@@ -34,18 +34,32 @@ func _run() -> void:
 			_expect(str(selected_slot_label.text).contains("slot_1"), "selected slot summary should show initial slot")
 		if selected_class_label != null:
 			_expect(str(selected_class_label.text).contains("warrior"), "selected class summary should show initial class")
+		var slot_1 := scene.find_child("SlotButtonSlot_1", true, false) as Button
+		var warrior := scene.find_child("ClassButtonWarrior", true, false) as Button
+		if slot_1 != null:
+			_expect(slot_1.toggle_mode, "slot buttons should expose a selected state")
+			_expect(slot_1.button_pressed, "initial selected slot button should be pressed")
+		if warrior != null:
+			_expect(warrior.toggle_mode, "class buttons should expose a selected state")
+			_expect(warrior.button_pressed, "initial selected class button should be pressed")
 		var slot_3 := scene.find_child("SlotButtonSlot_3", true, false) as Button
 		if slot_3 != null:
 			slot_3.pressed.emit()
 			await process_frame
 			if selected_slot_label != null:
 				_expect(str(selected_slot_label.text).contains("slot_3"), "selected slot summary should update after empty slot click")
+			_expect(slot_3.button_pressed, "clicked empty slot should become pressed")
+			if slot_1 != null:
+				_expect(not slot_1.button_pressed, "previous slot button should unpress after slot change")
 		var mage := scene.find_child("ClassButtonMage", true, false) as Button
 		if mage != null:
 			mage.pressed.emit()
 			await process_frame
 			if selected_class_label != null:
 				_expect(str(selected_class_label.text).contains("mage"), "selected class summary should update after class click")
+			_expect(mage.button_pressed, "clicked class should become pressed")
+			if warrior != null:
+				_expect(not warrior.button_pressed, "previous class button should unpress after class change")
 		scene.queue_free()
 		await process_frame
 	_finish()

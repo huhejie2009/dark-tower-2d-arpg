@@ -10,6 +10,8 @@ var selected_slot_id: String = "slot_1"
 var save_data: Dictionary = {}
 var selected_slot_summary: Label
 var selected_class_summary: Label
+var slot_buttons: Dictionary = {}
+var class_buttons: Dictionary = {}
 
 func _ready() -> void:
 	save_data = SaveManagerScript.load_save()
@@ -31,7 +33,9 @@ func _build_ui() -> void:
 		button.position = Vector2(250 + i * 270, 145)
 		button.size = Vector2(230, 120)
 		button.text = _build_slot_text(slot)
+		button.toggle_mode = true
 		button.pressed.connect(_on_slot_pressed.bind(slot_id))
+		slot_buttons[slot_id] = button
 		add_child(button)
 
 	var class_title := Label.new()
@@ -48,7 +52,9 @@ func _build_ui() -> void:
 		button.text = ClassRulesScript.get_class_name(class_id)
 		button.position = Vector2(360 + i * 130, 350)
 		button.size = Vector2(112, 46)
+		button.toggle_mode = true
 		button.pressed.connect(_select_class.bind(class_id))
+		class_buttons[class_id] = button
 		add_child(button)
 
 	selected_slot_summary = Label.new()
@@ -106,6 +112,17 @@ func _update_selection_summary() -> void:
 		selected_slot_summary.text = "Selected Slot: %s" % selected_slot_id
 	if is_instance_valid(selected_class_summary):
 		selected_class_summary.text = "Selected Class: %s (%s)" % [ClassRulesScript.get_class_name(selected_class), selected_class]
+	_sync_button_selected_states()
+
+func _sync_button_selected_states() -> void:
+	for slot_id in slot_buttons.keys():
+		var button := slot_buttons[slot_id] as Button
+		if is_instance_valid(button):
+			button.button_pressed = str(slot_id) == selected_slot_id
+	for class_id in class_buttons.keys():
+		var button := class_buttons[class_id] as Button
+		if is_instance_valid(button):
+			button.button_pressed = str(class_id) == selected_class
 
 func _create_character() -> void:
 	var slot: Dictionary = Dictionary(Dictionary(save_data.get("slots", {})).get(selected_slot_id, {}))
