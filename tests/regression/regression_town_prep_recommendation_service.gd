@@ -33,12 +33,18 @@ func _run() -> void:
 	_expect(_has_recommendation_id(items, "spend_skill_points"), "recommendations should expose skill point id")
 	_expect(_has_recommendation_id(items, "equip_upgrade"), "recommendations should expose equipment upgrade id")
 	_expect(_has_recommendation_id(items, "manage_bag"), "recommendations should expose bag id")
+	_expect(_has_recommendation_action(items, "spend_skill_points", "open_skills", "Open Skills"), "skill recommendation should expose skill action")
+	_expect(_has_recommendation_action(items, "equip_upgrade", "open_equipment", "Open Equipment"), "equipment recommendation should expose equipment action")
+	_expect(_has_recommendation_action(items, "manage_bag", "open_inventory", "Open Bag"), "bag recommendation should expose inventory action")
+	_expect(str(result.get("primary_action_id", "")) == "open_skills", "highest priority recommendation should become primary action")
+	_expect(str(result.get("primary_button_text", "")) == "Open Skills", "primary action should expose button text")
 	_expect(bool(result.get("has_action", false)), "recommendations should report action needed")
 
 	var clean := PlayerDataServiceScript.build_starter_player("slot_1", "Clean", "warrior")
 	var clean_result: Dictionary = TownPrepRecommendationServiceScript.build_recommendations(clean)
 	_expect(not bool(clean_result.get("has_action", true)), "fresh starter should not need prep actions")
 	_expect(str(clean_result.get("recommendation_text", "")).contains("Ready"), "clean recommendation should say ready")
+	_expect(str(clean_result.get("primary_action_id", "")) == "", "clean recommendation should not expose a primary action")
 	_finish()
 
 func _equipment_payload(id: String, item_name: String, level: int, affixes: Dictionary) -> Dictionary:
@@ -62,6 +68,13 @@ func _has_recommendation_id(items: Array, id: String) -> bool:
 	for item in items:
 		if str(Dictionary(item).get("id", "")) == id:
 			return true
+	return false
+
+func _has_recommendation_action(items: Array, id: String, action_id: String, button_text: String) -> bool:
+	for item in items:
+		var entry := Dictionary(item)
+		if str(entry.get("id", "")) == id:
+			return str(entry.get("action_id", "")) == action_id and str(entry.get("button_text", "")) == button_text
 	return false
 
 func _finish() -> void:

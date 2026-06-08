@@ -11,36 +11,58 @@ static func build_recommendations(player_data: Dictionary) -> Dictionary:
 	var items: Array[Dictionary] = []
 	var skill_points := int(player_data.get("skill_points", 0))
 	if skill_points > 0:
-		items.append({
-			"id": "spend_skill_points",
-			"priority": 10,
-			"text": "Spend SP %d before climbing." % skill_points,
-		})
+		items.append(_make_item(
+			"spend_skill_points",
+			10,
+			"Spend SP %d before climbing." % skill_points,
+			"open_skills",
+			"Open Skills"
+		))
 	var upgrade_count := _count_equipment_upgrades(player_data, inventory)
 	if upgrade_count > 0:
-		items.append({
-			"id": "equip_upgrade",
-			"priority": 20,
-			"text": "Equip upgrade: %d item(s) look stronger." % upgrade_count,
-		})
+		items.append(_make_item(
+			"equip_upgrade",
+			20,
+			"Equip upgrade: %d item(s) look stronger." % upgrade_count,
+			"open_equipment",
+			"Open Equipment"
+		))
 	var inventory_items := InventoryDataServiceScript.get_total_items(inventory)
 	if inventory_items >= BAG_PRESSURE_THRESHOLD:
-		items.append({
-			"id": "manage_bag",
-			"priority": 30,
-			"text": "Bag pressure: %d item(s), sort before a long run." % inventory_items,
-		})
+		items.append(_make_item(
+			"manage_bag",
+			30,
+			"Bag pressure: %d item(s), sort before a long run." % inventory_items,
+			"open_inventory",
+			"Open Bag"
+		))
 	items.sort_custom(_sort_recommendations)
 	if items.is_empty():
 		return {
 			"has_action": false,
 			"items": [],
 			"recommendation_text": "Ready: no urgent prep actions.",
+			"primary_action_id": "",
+			"primary_button_text": "",
+			"primary_recommendation_id": "",
 		}
+	var primary := Dictionary(items[0])
 	return {
 		"has_action": true,
 		"items": items,
 		"recommendation_text": _join_recommendation_text(items),
+		"primary_action_id": str(primary.get("action_id", "")),
+		"primary_button_text": str(primary.get("button_text", "")),
+		"primary_recommendation_id": str(primary.get("id", "")),
+	}
+
+static func _make_item(id: String, priority: int, text: String, action_id: String, button_text: String) -> Dictionary:
+	return {
+		"id": id,
+		"priority": priority,
+		"text": text,
+		"action_id": action_id,
+		"button_text": button_text,
 	}
 
 static func _count_equipment_upgrades(player_data: Dictionary, inventory: Dictionary) -> int:

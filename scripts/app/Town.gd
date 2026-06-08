@@ -14,6 +14,7 @@ var resource_summary: Label
 var growth_summary: Label
 var start_summary: Label
 var prep_recommendations: Label
+var prep_action_button: Button
 var inventory_window: Control
 
 func _ready() -> void:
@@ -76,11 +77,11 @@ func _create_prep_panel() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "TownPrepPanel"
 	panel.position = Vector2(360, 162)
-	panel.size = Vector2(560, 306)
+	panel.size = Vector2(560, 330)
 	add_child(panel)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 5)
 	panel.add_child(box)
 
 	var panel_title := Label.new()
@@ -100,8 +101,14 @@ func _create_prep_panel() -> void:
 	start_summary.custom_minimum_size = Vector2(520, 46)
 	box.add_child(start_summary)
 	prep_recommendations = _make_prep_label("TownPrepRecommendations")
-	prep_recommendations.custom_minimum_size = Vector2(520, 62)
+	prep_recommendations.custom_minimum_size = Vector2(520, 52)
 	box.add_child(prep_recommendations)
+	prep_action_button = Button.new()
+	prep_action_button.name = "TownPrepActionButton"
+	prep_action_button.text = "Open Prep"
+	prep_action_button.custom_minimum_size = Vector2(220, 34)
+	prep_action_button.pressed.connect(_on_prep_action_pressed)
+	box.add_child(prep_action_button)
 
 func _make_prep_label(label_name: String) -> Label:
 	var label := Label.new()
@@ -122,6 +129,38 @@ func _toggle_inventory_window() -> void:
 	inventory_window.visible = not inventory_window.visible
 	if inventory_window.visible:
 		inventory_window.set_player_data(player_data)
+
+func _on_prep_action_pressed() -> void:
+	var prep := TownPrepSummaryServiceScript.build_summary(player_data)
+	var recommendations := Dictionary(prep.get("recommendations", {}))
+	_open_prep_action(str(recommendations.get("primary_action_id", "")))
+
+func _open_prep_action(action_id: String) -> void:
+	if not is_instance_valid(inventory_window):
+		return
+	inventory_window.visible = true
+	inventory_window.set_player_data(player_data)
+	match action_id:
+		"open_equipment":
+			if inventory_window.has_method("set_filter_mode"):
+				inventory_window.call("set_filter_mode", "equipment")
+		"open_inventory":
+			if inventory_window.has_method("set_filter_mode"):
+				inventory_window.call("set_filter_mode", "all")
+		"open_skills":
+			if inventory_window.has_method("set_filter_mode"):
+				inventory_window.call("set_filter_mode", "all")
+			if inventory_window.has_method("select_skill_node"):
+				inventory_window.call("select_skill_node", "basic_attack_training")
+		_:
+			pass
+
+func trigger_prep_action_for_test() -> void:
+	_on_prep_action_pressed()
+
+func get_prep_primary_action_for_test() -> Dictionary:
+	var prep := TownPrepSummaryServiceScript.build_summary(player_data)
+	return Dictionary(prep.get("recommendations", {}))
 
 func _enter_fresh_tower_run() -> void:
 	TowerRunStartServiceScript.request_fresh_run()
@@ -155,3 +194,8 @@ func _update_summary() -> void:
 		start_summary.text = str(prep.get("start_text", ""))
 	if is_instance_valid(prep_recommendations):
 		prep_recommendations.text = str(prep.get("recommendation_text", ""))
+	if is_instance_valid(prep_action_button):
+		var recommendations := Dictionary(prep.get("recommendations", {}))
+		var has_action := bool(recommendations.get("has_action", false))
+		prep_action_button.disabled = not has_action
+		prep_action_button.text = str(recommendations.get("primary_button_text", "Ready"))
