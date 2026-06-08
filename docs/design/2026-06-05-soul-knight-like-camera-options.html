@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D ARPG 视角方向对比</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      background: #151718;
+      color: #eee6d4;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .intro {
+      margin: 0 0 24px;
+      color: #b8b1a3;
+      line-height: 1.7;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .card {
+      border: 1px solid #35383a;
+      background: #202326;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .viewport {
+      position: relative;
+      height: 310px;
+      background: #0e1112;
+      overflow: hidden;
+    }
+    .room {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 76%;
+      height: 68%;
+      transform: translate(-50%, -50%);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        #2c2922;
+      background-size: 28px 28px;
+      border: 6px solid #5d4630;
+      box-shadow: inset 0 0 0 3px #1a1410;
+    }
+    .room.b {
+      width: 90%;
+      height: 82%;
+      background-size: 32px 32px;
+      border-width: 8px;
+    }
+    .room.c {
+      width: 88%;
+      height: 72%;
+      transform: translate(-50%, -50%) skewX(-8deg) scaleY(.86);
+      background-size: 30px 24px;
+      border-width: 8px;
+    }
+    .wall {
+      position: absolute;
+      background: #4a3827;
+      border: 2px solid #241b14;
+    }
+    .wall.one { left: 12%; top: 18%; width: 24%; height: 12%; }
+    .wall.two { right: 13%; bottom: 18%; width: 18%; height: 20%; }
+    .wall.three { left: 42%; top: 58%; width: 18%; height: 10%; }
+    .player {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      border-radius: 50% 50% 44% 44%;
+      transform: translate(-50%, -50%);
+      background: #58d38b;
+      border: 3px solid #102917;
+      box-shadow: 0 6px 0 rgba(0,0,0,.25);
+    }
+    .player.a { width: 22px; height: 28px; }
+    .player.b { width: 38px; height: 46px; }
+    .player.c { width: 34px; height: 48px; transform: translate(-50%, -50%) scaleY(1.1); }
+    .enemy {
+      position: absolute;
+      border-radius: 50%;
+      background: #cf5048;
+      border: 3px solid #32100e;
+      box-shadow: 0 5px 0 rgba(0,0,0,.22);
+    }
+    .enemy.e1 { left: 28%; top: 36%; width: 28px; height: 28px; }
+    .enemy.e2 { right: 24%; top: 44%; width: 32px; height: 32px; }
+    .enemy.e3 { left: 42%; bottom: 22%; width: 24px; height: 24px; }
+    .bullet {
+      position: absolute;
+      width: 42px;
+      height: 8px;
+      border-radius: 999px;
+      background: #f8d778;
+      box-shadow: 0 0 12px #f8d778;
+    }
+    .bullet.one { left: 52%; top: 43%; transform: rotate(-18deg); }
+    .bullet.two { left: 38%; top: 57%; transform: rotate(28deg); }
+    .hud {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #f1dec0;
+    }
+    .panel {
+      padding: 14px 16px 16px;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    p {
+      margin: 0;
+      color: #beb6a8;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .tag {
+      display: inline-block;
+      margin: 0 0 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #31363a;
+      color: #e7d8ba;
+      font-size: 12px;
+    }
+    .recommend {
+      border-color: #d9a84f;
+      box-shadow: 0 0 0 1px #d9a84f inset;
+    }
+    .note {
+      margin-top: 22px;
+      padding: 14px 16px;
+      border-left: 4px solid #d9a84f;
+      background: #202326;
+      color: #d7cbb8;
+      line-height: 1.7;
+    }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>“元气骑士感”视角方向对比</h1>
+    <p class="intro">目标不是复制素材，而是借鉴“房间式近距离顶视、角色轮廓清楚、子弹/敌人读得快”的观感。下面三种方向都可以在当前 Godot 2D 项目上落地。</p>
+    <section class="grid">
+      <article class="card">
+        <div class="viewport">
+          <div class="room">
+            <div class="wall one"></div>
+            <div class="wall two"></div>
+            <div class="wall three"></div>
+            <div class="enemy e1"></div>
+            <div class="enemy e2"></div>
+            <div class="enemy e3"></div>
+            <div class="bullet one"></div>
+            <div class="player a"></div>
+          </div>
+          <div class="hud"><span>HP 88/120</span><span>Floor 3</span></div>
+        </div>
+        <div class="panel">
+          <span class="tag">A 现状加强</span>
+          <h2>大房间顶视</h2>
+          <p>保留现在的大竞技场和远镜头，只加强地砖、边界和单位对比。改动最小，但“像房间闯关”的感觉弱一些。</p>
+        </div>
+      </article>
+      <article class="card recommend">
+        <div class="viewport">
+          <div class="room b">
+            <div class="wall one"></div>
+            <div class="wall two"></div>
+            <div class="wall three"></div>
+            <div class="enemy e1"></div>
+            <div class="enemy e2"></div>
+            <div class="enemy e3"></div>
+            <div class="bullet one"></div>
+            <div class="bullet two"></div>
+            <div class="player b"></div>
+          </div>
+          <div class="hud"><span>HP 88/120</span><span>Floor 3</span></div>
+        </div>
+        <div class="panel">
+          <span class="tag">B 推荐</span>
+          <h2>近距离房间式顶视</h2>
+          <p>镜头更近，房间刚好塞进屏幕，角色占比更大，地形障碍可读。最接近你说的方向，也适合刷宝 ARPG 继续扩展。</p>
+        </div>
+      </article>
+      <article class="card">
+        <div class="viewport">
+          <div class="room c">
+            <div class="wall one"></div>
+            <div class="wall two"></div>
+            <div class="wall three"></div>
+            <div class="enemy e1"></div>
+            <div class="enemy e2"></div>
+            <div class="enemy e3"></div>
+            <div class="bullet one"></div>
+            <div class="player c"></div>
+          </div>
+          <div class="hud"><span>HP 88/120</span><span>Floor 3</span></div>
+        </div>
+        <div class="panel">
+          <span class="tag">C 风格化</span>
+          <h2>伪 3/4 俯视</h2>
+          <p>地面和单位做轻微斜视表现，更有立体感，但碰撞、投射物和房间边界更容易产生视觉/逻辑不一致。</p>
+        </div>
+      </article>
+    </section>
+    <div class="note">我的建议：先采用 B。实现上先改镜头缩放、房间尺寸、地砖/墙体/障碍表现、角色和敌人绘制比例；后续再加门、房间清场、随机小房间。</div>
+  </main>
+</body>
+</html>

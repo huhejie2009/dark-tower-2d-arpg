@@ -1,0 +1,25 @@
+# Godot local/editor cache
+.godot/
+.godot-devtool/
+
+# User-local save/config data
+user://
+*.tmp
+*.temp
+
+# Runtime and scratch outputs
+tmp/
+*.log
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large exported builds
+build/
+export/
+exports/
+*.exe
+*.pck
+*.zip
