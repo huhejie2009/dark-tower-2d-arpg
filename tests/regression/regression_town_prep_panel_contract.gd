@@ -33,11 +33,13 @@ func _run() -> void:
 		_expect(town.find_child("TownResourceSummary", true, false) != null, "prep panel should show resources")
 		_expect(town.find_child("TownGrowthSummary", true, false) != null, "prep panel should show growth")
 		_expect(town.find_child("TownStartSummary", true, false) != null, "prep panel should show start options")
+		_expect(town.find_child("TownPrepRecommendations", true, false) != null, "prep panel should show recommendations")
 		var character := town.find_child("TownCharacterSummary", true, false) as Label
 		var progress := town.find_child("TownProgressSummary", true, false) as Label
 		var resources := town.find_child("TownResourceSummary", true, false) as Label
 		var growth := town.find_child("TownGrowthSummary", true, false) as Label
 		var start := town.find_child("TownStartSummary", true, false) as Label
+		var recommendations := town.find_child("TownPrepRecommendations", true, false) as Label
 		if character != null:
 			_expect(str(character.text).contains("Prep Panel"), "character summary should include character name")
 		if progress != null:
@@ -48,6 +50,8 @@ func _run() -> void:
 			_expect(str(growth.text).contains("SP 2"), "growth summary should include skill points")
 		if start != null:
 			_expect(str(start.text).contains("Floor 1") and str(start.text).contains("9"), "start summary should explain both start options")
+		if recommendations != null:
+			_expect(str(recommendations.text).contains("SP 2"), "recommendations should mention unspent skill points")
 		town.queue_free()
 		await process_frame
 	_finish()

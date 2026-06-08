@@ -13,6 +13,7 @@ var progress_summary: Label
 var resource_summary: Label
 var growth_summary: Label
 var start_summary: Label
+var prep_recommendations: Label
 var inventory_window: Control
 
 func _ready() -> void:
@@ -41,7 +42,7 @@ func _build_ui() -> void:
 	enter.name = "EnterTowerButton"
 	var start_options := TowerRunStartServiceScript.build_start_options(player_data)
 	enter.text = str(start_options.get("fresh_label", "Enter Tower: Floor 1"))
-	enter.position = Vector2(500, 430)
+	enter.position = Vector2(500, 500)
 	enter.size = Vector2(280, 54)
 	enter.pressed.connect(_enter_fresh_tower_run)
 	add_child(enter)
@@ -49,7 +50,7 @@ func _build_ui() -> void:
 	var best_floor := Button.new()
 	best_floor.name = "EnterBestFloorButton"
 	best_floor.text = str(start_options.get("best_label", "Challenge Best Floor"))
-	best_floor.position = Vector2(500, 492)
+	best_floor.position = Vector2(500, 562)
 	best_floor.size = Vector2(280, 44)
 	best_floor.pressed.connect(_enter_best_floor_run)
 	add_child(best_floor)
@@ -57,7 +58,7 @@ func _build_ui() -> void:
 	var inventory := Button.new()
 	inventory.name = "OpenInventoryButton"
 	inventory.text = "Inventory / Equipment"
-	inventory.position = Vector2(500, 548)
+	inventory.position = Vector2(500, 618)
 	inventory.size = Vector2(280, 48)
 	inventory.pressed.connect(_toggle_inventory_window)
 	add_child(inventory)
@@ -65,7 +66,7 @@ func _build_ui() -> void:
 	var menu := Button.new()
 	menu.name = "ReturnMainMenuButton"
 	menu.text = "Main Menu"
-	menu.position = Vector2(500, 604)
+	menu.position = Vector2(500, 676)
 	menu.size = Vector2(280, 48)
 	menu.pressed.connect(func(): SceneRouterScript.go_to_main_menu(get_tree()))
 	add_child(menu)
@@ -75,7 +76,7 @@ func _create_prep_panel() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "TownPrepPanel"
 	panel.position = Vector2(360, 162)
-	panel.size = Vector2(560, 238)
+	panel.size = Vector2(560, 306)
 	add_child(panel)
 
 	var box := VBoxContainer.new()
@@ -98,6 +99,9 @@ func _create_prep_panel() -> void:
 	start_summary = _make_prep_label("TownStartSummary")
 	start_summary.custom_minimum_size = Vector2(520, 46)
 	box.add_child(start_summary)
+	prep_recommendations = _make_prep_label("TownPrepRecommendations")
+	prep_recommendations.custom_minimum_size = Vector2(520, 62)
+	box.add_child(prep_recommendations)
 
 func _make_prep_label(label_name: String) -> Label:
 	var label := Label.new()
@@ -149,3 +153,5 @@ func _update_summary() -> void:
 		growth_summary.text = str(prep.get("growth_text", ""))
 	if is_instance_valid(start_summary):
 		start_summary.text = str(prep.get("start_text", ""))
+	if is_instance_valid(prep_recommendations):
+		prep_recommendations.text = str(prep.get("recommendation_text", ""))

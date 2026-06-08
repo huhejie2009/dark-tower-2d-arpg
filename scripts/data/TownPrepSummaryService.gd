@@ -5,12 +5,14 @@ const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
+const TownPrepRecommendationServiceScript := preload("res://scripts/data/TownPrepRecommendationService.gd")
 const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
 
 static func build_summary(player_data: Dictionary) -> Dictionary:
 	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
 	var stats: Dictionary = EquipmentDataServiceScript.build_stat_totals(player_data)
 	var start_options: Dictionary = TowerRunStartServiceScript.build_start_options(player_data)
+	var recommendations: Dictionary = TownPrepRecommendationServiceScript.build_recommendations(player_data)
 	var gear_score := _get_total_equipment_score(player_data)
 	var gold := _get_inventory_amount(inventory, "gold")
 	var crystal := _get_inventory_amount(inventory, "crystal_shard")
@@ -49,6 +51,8 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		"crystal": crystal,
 		"inventory_items": InventoryDataServiceScript.get_total_items(inventory),
 		"start_options": start_options,
+		"recommendations": recommendations,
+		"recommendation_text": str(recommendations.get("recommendation_text", "")),
 	}
 
 static func _get_total_equipment_score(player_data: Dictionary) -> int:
