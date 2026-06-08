@@ -26,6 +26,26 @@ func _run() -> void:
 		for slot_id in SaveSchemaScript.SLOT_IDS:
 			_expect(scene.find_child("SlotButton%s" % slot_id.capitalize(), true, false) != null, "slot button should exist for %s" % slot_id)
 		_expect(scene.find_child("CreateCharacterButton", true, false) != null, "create character button should exist")
+		var selected_slot_label := scene.find_child("SelectedSlotSummary", true, false) as Label
+		var selected_class_label := scene.find_child("SelectedClassSummary", true, false) as Label
+		_expect(selected_slot_label != null, "character select should show selected slot summary")
+		_expect(selected_class_label != null, "character select should show selected class summary")
+		if selected_slot_label != null:
+			_expect(str(selected_slot_label.text).contains("slot_1"), "selected slot summary should show initial slot")
+		if selected_class_label != null:
+			_expect(str(selected_class_label.text).contains("warrior"), "selected class summary should show initial class")
+		var slot_3 := scene.find_child("SlotButtonSlot_3", true, false) as Button
+		if slot_3 != null:
+			slot_3.pressed.emit()
+			await process_frame
+			if selected_slot_label != null:
+				_expect(str(selected_slot_label.text).contains("slot_3"), "selected slot summary should update after empty slot click")
+		var mage := scene.find_child("ClassButtonMage", true, false) as Button
+		if mage != null:
+			mage.pressed.emit()
+			await process_frame
+			if selected_class_label != null:
+				_expect(str(selected_class_label.text).contains("mage"), "selected class summary should update after class click")
 		scene.queue_free()
 		await process_frame
 	_finish()

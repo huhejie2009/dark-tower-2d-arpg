@@ -8,6 +8,8 @@ const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
 var selected_class: String = "warrior"
 var selected_slot_id: String = "slot_1"
 var save_data: Dictionary = {}
+var selected_slot_summary: Label
+var selected_class_summary: Label
 
 func _ready() -> void:
 	save_data = SaveManagerScript.load_save()
@@ -49,13 +51,30 @@ func _build_ui() -> void:
 		button.pressed.connect(_select_class.bind(class_id))
 		add_child(button)
 
+	selected_slot_summary = Label.new()
+	selected_slot_summary.name = "SelectedSlotSummary"
+	selected_slot_summary.position = Vector2(430, 410)
+	selected_slot_summary.size = Vector2(420, 28)
+	selected_slot_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	selected_slot_summary.add_theme_font_size_override("font_size", 16)
+	add_child(selected_slot_summary)
+
+	selected_class_summary = Label.new()
+	selected_class_summary.name = "SelectedClassSummary"
+	selected_class_summary.position = Vector2(430, 438)
+	selected_class_summary.size = Vector2(420, 28)
+	selected_class_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	selected_class_summary.add_theme_font_size_override("font_size", 16)
+	add_child(selected_class_summary)
+
 	var create := Button.new()
 	create.name = "CreateCharacterButton"
 	create.text = "Create In Selected Empty Slot"
-	create.position = Vector2(480, 455)
+	create.position = Vector2(480, 490)
 	create.size = Vector2(280, 54)
 	create.pressed.connect(_create_character)
 	add_child(create)
+	_update_selection_summary()
 
 func _build_slot_text(slot: Dictionary) -> String:
 	var label := str(slot.get("slot_id", "slot"))
@@ -75,9 +94,18 @@ func _on_slot_pressed(slot_id: String) -> void:
 	if bool(slot.get("exists", false)):
 		SaveManagerScript.set_active_slot(slot_id)
 		SceneRouterScript.go_to_town(get_tree())
+		return
+	_update_selection_summary()
 
 func _select_class(class_id: String) -> void:
 	selected_class = class_id
+	_update_selection_summary()
+
+func _update_selection_summary() -> void:
+	if is_instance_valid(selected_slot_summary):
+		selected_slot_summary.text = "Selected Slot: %s" % selected_slot_id
+	if is_instance_valid(selected_class_summary):
+		selected_class_summary.text = "Selected Class: %s (%s)" % [ClassRulesScript.get_class_name(selected_class), selected_class]
 
 func _create_character() -> void:
 	var slot: Dictionary = Dictionary(Dictionary(save_data.get("slots", {})).get(selected_slot_id, {}))
