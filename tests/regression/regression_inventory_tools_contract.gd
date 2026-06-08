@@ -32,6 +32,16 @@ func _run() -> void:
 	_expect(window.find_child("FilterMaterialButton", true, false) != null, "material filter should exist")
 	_expect(window.has_method("toggle_item_lock"), "window should expose toggle_item_lock")
 	_expect(window.has_method("get_visible_item_ids"), "window should expose visible item ids")
+	var all_filter := window.find_child("FilterAllButton", true, false) as Button
+	var equipment_filter := window.find_child("FilterEquipmentButton", true, false) as Button
+	var material_filter := window.find_child("FilterMaterialButton", true, false) as Button
+	if all_filter != null and equipment_filter != null and material_filter != null:
+		_expect(all_filter.toggle_mode, "all filter should expose selected state")
+		_expect(equipment_filter.toggle_mode, "equipment filter should expose selected state")
+		_expect(material_filter.toggle_mode, "material filter should expose selected state")
+		_expect(all_filter.button_pressed, "all filter should start selected")
+		_expect(not equipment_filter.button_pressed, "equipment filter should start unselected")
+		_expect(not material_filter.button_pressed, "material filter should start unselected")
 
 	if window.has_method("toggle_item_lock"):
 		window.call("toggle_item_lock", "armor_test")
@@ -43,9 +53,17 @@ func _run() -> void:
 		window.call("set_filter_mode", "material")
 		var visible_materials: Array = Array(window.call("get_visible_item_ids"))
 		_expect(not visible_materials.has("armor_test"), "equipment should be hidden by material filter")
+		if all_filter != null and equipment_filter != null and material_filter != null:
+			_expect(material_filter.button_pressed, "material filter should become selected")
+			_expect(not all_filter.button_pressed, "all filter should unselect after material filter")
+			_expect(not equipment_filter.button_pressed, "equipment filter should remain unselected after material filter")
 		window.call("set_filter_mode", "equipment")
 		var visible_equipment: Array = Array(window.call("get_visible_item_ids"))
 		_expect(visible_equipment.has("armor_test"), "equipment should show in equipment filter")
+		if all_filter != null and equipment_filter != null and material_filter != null:
+			_expect(equipment_filter.button_pressed, "equipment filter should become selected")
+			_expect(not all_filter.button_pressed, "all filter should remain unselected after equipment filter")
+			_expect(not material_filter.button_pressed, "material filter should unselect after equipment filter")
 
 	window.queue_free()
 	await process_frame

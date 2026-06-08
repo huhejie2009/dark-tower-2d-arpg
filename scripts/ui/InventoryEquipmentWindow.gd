@@ -36,6 +36,7 @@ var filter_mode: String = "all"
 var sort_mode: String = "type"
 var selected_item_id: String = ""
 var selected_skill_node_id: String = PlayerDataServiceScript.BASIC_ATTACK_TRAINING_NODE
+var filter_buttons: Dictionary = {}
 
 func _ready() -> void:
 	_build_ui()
@@ -128,21 +129,27 @@ func _build_ui() -> void:
 	all_button.name = "FilterAllButton"
 	all_button.text = "All"
 	all_button.custom_minimum_size = Vector2(52, 30)
+	all_button.toggle_mode = true
 	all_button.pressed.connect(set_filter_mode.bind("all"))
+	filter_buttons["all"] = all_button
 	tools.add_child(all_button)
 
 	var equipment_button := Button.new()
 	equipment_button.name = "FilterEquipmentButton"
 	equipment_button.text = "Equip"
 	equipment_button.custom_minimum_size = Vector2(64, 30)
+	equipment_button.toggle_mode = true
 	equipment_button.pressed.connect(set_filter_mode.bind("equipment"))
+	filter_buttons["equipment"] = equipment_button
 	tools.add_child(equipment_button)
 
 	var material_button := Button.new()
 	material_button.name = "FilterMaterialButton"
 	material_button.text = "Mat"
 	material_button.custom_minimum_size = Vector2(52, 30)
+	material_button.toggle_mode = true
 	material_button.pressed.connect(set_filter_mode.bind("material"))
+	filter_buttons["material"] = material_button
 	tools.add_child(material_button)
 
 	var scroll := ScrollContainer.new()
@@ -225,6 +232,7 @@ func _build_ui() -> void:
 	clear_selected_button.custom_minimum_size = Vector2(72, 32)
 	clear_selected_button.pressed.connect(clear_selection)
 	action_row.add_child(clear_selected_button)
+	_sync_filter_button_states()
 
 func _sync_layout_to_viewport() -> void:
 	var viewport_size := _get_layout_viewport_size()
@@ -500,6 +508,7 @@ func get_visible_item_ids() -> Array:
 
 func set_filter_mode(mode: String) -> void:
 	filter_mode = mode if ["all", "equipment", "material"].has(mode) else "all"
+	_sync_filter_button_states()
 	refresh()
 
 func toggle_item_lock(item_id: String) -> void:
@@ -574,6 +583,12 @@ func _cycle_sort_mode() -> void:
 	if sort_button != null:
 		sort_button.text = "Sort: %s" % sort_mode.capitalize()
 	refresh()
+
+func _sync_filter_button_states() -> void:
+	for mode in filter_buttons.keys():
+		var button := filter_buttons[mode] as Button
+		if is_instance_valid(button):
+			button.button_pressed = str(mode) == filter_mode
 
 func _entry_matches_filter(entry: Dictionary) -> bool:
 	if filter_mode == "all":
