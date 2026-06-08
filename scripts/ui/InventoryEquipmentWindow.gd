@@ -14,6 +14,9 @@ const SkillNodeGrowthServiceScript := preload("res://scripts/data/SkillNodeGrowt
 const SkillUpgradePreviewServiceScript := preload("res://scripts/data/SkillUpgradePreviewService.gd")
 const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
 
+const DEFAULT_WINDOW_SIZE := Vector2(860, 500)
+const VIEWPORT_MARGIN := 32.0
+
 var player_data: Dictionary = {}
 var inventory_grid: GridContainer
 var equipment_box: VBoxContainer
@@ -36,6 +39,8 @@ var selected_skill_node_id: String = PlayerDataServiceScript.BASIC_ATTACK_TRAINI
 
 func _ready() -> void:
 	_build_ui()
+	_sync_layout_to_viewport()
+	get_viewport().size_changed.connect(_sync_layout_to_viewport)
 	refresh()
 
 func set_player_data(data: Dictionary) -> void:
@@ -61,10 +66,7 @@ func _build_ui() -> void:
 	anchor_top = 0.5
 	anchor_right = 0.5
 	anchor_bottom = 0.5
-	offset_left = -430
-	offset_top = -250
-	offset_right = 430
-	offset_bottom = 250
+	_sync_layout_to_viewport()
 	visible = false
 
 	var panel := PanelContainer.new()
@@ -223,6 +225,32 @@ func _build_ui() -> void:
 	clear_selected_button.custom_minimum_size = Vector2(72, 32)
 	clear_selected_button.pressed.connect(clear_selection)
 	action_row.add_child(clear_selected_button)
+
+func _sync_layout_to_viewport() -> void:
+	var viewport_size := _get_layout_viewport_size()
+	var window_size := _get_responsive_window_size(viewport_size)
+	offset_left = -window_size.x * 0.5
+	offset_top = -window_size.y * 0.5
+	offset_right = window_size.x * 0.5
+	offset_bottom = window_size.y * 0.5
+
+func _get_layout_viewport_size() -> Vector2:
+	var parent := get_parent()
+	if parent is Window:
+		var window_size := Vector2((parent as Window).size)
+		if window_size.x > 0.0 and window_size.y > 0.0:
+			return window_size
+	return Vector2(get_viewport().get_visible_rect().size)
+
+func _get_responsive_window_size(viewport_size: Vector2) -> Vector2:
+	return Vector2(
+		minf(DEFAULT_WINDOW_SIZE.x, maxf(360.0, viewport_size.x - VIEWPORT_MARGIN)),
+		minf(DEFAULT_WINDOW_SIZE.y, maxf(360.0, viewport_size.y - VIEWPORT_MARGIN))
+	)
+
+func get_responsive_window_rect_for_test(viewport_size: Vector2) -> Rect2:
+	var window_size := _get_responsive_window_size(viewport_size)
+	return Rect2((viewport_size - window_size) * 0.5, window_size)
 
 func _build_equipment_slots() -> void:
 	var title := Label.new()

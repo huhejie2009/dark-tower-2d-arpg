@@ -102,9 +102,9 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 100`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 103`
 - `HEADLESS_BOOT_EXIT 0`
-- `NO_RESIDUAL_GODOT_PROCESS`
+- `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
 Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in use` 警告；目前只要退出码为 0 且完整回归通过，就按非阻断清理项处理。
 
