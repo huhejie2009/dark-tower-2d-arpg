@@ -61,6 +61,8 @@ func _run() -> void:
 	_expect(window.has_method("salvage_junk_items"), "inventory window should expose salvage_junk_items")
 	if window.has_method("sell_junk_items"):
 		window.call("sell_junk_items")
+		if window.has_method("confirm_pending_junk_action_for_test"):
+			window.call("confirm_pending_junk_action_for_test")
 		var updated: Dictionary = Dictionary(window.get("player_data"))
 		var updated_inventory: Dictionary = Dictionary(updated.get("inventory", {}))
 		_expect(not updated_inventory.has("junk_sword"), "window sell junk should apply service result")

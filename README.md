@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 113`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 114`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -129,6 +129,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 锁定、收藏、已装备、不可出售物品会被自动保护，不会被批量处理。
 - 背包窗口新增 `SellJunkButton` 与 `SalvageJunkButton`，先以文字按钮保留正式图标素材接口。
 - 新增回归：`regression_inventory_junk_batch_actions.gd`。
+
+## 2026-06-10 更新：废品处理确认弹窗
+
+- 背包窗口新增 `JunkActionConfirmDialog`。
+- `Sell Junk` / `Salvage` 会先显示处理数量、保护数量和预计收益，确认后才执行。
+- 新增待确认预览接口，后续商人和铁匠可以复用同一套确认流程。
+- 新增回归：`regression_inventory_junk_action_confirmation.gd`。
 
 ## License
 

@@ -44,6 +44,9 @@ var junk_selected_button: Button
 var clear_selected_button: Button
 var sell_junk_button: Button
 var salvage_junk_button: Button
+var junk_action_confirm_dialog: ConfirmationDialog
+var pending_junk_action_mode: String = ""
+var pending_junk_action_preview: Dictionary = {}
 var filter_mode: String = "all"
 var sort_mode: String = "type"
 var selected_item_id: String = ""
@@ -91,6 +94,13 @@ func _build_ui() -> void:
 	var root_box := VBoxContainer.new()
 	root_box.add_theme_constant_override("separation", 8)
 	panel.add_child(root_box)
+
+	junk_action_confirm_dialog = ConfirmationDialog.new()
+	junk_action_confirm_dialog.name = "JunkActionConfirmDialog"
+	junk_action_confirm_dialog.title = "Process Junk"
+	junk_action_confirm_dialog.dialog_text = ""
+	junk_action_confirm_dialog.confirmed.connect(_confirm_pending_junk_action)
+	add_child(junk_action_confirm_dialog)
 
 	var header := HBoxContainer.new()
 	root_box.add_child(header)
@@ -676,10 +686,54 @@ func toggle_selected_junk() -> void:
 	toggle_item_junk(selected_item_id)
 
 func sell_junk_items() -> void:
-	_process_junk_items("sell")
+	_request_junk_action_confirmation("sell")
 
 func salvage_junk_items() -> void:
-	_process_junk_items("salvage")
+	_request_junk_action_confirmation("salvage")
+
+func _request_junk_action_confirmation(mode: String) -> void:
+	var preview: Dictionary = InventoryItemActionServiceScript.build_junk_action_preview(player_data, mode)
+	preview["confirm_text"] = _build_junk_action_confirm_text(preview)
+	if not bool(preview.get("can_process", false)):
+		pending_junk_action_mode = ""
+		pending_junk_action_preview = {}
+		if is_instance_valid(detail_label):
+			detail_label.text = "No junk to process.\n%s" % str(preview.get("summary_text", ""))
+		_update_selected_actions()
+		return
+	pending_junk_action_mode = str(preview.get("mode", mode))
+	pending_junk_action_preview = preview.duplicate(true)
+	if is_instance_valid(junk_action_confirm_dialog):
+		junk_action_confirm_dialog.title = "Salvage Junk" if pending_junk_action_mode == "salvage" else "Sell Junk"
+		junk_action_confirm_dialog.dialog_text = str(preview.get("confirm_text", ""))
+		junk_action_confirm_dialog.popup_centered(Vector2i(420, 220))
+	if is_instance_valid(detail_label):
+		detail_label.text = str(preview.get("confirm_text", ""))
+
+func _confirm_pending_junk_action() -> void:
+	if pending_junk_action_mode == "":
+		return
+	var mode := pending_junk_action_mode
+	pending_junk_action_mode = ""
+	pending_junk_action_preview = {}
+	_process_junk_items(mode)
+
+func get_pending_junk_action_preview_for_test() -> Dictionary:
+	return pending_junk_action_preview.duplicate(true)
+
+func confirm_pending_junk_action_for_test() -> void:
+	_confirm_pending_junk_action()
+
+func _build_junk_action_confirm_text(preview: Dictionary) -> String:
+	var mode := str(preview.get("mode", "sell"))
+	var action_label := "Salvage" if mode == "salvage" else "Sell"
+	var reward_text := "+%d Crystal Shard" % int(preview.get("crystal_gain", 0)) if mode == "salvage" else "+%d Gold" % int(preview.get("gold_gain", 0))
+	return "%s marked junk?\nItems %d  Protected %d\nReward %s\nLocked, favorite, equipped, and unsellable items are safe." % [
+		action_label,
+		int(preview.get("processed_count", 0)),
+		int(preview.get("protected_count", 0)),
+		reward_text,
+	]
 
 func _process_junk_items(mode: String) -> void:
 	var result: Dictionary = InventoryItemActionServiceScript.process_junk_action(player_data, mode)
