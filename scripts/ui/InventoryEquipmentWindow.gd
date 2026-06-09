@@ -6,6 +6,7 @@ signal close_requested
 
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
 const InventoryQueryServiceScript := preload("res://scripts/data/InventoryQueryService.gd")
+const InventoryItemActionServiceScript := preload("res://scripts/data/InventoryItemActionService.gd")
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 const EquipmentActionHintServiceScript := preload("res://scripts/data/EquipmentActionHintService.gd")
 const EquipmentCompareSummaryServiceScript := preload("res://scripts/data/EquipmentCompareSummaryService.gd")
@@ -41,6 +42,8 @@ var lock_selected_button: Button
 var favorite_selected_button: Button
 var junk_selected_button: Button
 var clear_selected_button: Button
+var sell_junk_button: Button
+var salvage_junk_button: Button
 var filter_mode: String = "all"
 var sort_mode: String = "type"
 var selected_item_id: String = ""
@@ -251,6 +254,27 @@ func _build_ui() -> void:
 	DarkArpgUiThemeScript.style_button(clear_selected_button)
 	clear_selected_button.pressed.connect(clear_selection)
 	action_row.add_child(clear_selected_button)
+
+	var batch_row := HBoxContainer.new()
+	batch_row.name = "BatchJunkActions"
+	batch_row.add_theme_constant_override("separation", 4)
+	side.add_child(batch_row)
+
+	sell_junk_button = Button.new()
+	sell_junk_button.name = "SellJunkButton"
+	sell_junk_button.text = "Sell Junk"
+	sell_junk_button.custom_minimum_size = Vector2(96, 32)
+	DarkArpgUiThemeScript.style_button(sell_junk_button)
+	sell_junk_button.pressed.connect(sell_junk_items)
+	batch_row.add_child(sell_junk_button)
+
+	salvage_junk_button = Button.new()
+	salvage_junk_button.name = "SalvageJunkButton"
+	salvage_junk_button.text = "Salvage"
+	salvage_junk_button.custom_minimum_size = Vector2(96, 32)
+	DarkArpgUiThemeScript.style_button(salvage_junk_button)
+	salvage_junk_button.pressed.connect(salvage_junk_items)
+	batch_row.add_child(salvage_junk_button)
 	_sync_filter_button_states()
 
 func _add_filter_button(parent: Container, mode: String, button_name: String, text: String, width: int, selected: bool = false) -> void:
@@ -651,6 +675,28 @@ func toggle_selected_junk() -> void:
 		return
 	toggle_item_junk(selected_item_id)
 
+func sell_junk_items() -> void:
+	_process_junk_items("sell")
+
+func salvage_junk_items() -> void:
+	_process_junk_items("salvage")
+
+func _process_junk_items(mode: String) -> void:
+	var result: Dictionary = InventoryItemActionServiceScript.process_junk_action(player_data, mode)
+	if not bool(result.get("ok", false)):
+		if is_instance_valid(detail_label):
+			var preview: Dictionary = Dictionary(result.get("preview", {}))
+			detail_label.text = "No junk to process.\n%s" % str(preview.get("summary_text", ""))
+		_update_selected_actions()
+		return
+	player_data = Dictionary(result.get("player_data", player_data))
+	if selected_item_id != "" and not Dictionary(player_data.get("inventory", {})).has(selected_item_id):
+		selected_item_id = ""
+	if is_instance_valid(detail_label):
+		detail_label.text = str(result.get("summary_text", "Junk processed."))
+	player_data_changed.emit(player_data.duplicate(true))
+	refresh()
+
 func _cycle_sort_mode() -> void:
 	if sort_mode == "type":
 		sort_mode = "power"
@@ -751,6 +797,7 @@ func _update_selected_actions() -> void:
 	favorite_selected_button.text = "Fav"
 	junk_selected_button.text = "Junk"
 	if not has_selection:
+		_update_batch_junk_actions()
 		return
 	var entry: Dictionary = Dictionary(inventory[selected_item_id])
 	var flags: Dictionary = Dictionary(entry.get("binding_flags", {}))
@@ -764,6 +811,17 @@ func _update_selected_actions() -> void:
 	else:
 		equip_selected_button.text = "Equip"
 		equip_selected_button.disabled = str(entry.get("type", "")) != "equipment"
+	_update_batch_junk_actions()
+
+func _update_batch_junk_actions() -> void:
+	if not is_instance_valid(sell_junk_button) or not is_instance_valid(salvage_junk_button):
+		return
+	var sell_preview: Dictionary = InventoryItemActionServiceScript.build_junk_action_preview(player_data, "sell")
+	var salvage_preview: Dictionary = InventoryItemActionServiceScript.build_junk_action_preview(player_data, "salvage")
+	sell_junk_button.disabled = not bool(sell_preview.get("can_process", false))
+	salvage_junk_button.disabled = not bool(salvage_preview.get("can_process", false))
+	sell_junk_button.tooltip_text = str(sell_preview.get("summary_text", "Sell Junk 0"))
+	salvage_junk_button.tooltip_text = str(salvage_preview.get("summary_text", "Salvage Junk 0"))
 
 func _sync_selected_detail() -> void:
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))

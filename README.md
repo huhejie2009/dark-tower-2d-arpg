@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 112`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 113`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -121,6 +121,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 3. 继续完善 HUD、背包、装备、技能与死亡结算体验。
 4. 准备正式 2D 人物、敌人、动作和环境素材替换。
 5. 扩展 3 到 5 个楼层节奏变化，并增加更稳定的连续楼层测试。
+
+## 2026-06-10 更新：废品批量处理前置
+
+- 新增 `InventoryItemActionService`，集中处理背包物品操作规则。
+- 新增废品批量出售/分解预览与执行接口，后续商人和铁匠窗口可直接复用。
+- 锁定、收藏、已装备、不可出售物品会被自动保护，不会被批量处理。
+- 背包窗口新增 `SellJunkButton` 与 `SalvageJunkButton`，先以文字按钮保留正式图标素材接口。
+- 新增回归：`regression_inventory_junk_batch_actions.gd`。
 
 ## License
 
