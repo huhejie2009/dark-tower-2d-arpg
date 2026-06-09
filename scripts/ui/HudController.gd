@@ -1,6 +1,9 @@
 extends CanvasLayer
 class_name HudController
 
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
+
+var hud_panel: PanelContainer
 var status_label: Label
 var log_label: Label
 var health_label: Label
@@ -16,13 +19,20 @@ var last_loot_notification: Dictionary = {}
 
 func _ready() -> void:
 	name = "HudController"
-	status_label = _make_label("StatusLabel", Vector2(20, 18), 20, Color(1.0, 0.78, 0.34))
-	log_label = _make_label("LogLabel", Vector2(20, 54), 15, Color(0.9, 0.78, 0.56))
-	health_label = _make_label("HealthLabel", Vector2(20, 86), 15, Color(1.0, 0.42, 0.38))
-	health_bar = _make_bar("HealthBar", Vector2(88, 90), Vector2(190, 12), Color(0.72, 0.08, 0.06))
-	mana_label = _make_label("ManaLabel", Vector2(20, 108), 15, Color(0.38, 0.68, 1.0))
-	mana_bar = _make_bar("ManaBar", Vector2(88, 112), Vector2(190, 12), Color(0.08, 0.28, 0.78))
-	level_label = _make_label("LevelLabel", Vector2(20, 136), 16, Color(0.82, 0.93, 1.0))
+	hud_panel = PanelContainer.new()
+	hud_panel.name = "DarkArpgHudPanel"
+	hud_panel.position = Vector2(14, 14)
+	hud_panel.size = Vector2(292, 184)
+	DarkArpgUiThemeScript.style_panel(hud_panel)
+	add_child(hud_panel)
+
+	status_label = _make_label("StatusLabel", Vector2(20, 18), 20, DarkArpgUiThemeScript.COLOR_GOLD)
+	log_label = _make_label("LogLabel", Vector2(20, 54), 15, DarkArpgUiThemeScript.COLOR_BONE)
+	health_label = _make_label("HealthLabel", Vector2(20, 86), 15, DarkArpgUiThemeScript.COLOR_BONE)
+	health_bar = _make_bar("HealthBar", Vector2(88, 90), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_HEALTH)
+	mana_label = _make_label("ManaLabel", Vector2(20, 108), 15, DarkArpgUiThemeScript.COLOR_BONE)
+	mana_bar = _make_bar("ManaBar", Vector2(88, 112), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_MANA)
+	level_label = _make_label("LevelLabel", Vector2(20, 136), 16, DarkArpgUiThemeScript.COLOR_BONE)
 	experience_bar = ProgressBar.new()
 	experience_bar.name = "ExperienceBar"
 	experience_bar.position = Vector2(20, 164)
@@ -31,9 +41,10 @@ func _ready() -> void:
 	experience_bar.max_value = 100
 	experience_bar.value = 0
 	experience_bar.show_percentage = false
-	skill_point_label = _make_label("SkillPointLabel", Vector2(290, 154), 14, Color(0.78, 0.94, 0.78))
-	inventory_label = _make_label("InventoryLabel", Vector2(960, 18), 16, Color(0.72, 0.9, 1.0))
-	loot_notification_label = _make_label("LootNotificationLabel", Vector2(860, 54), 15, Color(0.92, 0.95, 1.0))
+	DarkArpgUiThemeScript.style_bar(experience_bar, DarkArpgUiThemeScript.COLOR_XP)
+	skill_point_label = _make_label("SkillPointLabel", Vector2(290, 154), 14, DarkArpgUiThemeScript.COLOR_GOLD)
+	inventory_label = _make_label("InventoryLabel", Vector2(960, 18), 16, DarkArpgUiThemeScript.COLOR_BONE)
+	loot_notification_label = _make_label("LootNotificationLabel", Vector2(860, 54), 15, DarkArpgUiThemeScript.COLOR_BONE)
 	loot_notification_label.size = Vector2(380, 110)
 	loot_notification_label.visible = false
 	add_child(status_label)
@@ -47,6 +58,8 @@ func _ready() -> void:
 	add_child(skill_point_label)
 	add_child(inventory_label)
 	add_child(loot_notification_label)
+	_sync_layout_to_viewport()
+	get_viewport().size_changed.connect(_sync_layout_to_viewport)
 
 func set_status(text: String) -> void:
 	if is_instance_valid(status_label):
@@ -116,7 +129,7 @@ func _make_label(label_name: String, pos: Vector2, font_size: int, color: Color)
 	label.position = pos
 	label.size = Vector2(300, 80)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override("font_size", font_size)
+	DarkArpgUiThemeScript.style_body_label(label, font_size)
 	label.add_theme_color_override("font_color", color)
 	return label
 
@@ -129,11 +142,31 @@ func _make_bar(bar_name: String, pos: Vector2, bar_size: Vector2, fill_color: Co
 	bar.max_value = 100
 	bar.value = 0
 	bar.show_percentage = false
-	bar.add_theme_color_override("font_color", Color.TRANSPARENT)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = fill_color
-	bar.add_theme_stylebox_override("fill", fill)
-	var background := StyleBoxFlat.new()
-	background.bg_color = Color(0.05, 0.06, 0.07, 0.86)
-	bar.add_theme_stylebox_override("background", background)
+	DarkArpgUiThemeScript.style_bar(bar, fill_color)
 	return bar
+
+func get_ui_style_id_for_test() -> String:
+	return DarkArpgUiThemeScript.get_style_id()
+
+func _sync_layout_to_viewport() -> void:
+	var viewport_size := Vector2(get_viewport().get_visible_rect().size)
+	var rects := get_visual_qa_rects_for_test(viewport_size)
+	if is_instance_valid(inventory_label):
+		var inventory_rect: Rect2 = Rect2(rects.get("inventory", Rect2()))
+		inventory_label.position = inventory_rect.position
+		inventory_label.size = inventory_rect.size
+	if is_instance_valid(loot_notification_label):
+		var loot_rect: Rect2 = Rect2(rects.get("loot", Rect2()))
+		loot_notification_label.position = loot_rect.position
+		loot_notification_label.size = loot_rect.size
+
+func get_visual_qa_rects_for_test(viewport_size: Vector2) -> Dictionary:
+	var safe_width := maxf(360.0, viewport_size.x)
+	var inventory_size := Vector2(minf(300.0, safe_width - 28.0), 42.0)
+	var inventory_x := maxf(14.0, safe_width - inventory_size.x - 20.0)
+	var loot_size := Vector2(minf(380.0, safe_width - 28.0), 110.0)
+	var loot_x := maxf(14.0, safe_width - loot_size.x - 20.0)
+	return {
+		"inventory": Rect2(Vector2(inventory_x, 18.0), inventory_size),
+		"loot": Rect2(Vector2(loot_x, 64.0), loot_size),
+	}

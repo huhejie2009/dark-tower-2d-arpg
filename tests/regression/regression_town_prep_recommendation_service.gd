@@ -15,7 +15,7 @@ func _run() -> void:
 	player["highest_floor"] = 8
 	var inventory: Dictionary = Dictionary(player.get("inventory", {})).duplicate(true)
 	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("prep_upgrade_sword", "Prep Upgrade Sword", 6, {"attack_damage": 42}))
-	for i in range(22):
+	for i in range(30):
 		inventory = InventoryDataServiceScript.add_item(inventory, {
 			"id": "prep_material_%d" % i,
 			"name": "Prep Material %d" % i,
@@ -30,6 +30,7 @@ func _run() -> void:
 	_expect(str(result.get("recommendation_text", "")).contains("Spend SP 2"), "recommendation text should mention unspent skill points")
 	_expect(str(result.get("recommendation_text", "")).contains("Equip upgrade"), "recommendation text should mention equipment upgrades")
 	_expect(str(result.get("recommendation_text", "")).contains("Bag"), "recommendation text should mention bag pressure")
+	_expect(str(result.get("recommendation_text", "")).contains("/40"), "bag pressure should use capacity text")
 	_expect(_has_recommendation_id(items, "spend_skill_points"), "recommendations should expose skill point id")
 	_expect(_has_recommendation_id(items, "equip_upgrade"), "recommendations should expose equipment upgrade id")
 	_expect(_has_recommendation_id(items, "manage_bag"), "recommendations should expose bag id")

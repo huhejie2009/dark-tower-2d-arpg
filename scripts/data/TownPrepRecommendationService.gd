@@ -4,10 +4,9 @@ class_name TownPrepRecommendationService
 const EquipmentActionHintServiceScript := preload("res://scripts/data/EquipmentActionHintService.gd")
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
 
-const BAG_PRESSURE_THRESHOLD := 24
-
 static func build_recommendations(player_data: Dictionary) -> Dictionary:
 	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
+	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(inventory)
 	var items: Array[Dictionary] = []
 	var skill_points := int(player_data.get("skill_points", 0))
 	if skill_points > 0:
@@ -27,15 +26,22 @@ static func build_recommendations(player_data: Dictionary) -> Dictionary:
 			"open_equipment",
 			"Open Equipment"
 		))
-	var inventory_items := InventoryDataServiceScript.get_total_items(inventory)
-	if inventory_items >= BAG_PRESSURE_THRESHOLD:
-		items.append(_make_item(
+	if bool(capacity.get("pressure", false)):
+		var bag_item := _make_item(
 			"manage_bag",
 			30,
-			"Bag pressure: %d item(s), sort before a long run." % inventory_items,
+			"Bag pressure: %d/%d slots, sort before a long run." % [
+				int(capacity.get("used_slots", 0)),
+				int(capacity.get("capacity", 0)),
+			],
 			"open_inventory",
 			"Open Bag"
-		))
+		)
+		bag_item["used_slots"] = int(capacity.get("used_slots", 0))
+		bag_item["capacity"] = int(capacity.get("capacity", 0))
+		bag_item["free_slots"] = int(capacity.get("free_slots", 0))
+		bag_item["pressure_ratio"] = float(capacity.get("pressure_ratio", 0.0))
+		items.append(bag_item)
 	items.sort_custom(_sort_recommendations)
 	if items.is_empty():
 		return {

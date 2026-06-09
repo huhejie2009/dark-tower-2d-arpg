@@ -13,6 +13,7 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 	var stats: Dictionary = EquipmentDataServiceScript.build_stat_totals(player_data)
 	var start_options: Dictionary = TowerRunStartServiceScript.build_start_options(player_data)
 	var recommendations: Dictionary = TownPrepRecommendationServiceScript.build_recommendations(player_data)
+	var inventory_capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(inventory)
 	var gear_score := _get_total_equipment_score(player_data)
 	var gold := _get_inventory_amount(inventory, "gold")
 	var crystal := _get_inventory_amount(inventory, "crystal_shard")
@@ -25,10 +26,10 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		int(player_data.get("highest_floor", 1)),
 		gear_score,
 	]
-	var resource_text := "Gold %d | Crystal %d | Bag %d" % [
+	var resource_text := "Gold %d | Crystal %d | %s" % [
 		gold,
 		crystal,
-		InventoryDataServiceScript.get_total_items(inventory),
+		str(inventory_capacity.get("summary_text", "Bag 0/40")),
 	]
 	var growth_text := "SP %d | Damage %d | HP %d | MP %d" % [
 		int(player_data.get("skill_points", 0)),
@@ -50,6 +51,7 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		"gold": gold,
 		"crystal": crystal,
 		"inventory_items": InventoryDataServiceScript.get_total_items(inventory),
+		"inventory_capacity": inventory_capacity,
 		"start_options": start_options,
 		"recommendations": recommendations,
 		"recommendation_text": str(recommendations.get("recommendation_text", "")),

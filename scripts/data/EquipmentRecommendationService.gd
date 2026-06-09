@@ -17,7 +17,7 @@ static func build_recommendation(player_data: Dictionary, equipment: Dictionary,
 	candidate_data["inventory"] = inventory
 	var can_equip := EquipmentDataServiceScript.can_equip(candidate_data, item_id)
 	var score := EquipmentDataServiceScript.get_equipment_score(equipment)
-	var equipped_score := _get_equipped_slot_score(candidate_data, str(equipment.get("slot", "")))
+	var equipped_score := _get_equipped_slot_score(candidate_data, str(can_equip.get("slot", "")))
 	var score_delta := score - equipped_score
 	var upgrade := bool(can_equip.get("ok", false)) and score_delta > 0
 	var source := str(loot_quality.get("source", "normal"))
@@ -37,7 +37,7 @@ static func build_recommendation(player_data: Dictionary, equipment: Dictionary,
 static func _get_equipped_slot_score(player_data: Dictionary, slot: String) -> int:
 	if slot == "":
 		return 0
-	var equipped: Dictionary = Dictionary(player_data.get("equipped_items", {}))
+	var equipped := EquipmentDataServiceScript.normalize_equipped_items(player_data.get("equipped_items", {}))
 	var equipped_id := str(equipped.get(slot, ""))
 	if equipped_id == "":
 		return 0

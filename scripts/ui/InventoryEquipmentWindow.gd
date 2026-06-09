@@ -5,6 +5,7 @@ signal player_data_changed(player_data: Dictionary)
 signal close_requested
 
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
+const InventoryQueryServiceScript := preload("res://scripts/data/InventoryQueryService.gd")
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 const EquipmentActionHintServiceScript := preload("res://scripts/data/EquipmentActionHintService.gd")
 const EquipmentCompareSummaryServiceScript := preload("res://scripts/data/EquipmentCompareSummaryService.gd")
@@ -13,13 +14,19 @@ const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.g
 const SkillNodeGrowthServiceScript := preload("res://scripts/data/SkillNodeGrowthService.gd")
 const SkillUpgradePreviewServiceScript := preload("res://scripts/data/SkillUpgradePreviewService.gd")
 const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
-const DEFAULT_WINDOW_SIZE := Vector2(860, 500)
+const DEFAULT_WINDOW_SIZE := Vector2(980, 600)
 const VIEWPORT_MARGIN := 32.0
+const WIDE_LAYOUT_MIN_WIDTH := 940.0
+const WIDE_GRID_COLUMNS := 9
+const COMPACT_GRID_COLUMNS := 6
+const DETAIL_WIDE_MIN_WIDTH := 260.0
 
 var player_data: Dictionary = {}
 var inventory_grid: GridContainer
 var equipment_box: VBoxContainer
+var inventory_title_label: Label
 var paper_doll_class_label: Label
 var paper_doll_score_label: Label
 var paper_doll_anchor: Control
@@ -73,6 +80,7 @@ func _build_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "InventoryEquipmentPanel"
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	DarkArpgUiThemeScript.style_panel(panel, true)
 	add_child(panel)
 
 	var root_box := VBoxContainer.new()
@@ -83,8 +91,8 @@ func _build_ui() -> void:
 	root_box.add_child(header)
 
 	var title := Label.new()
-	title.text = "Inventory / Equipment"
-	title.add_theme_font_size_override("font_size", 22)
+	title.text = "Inventory & Equipment"
+	DarkArpgUiThemeScript.style_title(title, 22)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
@@ -92,6 +100,7 @@ func _build_ui() -> void:
 	close_button.name = "CloseInventoryButton"
 	close_button.text = "X"
 	close_button.custom_minimum_size = Vector2(36, 32)
+	DarkArpgUiThemeScript.style_button(close_button)
 	close_button.pressed.connect(func(): close_requested.emit())
 	header.add_child(close_button)
 
@@ -109,9 +118,11 @@ func _build_ui() -> void:
 	inventory_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(inventory_panel)
 
-	var inventory_title := Label.new()
-	inventory_title.text = "Bag"
-	inventory_panel.add_child(inventory_title)
+	inventory_title_label = Label.new()
+	inventory_title_label.name = "InventoryCapacityTitle"
+	inventory_title_label.text = "Bag"
+	DarkArpgUiThemeScript.style_title(inventory_title_label, 17)
+	inventory_panel.add_child(inventory_title_label)
 
 	var tools := HBoxContainer.new()
 	tools.name = "InventoryTools"
@@ -122,6 +133,7 @@ func _build_ui() -> void:
 	sort_button.name = "SortInventoryButton"
 	sort_button.text = "Sort: Type"
 	sort_button.custom_minimum_size = Vector2(62, 30)
+	DarkArpgUiThemeScript.style_button(sort_button)
 	sort_button.pressed.connect(_cycle_sort_mode)
 	tools.add_child(sort_button)
 
@@ -130,6 +142,7 @@ func _build_ui() -> void:
 	all_button.text = "All"
 	all_button.custom_minimum_size = Vector2(52, 30)
 	all_button.toggle_mode = true
+	DarkArpgUiThemeScript.style_toggle_button(all_button, true)
 	all_button.pressed.connect(set_filter_mode.bind("all"))
 	filter_buttons["all"] = all_button
 	tools.add_child(all_button)
@@ -139,6 +152,7 @@ func _build_ui() -> void:
 	equipment_button.text = "Equip"
 	equipment_button.custom_minimum_size = Vector2(64, 30)
 	equipment_button.toggle_mode = true
+	DarkArpgUiThemeScript.style_toggle_button(equipment_button)
 	equipment_button.pressed.connect(set_filter_mode.bind("equipment"))
 	filter_buttons["equipment"] = equipment_button
 	tools.add_child(equipment_button)
@@ -148,6 +162,7 @@ func _build_ui() -> void:
 	material_button.text = "Mat"
 	material_button.custom_minimum_size = Vector2(52, 30)
 	material_button.toggle_mode = true
+	DarkArpgUiThemeScript.style_toggle_button(material_button)
 	material_button.pressed.connect(set_filter_mode.bind("material"))
 	filter_buttons["material"] = material_button
 	tools.add_child(material_button)
@@ -162,24 +177,26 @@ func _build_ui() -> void:
 	scroll.add_child(inventory_grid)
 
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(210, 0)
+	side.custom_minimum_size = Vector2(DETAIL_WIDE_MIN_WIDTH, 0)
 	body.add_child(side)
 
 	stats_label = Label.new()
 	stats_label.name = "StatsSummary"
 	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats_label.custom_minimum_size = Vector2(200, 150)
+	DarkArpgUiThemeScript.style_body_label(stats_label)
 	side.add_child(stats_label)
 
 	var skill_title := Label.new()
 	skill_title.text = "Skills"
-	skill_title.add_theme_font_size_override("font_size", 16)
+	DarkArpgUiThemeScript.style_title(skill_title, 16)
 	side.add_child(skill_title)
 
 	skill_point_summary = Label.new()
 	skill_point_summary.name = "SkillPointSummary"
 	skill_point_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	skill_point_summary.custom_minimum_size = Vector2(200, 56)
+	DarkArpgUiThemeScript.style_body_label(skill_point_summary)
 	side.add_child(skill_point_summary)
 
 	skill_node_list = VBoxContainer.new()
@@ -191,6 +208,7 @@ func _build_ui() -> void:
 	upgrade_selected_skill_button.name = "UpgradeSelectedSkillButton"
 	upgrade_selected_skill_button.text = "Upgrade Selected"
 	upgrade_selected_skill_button.custom_minimum_size = Vector2(200, 32)
+	DarkArpgUiThemeScript.style_button(upgrade_selected_skill_button, true)
 	upgrade_selected_skill_button.pressed.connect(upgrade_selected_skill_node)
 	side.add_child(upgrade_selected_skill_button)
 
@@ -198,6 +216,7 @@ func _build_ui() -> void:
 	upgrade_basic_attack_button.name = "UpgradeBasicAttackButton"
 	upgrade_basic_attack_button.text = "Upgrade Basic Attack"
 	upgrade_basic_attack_button.custom_minimum_size = Vector2(200, 36)
+	DarkArpgUiThemeScript.style_button(upgrade_basic_attack_button, true)
 	upgrade_basic_attack_button.pressed.connect(_on_upgrade_basic_attack_pressed)
 	side.add_child(upgrade_basic_attack_button)
 
@@ -205,6 +224,7 @@ func _build_ui() -> void:
 	detail_label.name = "ItemDetail"
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	DarkArpgUiThemeScript.style_body_label(detail_label)
 	side.add_child(detail_label)
 
 	var action_row := HBoxContainer.new()
@@ -216,6 +236,7 @@ func _build_ui() -> void:
 	equip_selected_button.name = "EquipSelectedButton"
 	equip_selected_button.text = "Equip"
 	equip_selected_button.custom_minimum_size = Vector2(72, 32)
+	DarkArpgUiThemeScript.style_button(equip_selected_button, true)
 	equip_selected_button.pressed.connect(use_selected_item)
 	action_row.add_child(equip_selected_button)
 
@@ -223,6 +244,7 @@ func _build_ui() -> void:
 	lock_selected_button.name = "LockSelectedButton"
 	lock_selected_button.text = "Lock"
 	lock_selected_button.custom_minimum_size = Vector2(72, 32)
+	DarkArpgUiThemeScript.style_button(lock_selected_button)
 	lock_selected_button.pressed.connect(toggle_selected_lock)
 	action_row.add_child(lock_selected_button)
 
@@ -230,6 +252,7 @@ func _build_ui() -> void:
 	clear_selected_button.name = "ClearSelectedButton"
 	clear_selected_button.text = "Clear"
 	clear_selected_button.custom_minimum_size = Vector2(72, 32)
+	DarkArpgUiThemeScript.style_button(clear_selected_button)
 	clear_selected_button.pressed.connect(clear_selection)
 	action_row.add_child(clear_selected_button)
 	_sync_filter_button_states()
@@ -241,6 +264,8 @@ func _sync_layout_to_viewport() -> void:
 	offset_top = -window_size.y * 0.5
 	offset_right = window_size.x * 0.5
 	offset_bottom = window_size.y * 0.5
+	if is_instance_valid(inventory_grid):
+		inventory_grid.columns = WIDE_GRID_COLUMNS if window_size.x >= WIDE_LAYOUT_MIN_WIDTH else COMPACT_GRID_COLUMNS
 
 func _get_layout_viewport_size() -> Vector2:
 	var parent := get_parent()
@@ -260,12 +285,23 @@ func get_responsive_window_rect_for_test(viewport_size: Vector2) -> Rect2:
 	var window_size := _get_responsive_window_size(viewport_size)
 	return Rect2((viewport_size - window_size) * 0.5, window_size)
 
+func get_visual_qa_metrics_for_test(viewport_size: Vector2) -> Dictionary:
+	var window_size := _get_responsive_window_size(viewport_size)
+	return {
+		"window_size": window_size,
+		"grid_columns": WIDE_GRID_COLUMNS if window_size.x >= WIDE_LAYOUT_MIN_WIDTH else COMPACT_GRID_COLUMNS,
+		"detail_min_width": DETAIL_WIDE_MIN_WIDTH,
+		"default_window_size": DEFAULT_WINDOW_SIZE,
+	}
+
 func _build_equipment_slots() -> void:
 	var title := Label.new()
 	title.text = "Equipment"
+	DarkArpgUiThemeScript.style_title(title, 17)
 	equipment_box.add_child(title)
 	var paper_panel := PanelContainer.new()
 	paper_panel.custom_minimum_size = Vector2(190, 214)
+	DarkArpgUiThemeScript.style_panel(paper_panel)
 	equipment_box.add_child(paper_panel)
 	paper_panel.name = "EquipmentPaperDollPanel"
 
@@ -282,6 +318,7 @@ func _build_equipment_slots() -> void:
 	paper_doll_class_label.name = "PaperDollClassLabel"
 	paper_doll_class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	paper_doll_class_label.text = str(player_data.get("base_class", "warrior")).capitalize()
+	DarkArpgUiThemeScript.style_body_label(paper_doll_class_label, 15)
 	paper_root.add_child(paper_doll_class_label)
 
 	paper_doll_anchor = Control.new()
@@ -294,6 +331,7 @@ func _build_equipment_slots() -> void:
 	paper_doll_score_label.name = "PaperDollScoreLabel"
 	paper_doll_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	paper_doll_score_label.text = "Gear Score %d" % _get_total_equipment_score()
+	DarkArpgUiThemeScript.style_body_label(paper_doll_score_label, 14, true)
 	paper_root.add_child(paper_doll_score_label)
 
 	var equipped: Dictionary = Dictionary(player_data.get("equipped_items", {}))
@@ -305,6 +343,7 @@ func _build_equipment_slots() -> void:
 		var summary := _build_equipment_slot_summary(slot, equipped, inventory)
 		button.text = str(summary.get("button_text", "%s: Empty" % slot.capitalize()))
 		button.tooltip_text = str(summary.get("tooltip", ""))
+		DarkArpgUiThemeScript.style_button(button)
 		var button_marker := Control.new()
 		button_marker.name = button_name
 		button_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -318,6 +357,7 @@ func _build_paper_doll_placeholder(parent: Control) -> void:
 	silhouette.name = "PaperDollSilhouette"
 	silhouette.position = Vector2(52, 8)
 	silhouette.size = Vector2(66, 102)
+	DarkArpgUiThemeScript.style_panel(silhouette, true)
 	parent.add_child(silhouette)
 
 	var label := Label.new()
@@ -326,6 +366,7 @@ func _build_paper_doll_placeholder(parent: Control) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_MUTED)
 	silhouette.add_child(label)
 
 	var left_tag := _make_paper_doll_tag("Weapon", Vector2(4, 34))
@@ -342,7 +383,7 @@ func _make_paper_doll_tag(text: String, position: Vector2) -> Label:
 	label.size = Vector2(56, 24)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 11)
-	label.add_theme_color_override("font_color", Color(0.68, 0.78, 0.84))
+	label.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_MUTED)
 	return label
 
 func _slot_node_suffix(slot: String) -> String:
@@ -352,6 +393,7 @@ func _slot_node_suffix(slot: String) -> String:
 
 func _build_inventory_grid() -> void:
 	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
+	_update_inventory_capacity_title(inventory)
 	var item_ids := get_visible_item_ids()
 	for item_id in item_ids:
 		var entry: Dictionary = Dictionary(inventory[item_id])
@@ -369,6 +411,7 @@ func _build_inventory_grid() -> void:
 	for _i in range(maxi(0, 32 - item_ids.size())):
 		var empty := PanelContainer.new()
 		empty.custom_minimum_size = Vector2(58, 58)
+		DarkArpgUiThemeScript.style_panel(empty)
 		inventory_grid.add_child(empty)
 
 func _item_short_text(entry: Dictionary) -> String:
@@ -497,17 +540,23 @@ func get_equipment_slot_summary_for_test(slot: String) -> Dictionary:
 	return _build_equipment_slot_summary(slot, equipped, inventory)
 
 func get_visible_item_ids() -> Array:
-	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
-	var item_ids: Array = []
-	for item_id in inventory.keys():
-		var entry: Dictionary = Dictionary(inventory[item_id])
-		if _entry_matches_filter(entry):
-			item_ids.append(str(item_id))
-	item_ids.sort_custom(_sort_item_ids.bind(inventory))
-	return item_ids
+	return InventoryQueryServiceScript.query_item_ids(player_data, {"filter_mode": filter_mode, "sort_mode": sort_mode})
+
+func get_inventory_capacity_for_test() -> Dictionary:
+	return InventoryDataServiceScript.build_capacity_summary(InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {})))
+
+func _update_inventory_capacity_title(inventory: Dictionary) -> void:
+	if not is_instance_valid(inventory_title_label):
+		return
+	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(inventory)
+	inventory_title_label.text = str(capacity.get("summary_text", "Bag 0/40"))
+	if bool(capacity.get("pressure", false)):
+		inventory_title_label.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_GOLD.lightened(0.18))
+	else:
+		DarkArpgUiThemeScript.style_title(inventory_title_label, 17)
 
 func set_filter_mode(mode: String) -> void:
-	filter_mode = mode if ["all", "equipment", "material"].has(mode) else "all"
+	filter_mode = InventoryQueryServiceScript.normalize_filter_mode(mode)
 	_sync_filter_button_states()
 	refresh()
 
@@ -588,7 +637,9 @@ func _sync_filter_button_states() -> void:
 	for mode in filter_buttons.keys():
 		var button := filter_buttons[mode] as Button
 		if is_instance_valid(button):
-			button.button_pressed = str(mode) == filter_mode
+			var selected := str(mode) == filter_mode
+			button.button_pressed = selected
+			DarkArpgUiThemeScript.style_toggle_button(button, selected)
 
 func _entry_matches_filter(entry: Dictionary) -> bool:
 	if filter_mode == "all":
@@ -816,6 +867,7 @@ func _build_skill_node_list() -> void:
 		]
 		button.tooltip_text = str(data.get("tooltip_text", ""))
 		button.disabled = false
+		DarkArpgUiThemeScript.style_toggle_button(button, node_id == selected_skill_node_id)
 		button.pressed.connect(select_skill_node.bind(node_id))
 		skill_node_list.add_child(button)
 
@@ -839,13 +891,14 @@ func _build_item_compare_summary(item_id: String, candidate_equipment: Dictionar
 
 func _apply_item_button_style(button: Button, visual_meta: Dictionary) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color.html(str(visual_meta.get("background_color", "#20242a")))
-	normal.border_color = Color.html(str(visual_meta.get("border_color", "#4b5563")))
+	var rarity := str(visual_meta.get("rarity", "common"))
+	normal.bg_color = DarkArpgUiThemeScript.rarity_background_color(rarity)
+	normal.border_color = DarkArpgUiThemeScript.rarity_border_color(rarity)
 	normal.set_border_width_all(2)
-	normal.corner_radius_top_left = 6
-	normal.corner_radius_top_right = 6
-	normal.corner_radius_bottom_left = 6
-	normal.corner_radius_bottom_right = 6
+	normal.corner_radius_top_left = 2
+	normal.corner_radius_top_right = 2
+	normal.corner_radius_bottom_left = 2
+	normal.corner_radius_bottom_right = 2
 	button.add_theme_stylebox_override("normal", normal)
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = hover.bg_color.lightened(0.08)
@@ -853,40 +906,22 @@ func _apply_item_button_style(button: Button, visual_meta: Dictionary) -> void:
 	var pressed := normal.duplicate() as StyleBoxFlat
 	pressed.bg_color = pressed.bg_color.darkened(0.08)
 	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("focus", DarkArpgUiThemeScript.make_button_box(false, false, false, true))
+	button.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_BONE)
+	button.add_theme_font_size_override("font_size", 14)
 	if bool(visual_meta.get("upgrade", false)):
-		button.add_theme_color_override("font_color", Color(0.78, 1.0, 0.74))
+		button.add_theme_color_override("font_color", Color(0.82, 1.0, 0.68))
 	elif bool(visual_meta.get("equipped", false)):
-		button.add_theme_color_override("font_color", Color(0.72, 0.9, 1.0))
+		button.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_GOLD.lightened(0.12))
 
 func _rarity_border_color_hex(rarity: String) -> String:
-	match rarity:
-		"magic":
-			return "#4fa3ff"
-		"rare":
-			return "#d5b94f"
-		"legendary":
-			return "#d9763c"
-		"currency":
-			return "#c7a34a"
-		"material":
-			return "#6b7280"
-		_:
-			return "#9ca3af"
+	return DarkArpgUiThemeScript.rarity_border_color(rarity).to_html(false)
 
 func _rarity_background_color_hex(rarity: String) -> String:
-	match rarity:
-		"magic":
-			return "#17283f"
-		"rare":
-			return "#332d16"
-		"legendary":
-			return "#3a2118"
-		"currency":
-			return "#2e2816"
-		"material":
-			return "#1f252b"
-		_:
-			return "#20242a"
+	return DarkArpgUiThemeScript.rarity_background_color(rarity).to_html(false)
+
+func get_ui_style_id_for_test() -> String:
+	return DarkArpgUiThemeScript.get_style_id()
 
 func _on_equipment_slot_pressed(slot: String) -> void:
 	var result := EquipmentDataServiceScript.unequip_slot(player_data, slot)

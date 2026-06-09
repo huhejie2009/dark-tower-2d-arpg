@@ -7,4 +7,4 @@ const TOWN_SCENE := "res://scenes/Town.tscn"
 const GAME_2D_SCENE := "res://scenes/Game2D.tscn"
 
 const BASE_CLASSES := ["warrior", "ranger", "mage", "acolyte"]
-const EQUIPMENT_SLOTS := ["weapon", "armor", "gloves", "ring"]
+const EQUIPMENT_SLOTS := ["weapon", "armor", "gloves", "ring_1", "ring_2"]

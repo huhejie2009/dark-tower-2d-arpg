@@ -16,6 +16,7 @@ const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartSer
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const P2LootLoopMetricsRecorderScript := preload("res://scripts/data/P2LootLoopMetricsRecorder.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 const ROOM_VISUAL_MODE := "topdown_production"
 const ENVIRONMENT_FAMILY := "brutalist_tower_interior"
@@ -25,6 +26,8 @@ const PSEUDO_34_CAMERA_ZOOM := Vector2(1.0, 1.0)
 const PSEUDO_34_SKEW := 0.0
 const PSEUDO_34_VERTICAL_COMPRESS := 1.0
 const DEFAULT_DEATH_PRESENTATION_DELAY := 0.35
+const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
+const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 64
 const IMAGE2_ENVIRONMENT_BACKGROUND_PATH := "res://assets/generated/environments/tower_interior_brutalist_room_v1.png"
 const DEFAULT_PLAYER_IMAGE2_SPRITE_PATH := "res://assets/generated/actors/player_warrior_sheet_v3.png"
 
@@ -906,9 +909,16 @@ func _create_pause_overlay() -> void:
 	pause_overlay.visible = false
 	add_child(pause_overlay)
 
+	var veil := ColorRect.new()
+	veil.name = "PauseDarkVeil"
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.color = Color(0.0, 0.0, 0.0, 0.48)
+	pause_overlay.add_child(veil)
+
 	var panel := PanelContainer.new()
 	panel.position = Vector2(490, 205)
 	panel.size = Vector2(300, 230)
+	DarkArpgUiThemeScript.style_panel(panel, true)
 	pause_overlay.add_child(panel)
 
 	var box := VBoxContainer.new()
@@ -918,13 +928,14 @@ func _create_pause_overlay() -> void:
 	var title := Label.new()
 	title.text = "Paused"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 24)
+	DarkArpgUiThemeScript.style_title(title, 24)
 	box.add_child(title)
 
 	pause_resume_button = Button.new()
 	pause_resume_button.name = "ResumeButton"
 	pause_resume_button.text = "Resume"
 	pause_resume_button.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(pause_resume_button, true)
 	pause_resume_button.pressed.connect(_toggle_pause)
 	box.add_child(pause_resume_button)
 
@@ -932,6 +943,7 @@ func _create_pause_overlay() -> void:
 	inventory.name = "PauseInventoryButton"
 	inventory.text = "Inventory / Equipment"
 	inventory.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(inventory)
 	inventory.pressed.connect(_toggle_inventory_window)
 	box.add_child(inventory)
 
@@ -939,6 +951,7 @@ func _create_pause_overlay() -> void:
 	town.name = "ReturnTownButton"
 	town.text = "Return To Town"
 	town.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(town)
 	town.pressed.connect(_return_to_town)
 	box.add_child(town)
 
@@ -949,9 +962,16 @@ func _create_death_overlay() -> void:
 	death_overlay.visible = false
 	add_child(death_overlay)
 
+	var veil := ColorRect.new()
+	veil.name = "DeathDarkVeil"
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.color = Color(0.0, 0.0, 0.0, 0.62)
+	death_overlay.add_child(veil)
+
 	var panel := PanelContainer.new()
-	panel.position = Vector2(390, 135)
-	panel.size = Vector2(500, 420)
+	panel.position = Vector2(360, 110)
+	panel.size = DEATH_SETTLEMENT_PANEL_SIZE
+	DarkArpgUiThemeScript.style_panel(panel, true)
 	death_overlay.add_child(panel)
 
 	var box := VBoxContainer.new()
@@ -961,7 +981,7 @@ func _create_death_overlay() -> void:
 	var title := Label.new()
 	title.text = "Death Settlement"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 26)
+	DarkArpgUiThemeScript.style_title(title, 26)
 	box.add_child(title)
 
 	death_floor_section = _make_death_section_label("DeathFloorSection")
@@ -978,12 +998,14 @@ func _create_death_overlay() -> void:
 	death_summary_label.visible = false
 	death_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	death_summary_label.custom_minimum_size = Vector2(460, 1)
+	DarkArpgUiThemeScript.style_body_label(death_summary_label, 15, true)
 	box.add_child(death_summary_label)
 
 	death_return_town_button = Button.new()
 	death_return_town_button.name = "DeathReturnTownButton"
 	death_return_town_button.text = "Return To Town"
 	death_return_town_button.custom_minimum_size = Vector2(380, 46)
+	DarkArpgUiThemeScript.style_button(death_return_town_button, true)
 	death_return_town_button.pressed.connect(_return_to_town_after_death)
 	box.add_child(death_return_town_button)
 
@@ -991,10 +1013,15 @@ func _make_death_section_label(label_name: String) -> Label:
 	var label := Label.new()
 	label.name = label_name
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size = Vector2(460, 54)
-	label.add_theme_font_size_override("font_size", 15)
-	label.add_theme_color_override("font_color", Color(0.92, 0.84, 0.66))
+	label.custom_minimum_size = Vector2(520, DEATH_SETTLEMENT_SECTION_MIN_HEIGHT)
+	DarkArpgUiThemeScript.style_body_label(label, 15)
 	return label
+
+func get_death_settlement_visual_qa_for_test() -> Dictionary:
+	return {
+		"panel_size": DEATH_SETTLEMENT_PANEL_SIZE,
+		"section_min_height": DEATH_SETTLEMENT_SECTION_MIN_HEIGHT,
+	}
 
 func _show_death_settlement() -> void:
 	if not is_instance_valid(death_overlay):
@@ -1165,7 +1192,8 @@ func _update_hud(message: String) -> void:
 		return
 	hud.set_status("Floor %d | Enemies %d" % [current_floor, enemies_alive])
 	hud.set_log(message)
-	hud.set_inventory("Inventory items: %d" % InventoryDataServiceScript.get_total_items(Dictionary(player_data.get("inventory", {}))))
+	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
+	hud.set_inventory(str(capacity.get("summary_text", "Bag 0/40")))
 	if hud.has_method("set_player_vitals"):
 		var health := int(player_data.get("health", 0))
 		var max_health := int(player_data.get("max_health", 1))

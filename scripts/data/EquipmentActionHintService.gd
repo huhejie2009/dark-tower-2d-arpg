@@ -19,7 +19,7 @@ static func build_hint(player_data: Dictionary, item_id: String) -> Dictionary:
 	if equipped:
 		return {
 			"item_id": item_id,
-			"slot": str(equipment.get("slot", "")),
+			"slot": str(compare.get("slot", equipment.get("slot", ""))),
 			"can_equip": false,
 			"equipped": true,
 			"upgrade": false,
@@ -33,7 +33,7 @@ static func build_hint(player_data: Dictionary, item_id: String) -> Dictionary:
 		var reason := str(can_equip.get("reason", "blocked"))
 		return {
 			"item_id": item_id,
-			"slot": str(equipment.get("slot", "")),
+			"slot": str(compare.get("slot", equipment.get("slot", ""))),
 			"can_equip": false,
 			"equipped": false,
 			"upgrade": false,
@@ -46,7 +46,7 @@ static func build_hint(player_data: Dictionary, item_id: String) -> Dictionary:
 	var upgrade := score_delta > 0
 	return {
 		"item_id": item_id,
-		"slot": str(equipment.get("slot", "")),
+		"slot": str(compare.get("slot", equipment.get("slot", ""))),
 		"can_equip": true,
 		"equipped": false,
 		"upgrade": upgrade,

@@ -40,7 +40,7 @@ static func build_starter_player(slot_id: String, character_name: String, base_c
 		"unlocked_skill_nodes": {},
 		"active_skill_id": "whirlwind_core" if normalized_class == "warrior" else "",
 		"inventory": inventory,
-		"equipped_items": {"weapon": starter_weapon_id, "armor": "", "gloves": "", "ring": ""},
+		"equipped_items": EquipmentDataServiceScript.normalize_equipped_items({"weapon": starter_weapon_id}),
 		"highest_floor": 1,
 	}
 
@@ -60,8 +60,7 @@ static func normalize_player_data(data: Variant) -> Dictionary:
 	result["max_mana"] = maxi(1, int(result.get("max_mana", 50)))
 	result["mana"] = clampi(int(result.get("mana", result["max_mana"])), 0, int(result["max_mana"]))
 	result["inventory"] = InventoryDataServiceScript.normalize_inventory(result.get("inventory", {}))
-	if not (result.get("equipped_items", {}) is Dictionary):
-		result["equipped_items"] = {"weapon": "", "armor": "", "gloves": "", "ring": ""}
+	result["equipped_items"] = EquipmentDataServiceScript.normalize_equipped_items(result.get("equipped_items", {}))
 	return result
 
 static func get_combat_stats(player_data: Dictionary) -> Dictionary:

@@ -1,21 +1,42 @@
 extends Control
 
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 func _ready() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
+	var background := ColorRect.new()
+	background.name = "MainMenuDarkBackground"
+	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.color = DarkArpgUiThemeScript.COLOR_VOID
+	add_child(background)
+
+	var panel := PanelContainer.new()
+	panel.name = "MainMenuPanel"
+	panel.position = Vector2(430, 170)
+	panel.size = Vector2(420, 260)
+	DarkArpgUiThemeScript.style_panel(panel, true)
+	add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 28)
+	panel.add_child(box)
+
 	var title := Label.new()
 	title.text = "Dark Tower 2D"
-	title.position = Vector2(470, 190)
-	title.add_theme_font_size_override("font_size", 42)
-	add_child(title)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	DarkArpgUiThemeScript.style_title(title, 42)
+	box.add_child(title)
 
 	var start := Button.new()
 	start.name = "StartButton"
-	start.text = "开始游戏"
-	start.position = Vector2(520, 310)
-	start.size = Vector2(240, 54)
+	start.text = "Start Game"
+	start.custom_minimum_size = Vector2(280, 54)
+	DarkArpgUiThemeScript.style_button(start, true)
 	start.pressed.connect(func(): SceneRouterScript.go_to_character_select(get_tree()))
-	add_child(start)
+	box.add_child(start)
+
+func get_ui_style_id_for_test() -> String:
+	return DarkArpgUiThemeScript.get_style_id()

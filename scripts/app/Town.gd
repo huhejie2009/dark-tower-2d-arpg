@@ -5,6 +5,7 @@ const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
 const TownPrepSummaryServiceScript := preload("res://scripts/data/TownPrepSummaryService.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 var player_data: Dictionary = {}
 var summary: Label
@@ -23,10 +24,16 @@ func _ready() -> void:
 	_create_inventory_window()
 
 func _build_ui() -> void:
+	var background := ColorRect.new()
+	background.name = "TownDarkBackground"
+	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.color = DarkArpgUiThemeScript.COLOR_VOID
+	add_child(background)
+
 	var title := Label.new()
 	title.text = "Tower Approach"
 	title.position = Vector2(460, 52)
-	title.add_theme_font_size_override("font_size", 34)
+	DarkArpgUiThemeScript.style_title(title, 34)
 	add_child(title)
 
 	summary = Label.new()
@@ -34,7 +41,7 @@ func _build_ui() -> void:
 	summary.position = Vector2(390, 112)
 	summary.size = Vector2(500, 42)
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	summary.add_theme_font_size_override("font_size", 18)
+	DarkArpgUiThemeScript.style_body_label(summary, 18)
 	add_child(summary)
 
 	_create_prep_panel()
@@ -45,6 +52,7 @@ func _build_ui() -> void:
 	enter.text = str(start_options.get("fresh_label", "Enter Tower: Floor 1"))
 	enter.position = Vector2(500, 500)
 	enter.size = Vector2(280, 54)
+	DarkArpgUiThemeScript.style_button(enter, true)
 	enter.pressed.connect(_enter_fresh_tower_run)
 	add_child(enter)
 
@@ -53,6 +61,7 @@ func _build_ui() -> void:
 	best_floor.text = str(start_options.get("best_label", "Challenge Best Floor"))
 	best_floor.position = Vector2(500, 562)
 	best_floor.size = Vector2(280, 44)
+	DarkArpgUiThemeScript.style_button(best_floor)
 	best_floor.pressed.connect(_enter_best_floor_run)
 	add_child(best_floor)
 
@@ -61,6 +70,7 @@ func _build_ui() -> void:
 	inventory.text = "Inventory / Equipment"
 	inventory.position = Vector2(500, 618)
 	inventory.size = Vector2(280, 48)
+	DarkArpgUiThemeScript.style_button(inventory)
 	inventory.pressed.connect(_toggle_inventory_window)
 	add_child(inventory)
 
@@ -69,6 +79,7 @@ func _build_ui() -> void:
 	menu.text = "Main Menu"
 	menu.position = Vector2(500, 676)
 	menu.size = Vector2(280, 48)
+	DarkArpgUiThemeScript.style_button(menu)
 	menu.pressed.connect(func(): SceneRouterScript.go_to_main_menu(get_tree()))
 	add_child(menu)
 	_update_summary()
@@ -78,6 +89,7 @@ func _create_prep_panel() -> void:
 	panel.name = "TownPrepPanel"
 	panel.position = Vector2(360, 162)
 	panel.size = Vector2(560, 330)
+	DarkArpgUiThemeScript.style_panel(panel, true)
 	add_child(panel)
 
 	var box := VBoxContainer.new()
@@ -86,7 +98,7 @@ func _create_prep_panel() -> void:
 
 	var panel_title := Label.new()
 	panel_title.text = "Preparation"
-	panel_title.add_theme_font_size_override("font_size", 20)
+	DarkArpgUiThemeScript.style_title(panel_title, 20)
 	box.add_child(panel_title)
 
 	character_summary = _make_prep_label("TownCharacterSummary")
@@ -107,6 +119,7 @@ func _create_prep_panel() -> void:
 	prep_action_button.name = "TownPrepActionButton"
 	prep_action_button.text = "Open Prep"
 	prep_action_button.custom_minimum_size = Vector2(220, 34)
+	DarkArpgUiThemeScript.style_button(prep_action_button, true)
 	prep_action_button.pressed.connect(_on_prep_action_pressed)
 	box.add_child(prep_action_button)
 
@@ -115,8 +128,11 @@ func _make_prep_label(label_name: String) -> Label:
 	label.name = label_name
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.custom_minimum_size = Vector2(520, 24)
-	label.add_theme_font_size_override("font_size", 15)
+	DarkArpgUiThemeScript.style_body_label(label, 15)
 	return label
+
+func get_ui_style_id_for_test() -> String:
+	return DarkArpgUiThemeScript.get_style_id()
 
 func _create_inventory_window() -> void:
 	inventory_window = InventoryEquipmentWindowScript.new()

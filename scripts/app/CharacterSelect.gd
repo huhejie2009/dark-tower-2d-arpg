@@ -4,6 +4,7 @@ const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
 const SaveSchemaScript := preload("res://scripts/save/SaveSchema.gd")
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 var selected_class: String = "warrior"
 var selected_slot_id: String = "slot_1"
@@ -18,10 +19,16 @@ func _ready() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
+	var background := ColorRect.new()
+	background.name = "CharacterSelectDarkBackground"
+	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.color = DarkArpgUiThemeScript.COLOR_VOID
+	add_child(background)
+
 	var title := Label.new()
 	title.text = "Choose Hero Slot"
 	title.position = Vector2(480, 70)
-	title.add_theme_font_size_override("font_size", 34)
+	DarkArpgUiThemeScript.style_title(title, 34)
 	add_child(title)
 
 	var slots: Dictionary = Dictionary(save_data.get("slots", {}))
@@ -34,6 +41,7 @@ func _build_ui() -> void:
 		button.size = Vector2(230, 120)
 		button.text = _build_slot_text(slot)
 		button.toggle_mode = true
+		DarkArpgUiThemeScript.style_toggle_button(button, slot_id == selected_slot_id)
 		button.pressed.connect(_on_slot_pressed.bind(slot_id))
 		slot_buttons[slot_id] = button
 		add_child(button)
@@ -41,7 +49,7 @@ func _build_ui() -> void:
 	var class_title := Label.new()
 	class_title.text = "Class for empty slot"
 	class_title.position = Vector2(520, 310)
-	class_title.add_theme_font_size_override("font_size", 20)
+	DarkArpgUiThemeScript.style_title(class_title, 20)
 	add_child(class_title)
 
 	var classes: Array[String] = ["warrior", "ranger", "mage", "acolyte"]
@@ -53,6 +61,7 @@ func _build_ui() -> void:
 		button.position = Vector2(360 + i * 130, 350)
 		button.size = Vector2(112, 46)
 		button.toggle_mode = true
+		DarkArpgUiThemeScript.style_toggle_button(button, class_id == selected_class)
 		button.pressed.connect(_select_class.bind(class_id))
 		class_buttons[class_id] = button
 		add_child(button)
@@ -62,7 +71,7 @@ func _build_ui() -> void:
 	selected_slot_summary.position = Vector2(430, 410)
 	selected_slot_summary.size = Vector2(420, 28)
 	selected_slot_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	selected_slot_summary.add_theme_font_size_override("font_size", 16)
+	DarkArpgUiThemeScript.style_body_label(selected_slot_summary, 16)
 	add_child(selected_slot_summary)
 
 	selected_class_summary = Label.new()
@@ -70,7 +79,7 @@ func _build_ui() -> void:
 	selected_class_summary.position = Vector2(430, 438)
 	selected_class_summary.size = Vector2(420, 28)
 	selected_class_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	selected_class_summary.add_theme_font_size_override("font_size", 16)
+	DarkArpgUiThemeScript.style_body_label(selected_class_summary, 16)
 	add_child(selected_class_summary)
 
 	var create := Button.new()
@@ -78,6 +87,7 @@ func _build_ui() -> void:
 	create.text = "Create In Selected Empty Slot"
 	create.position = Vector2(480, 490)
 	create.size = Vector2(280, 54)
+	DarkArpgUiThemeScript.style_button(create, true)
 	create.pressed.connect(_create_character)
 	add_child(create)
 	_update_selection_summary()
@@ -118,11 +128,18 @@ func _sync_button_selected_states() -> void:
 	for slot_id in slot_buttons.keys():
 		var button := slot_buttons[slot_id] as Button
 		if is_instance_valid(button):
-			button.button_pressed = str(slot_id) == selected_slot_id
+			var slot_selected := str(slot_id) == selected_slot_id
+			button.button_pressed = slot_selected
+			DarkArpgUiThemeScript.style_toggle_button(button, slot_selected)
 	for class_id in class_buttons.keys():
 		var button := class_buttons[class_id] as Button
 		if is_instance_valid(button):
-			button.button_pressed = str(class_id) == selected_class
+			var class_selected := str(class_id) == selected_class
+			button.button_pressed = class_selected
+			DarkArpgUiThemeScript.style_toggle_button(button, class_selected)
+
+func get_ui_style_id_for_test() -> String:
+	return DarkArpgUiThemeScript.get_style_id()
 
 func _create_character() -> void:
 	var slot: Dictionary = Dictionary(Dictionary(save_data.get("slots", {})).get(selected_slot_id, {}))

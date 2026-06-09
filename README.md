@@ -17,7 +17,9 @@ Godot 4.6.2 纯 2D 暗黑刷宝 / 爬塔 ARPG 新项目。
 - 左键基础攻击
 - 敌人追击、攻击、死亡
 - 掉落拾取进入背包
-- 背包、装备、装备评分、装备推荐与对比摘要
+- 背包、装备、装备评分、装备推荐、装备对比摘要与对比原因
+- 交付级物品实例契约：`instance_id`、`item_power`、`binding_flags`、`icon_id`、`source_tags`
+- 背包查询服务：装备、材料、升级、锁定、收藏、废品筛选与排序接口
 - 技能点与基础技能成长
 - 战斗内暂停、背包暂停、死亡结算
 - 清怪开门 / 传送门进入下一层
@@ -102,7 +104,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 103`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 111`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -112,8 +114,8 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 
 短期优先级：
 
-1. 把主城塔前准备面板视觉化为更正式的暗黑刷宝 UI。
-2. 给塔前准备面板加入建议事项：可用技能点、可装备升级、背包空间、推荐起始层。
+1. 补齐背包窗口筛选入口：升级、锁定、收藏、废品。
+2. 基于 `binding_flags` 完成收藏、废品标记与批量处理逻辑。
 3. 继续完善 HUD、背包、装备、技能与死亡结算体验。
 4. 准备正式 2D 人物、敌人、动作和环境素材替换。
 5. 扩展 3 到 5 个楼层节奏变化，并增加更稳定的连续楼层测试。
