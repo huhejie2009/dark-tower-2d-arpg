@@ -38,6 +38,8 @@ var upgrade_selected_skill_button: Button
 var detail_label: Label
 var equip_selected_button: Button
 var lock_selected_button: Button
+var favorite_selected_button: Button
+var junk_selected_button: Button
 var clear_selected_button: Button
 var filter_mode: String = "all"
 var sort_mode: String = "type"
@@ -137,35 +139,13 @@ func _build_ui() -> void:
 	sort_button.pressed.connect(_cycle_sort_mode)
 	tools.add_child(sort_button)
 
-	var all_button := Button.new()
-	all_button.name = "FilterAllButton"
-	all_button.text = "All"
-	all_button.custom_minimum_size = Vector2(52, 30)
-	all_button.toggle_mode = true
-	DarkArpgUiThemeScript.style_toggle_button(all_button, true)
-	all_button.pressed.connect(set_filter_mode.bind("all"))
-	filter_buttons["all"] = all_button
-	tools.add_child(all_button)
-
-	var equipment_button := Button.new()
-	equipment_button.name = "FilterEquipmentButton"
-	equipment_button.text = "Equip"
-	equipment_button.custom_minimum_size = Vector2(64, 30)
-	equipment_button.toggle_mode = true
-	DarkArpgUiThemeScript.style_toggle_button(equipment_button)
-	equipment_button.pressed.connect(set_filter_mode.bind("equipment"))
-	filter_buttons["equipment"] = equipment_button
-	tools.add_child(equipment_button)
-
-	var material_button := Button.new()
-	material_button.name = "FilterMaterialButton"
-	material_button.text = "Mat"
-	material_button.custom_minimum_size = Vector2(52, 30)
-	material_button.toggle_mode = true
-	DarkArpgUiThemeScript.style_toggle_button(material_button)
-	material_button.pressed.connect(set_filter_mode.bind("material"))
-	filter_buttons["material"] = material_button
-	tools.add_child(material_button)
+	_add_filter_button(tools, "all", "FilterAllButton", "All", 52, true)
+	_add_filter_button(tools, "equipment", "FilterEquipmentButton", "Equip", 64)
+	_add_filter_button(tools, "material", "FilterMaterialButton", "Mat", 52)
+	_add_filter_button(tools, "upgrade", "FilterUpgradeButton", "Upg", 52)
+	_add_filter_button(tools, "locked", "FilterLockedButton", "Lock", 58)
+	_add_filter_button(tools, "favorite", "FilterFavoriteButton", "Fav", 52)
+	_add_filter_button(tools, "junk", "FilterJunkButton", "Junk", 58)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -248,6 +228,22 @@ func _build_ui() -> void:
 	lock_selected_button.pressed.connect(toggle_selected_lock)
 	action_row.add_child(lock_selected_button)
 
+	favorite_selected_button = Button.new()
+	favorite_selected_button.name = "FavoriteSelectedButton"
+	favorite_selected_button.text = "Fav"
+	favorite_selected_button.custom_minimum_size = Vector2(62, 32)
+	DarkArpgUiThemeScript.style_button(favorite_selected_button)
+	favorite_selected_button.pressed.connect(toggle_selected_favorite)
+	action_row.add_child(favorite_selected_button)
+
+	junk_selected_button = Button.new()
+	junk_selected_button.name = "JunkSelectedButton"
+	junk_selected_button.text = "Junk"
+	junk_selected_button.custom_minimum_size = Vector2(62, 32)
+	DarkArpgUiThemeScript.style_button(junk_selected_button)
+	junk_selected_button.pressed.connect(toggle_selected_junk)
+	action_row.add_child(junk_selected_button)
+
 	clear_selected_button = Button.new()
 	clear_selected_button.name = "ClearSelectedButton"
 	clear_selected_button.text = "Clear"
@@ -256,6 +252,17 @@ func _build_ui() -> void:
 	clear_selected_button.pressed.connect(clear_selection)
 	action_row.add_child(clear_selected_button)
 	_sync_filter_button_states()
+
+func _add_filter_button(parent: Container, mode: String, button_name: String, text: String, width: int, selected: bool = false) -> void:
+	var button := Button.new()
+	button.name = button_name
+	button.text = text
+	button.custom_minimum_size = Vector2(width, 30)
+	button.toggle_mode = true
+	DarkArpgUiThemeScript.style_toggle_button(button, selected)
+	button.pressed.connect(set_filter_mode.bind(mode))
+	filter_buttons[mode] = button
+	parent.add_child(button)
 
 func _sync_layout_to_viewport() -> void:
 	var viewport_size := _get_layout_viewport_size()
@@ -561,14 +568,27 @@ func set_filter_mode(mode: String) -> void:
 	refresh()
 
 func toggle_item_lock(item_id: String) -> void:
+	_toggle_item_flag(item_id, "locked")
+
+func toggle_item_favorite(item_id: String) -> void:
+	_toggle_item_flag(item_id, "favorite")
+
+func toggle_item_junk(item_id: String) -> void:
+	_toggle_item_flag(item_id, "junk")
+
+func _toggle_item_flag(item_id: String, flag_id: String) -> void:
 	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
 	if not inventory.has(item_id):
 		return
 	var entry: Dictionary = Dictionary(inventory[item_id])
-	entry["locked"] = not bool(entry.get("locked", false))
+	var flags: Dictionary = Dictionary(entry.get("binding_flags", {}))
+	var next_value := not bool(flags.get(flag_id, entry.get(flag_id, false)))
+	flags[flag_id] = next_value
+	entry["binding_flags"] = flags
+	entry[flag_id] = next_value
 	if entry.has("equipment"):
 		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
-		equipment["locked"] = bool(entry["locked"])
+		equipment[flag_id] = next_value
 		entry["equipment"] = equipment
 	inventory[item_id] = entry
 	player_data["inventory"] = inventory
@@ -620,6 +640,16 @@ func toggle_selected_lock() -> void:
 	if selected_item_id == "":
 		return
 	toggle_item_lock(selected_item_id)
+
+func toggle_selected_favorite() -> void:
+	if selected_item_id == "":
+		return
+	toggle_item_favorite(selected_item_id)
+
+func toggle_selected_junk() -> void:
+	if selected_item_id == "":
+		return
+	toggle_item_junk(selected_item_id)
 
 func _cycle_sort_mode() -> void:
 	if sort_mode == "type":
@@ -709,17 +739,24 @@ func _update_selected_actions() -> void:
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
 	if selected_item_id != "" and not inventory.has(selected_item_id):
 		selected_item_id = ""
-	if not is_instance_valid(equip_selected_button) or not is_instance_valid(lock_selected_button) or not is_instance_valid(clear_selected_button):
+	if not is_instance_valid(equip_selected_button) or not is_instance_valid(lock_selected_button) or not is_instance_valid(favorite_selected_button) or not is_instance_valid(junk_selected_button) or not is_instance_valid(clear_selected_button):
 		return
 	var has_selection := selected_item_id != "" and inventory.has(selected_item_id)
 	equip_selected_button.disabled = true
 	lock_selected_button.disabled = not has_selection
+	favorite_selected_button.disabled = not has_selection
+	junk_selected_button.disabled = not has_selection
 	clear_selected_button.disabled = not has_selection
 	lock_selected_button.text = "Lock"
+	favorite_selected_button.text = "Fav"
+	junk_selected_button.text = "Junk"
 	if not has_selection:
 		return
 	var entry: Dictionary = Dictionary(inventory[selected_item_id])
-	lock_selected_button.text = "Unlock" if bool(entry.get("locked", false)) else "Lock"
+	var flags: Dictionary = Dictionary(entry.get("binding_flags", {}))
+	lock_selected_button.text = "Unlock" if bool(flags.get("locked", entry.get("locked", false))) else "Lock"
+	favorite_selected_button.text = "Unfav" if bool(flags.get("favorite", entry.get("favorite", false))) else "Fav"
+	junk_selected_button.text = "Unjunk" if bool(flags.get("junk", entry.get("junk", false))) else "Junk"
 	var hint := _build_item_action_hint(selected_item_id)
 	if not hint.is_empty():
 		equip_selected_button.text = str(hint.get("button_text", "Equip"))
