@@ -23,6 +23,12 @@ var town_interaction_hint: Label
 var town_interaction_points: Dictionary = {}
 var town_player_speed := 220.0
 
+const TOWN_WORLD_CENTER := Vector2(450, 405)
+const TOWN_PANEL_POS := Vector2(880, 92)
+const TOWN_PANEL_SIZE := Vector2(360, 420)
+const TOWN_BUTTON_X := 920.0
+const TOWN_BUTTON_W := 280.0
+
 func _ready() -> void:
 	player_data = SaveManagerScript.get_active_player_data()
 	_setup_input_actions()
@@ -48,15 +54,18 @@ func _build_ui() -> void:
 	_create_town_world_space()
 
 	var title := Label.new()
+	title.name = "TownTitle"
 	title.text = "Tower Approach"
-	title.position = Vector2(460, 52)
+	title.position = Vector2(226, 18)
+	title.size = Vector2(448, 42)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 34)
 	add_child(title)
 
 	summary = Label.new()
 	summary.name = "TownSummary"
-	summary.position = Vector2(390, 112)
-	summary.size = Vector2(500, 42)
+	summary.position = Vector2(190, 72)
+	summary.size = Vector2(520, 42)
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_body_label(summary, 18)
 	add_child(summary)
@@ -67,8 +76,8 @@ func _build_ui() -> void:
 	enter.name = "EnterTowerButton"
 	var start_options := TowerRunStartServiceScript.build_start_options(player_data)
 	enter.text = str(start_options.get("fresh_label", "Enter Tower: Floor 1"))
-	enter.position = Vector2(500, 500)
-	enter.size = Vector2(280, 54)
+	enter.position = Vector2(TOWN_BUTTON_X, 530)
+	enter.size = Vector2(TOWN_BUTTON_W, 46)
 	DarkArpgUiThemeScript.style_button(enter, true)
 	enter.pressed.connect(_enter_fresh_tower_run)
 	add_child(enter)
@@ -76,8 +85,8 @@ func _build_ui() -> void:
 	var best_floor := Button.new()
 	best_floor.name = "EnterBestFloorButton"
 	best_floor.text = str(start_options.get("best_label", "Challenge Best Floor"))
-	best_floor.position = Vector2(500, 562)
-	best_floor.size = Vector2(280, 44)
+	best_floor.position = Vector2(TOWN_BUTTON_X, 584)
+	best_floor.size = Vector2(TOWN_BUTTON_W, 38)
 	DarkArpgUiThemeScript.style_button(best_floor)
 	best_floor.pressed.connect(_enter_best_floor_run)
 	add_child(best_floor)
@@ -85,8 +94,8 @@ func _build_ui() -> void:
 	var inventory := Button.new()
 	inventory.name = "OpenInventoryButton"
 	inventory.text = "Inventory / Equipment"
-	inventory.position = Vector2(500, 618)
-	inventory.size = Vector2(280, 48)
+	inventory.position = Vector2(TOWN_BUTTON_X, 630)
+	inventory.size = Vector2(TOWN_BUTTON_W, 38)
 	DarkArpgUiThemeScript.style_button(inventory)
 	inventory.pressed.connect(_toggle_inventory_window)
 	add_child(inventory)
@@ -94,8 +103,8 @@ func _build_ui() -> void:
 	var menu := Button.new()
 	menu.name = "ReturnMainMenuButton"
 	menu.text = "Main Menu"
-	menu.position = Vector2(500, 676)
-	menu.size = Vector2(280, 48)
+	menu.position = Vector2(TOWN_BUTTON_X, 676)
+	menu.size = Vector2(TOWN_BUTTON_W, 34)
 	DarkArpgUiThemeScript.style_button(menu)
 	menu.pressed.connect(func(): SceneRouterScript.go_to_main_menu(get_tree()))
 	add_child(menu)
@@ -128,24 +137,24 @@ func _create_town_world_space() -> void:
 	town_world_root.position = Vector2(0, 0)
 	add_child(town_world_root)
 
-	_add_world_rect("TownGroundPlane", Vector2(640, 405), Vector2(900, 470), Color(0.07, 0.085, 0.095, 1.0), Color(0.16, 0.18, 0.19, 1.0))
-	_add_world_rect("TownTowerRoad", Vector2(640, 360), Vector2(190, 420), Color(0.12, 0.13, 0.135, 1.0), Color(0.22, 0.23, 0.23, 1.0))
-	_add_world_rect("TownTowerSilhouette", Vector2(640, 170), Vector2(170, 240), Color(0.035, 0.045, 0.055, 1.0), Color(0.16, 0.20, 0.25, 1.0))
-	_add_world_rect("TownTowerDarkCore", Vector2(640, 170), Vector2(22, 240), Color(0.015, 0.08, 0.12, 1.0), Color(0.18, 0.38, 0.46, 1.0))
-	_add_world_rect("TownMerchantStall", Vector2(278, 414), Vector2(130, 82), Color(0.12, 0.09, 0.075, 1.0), Color(0.35, 0.25, 0.16, 1.0))
-	_add_world_rect("TownBlacksmithForge", Vector2(1000, 410), Vector2(150, 90), Color(0.10, 0.09, 0.085, 1.0), Color(0.32, 0.15, 0.10, 1.0))
-	_add_world_rect("TownStashCrate", Vector2(330, 640), Vector2(110, 78), Color(0.09, 0.08, 0.07, 1.0), Color(0.28, 0.22, 0.16, 1.0))
-	_add_world_rect("TownTrainingCircle", Vector2(956, 640), Vector2(128, 78), Color(0.07, 0.08, 0.08, 1.0), Color(0.18, 0.26, 0.28, 1.0))
+	_add_world_rect("TownGroundPlane", TOWN_WORLD_CENTER, Vector2(780, 470), Color(0.07, 0.085, 0.095, 1.0), Color(0.16, 0.18, 0.19, 1.0))
+	_add_world_rect("TownTowerRoad", Vector2(450, 390), Vector2(190, 360), Color(0.12, 0.13, 0.135, 1.0), Color(0.22, 0.23, 0.23, 1.0))
+	_add_world_rect("TownTowerSilhouette", Vector2(450, 218), Vector2(170, 220), Color(0.035, 0.045, 0.055, 1.0), Color(0.16, 0.20, 0.25, 1.0))
+	_add_world_rect("TownTowerDarkCore", Vector2(450, 218), Vector2(22, 220), Color(0.015, 0.08, 0.12, 1.0), Color(0.18, 0.38, 0.46, 1.0))
+	_add_world_rect("TownMerchantStall", Vector2(160, 414), Vector2(130, 82), Color(0.12, 0.09, 0.075, 1.0), Color(0.35, 0.25, 0.16, 1.0))
+	_add_world_rect("TownBlacksmithForge", Vector2(730, 410), Vector2(150, 90), Color(0.10, 0.09, 0.085, 1.0), Color(0.32, 0.15, 0.10, 1.0))
+	_add_world_rect("TownStashCrate", Vector2(220, 610), Vector2(110, 78), Color(0.09, 0.08, 0.07, 1.0), Color(0.28, 0.22, 0.16, 1.0))
+	_add_world_rect("TownTrainingCircle", Vector2(720, 610), Vector2(128, 78), Color(0.07, 0.08, 0.08, 1.0), Color(0.18, 0.26, 0.28, 1.0))
 
-	_add_town_interaction_point("tower_gate", "TownTowerGateInteraction", "Tower Gate", Vector2(640, 302), "enter_tower")
-	_add_town_interaction_point("merchant", "TownMerchantInteraction", "Merchant", Vector2(278, 486), "open_inventory")
-	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "Blacksmith", Vector2(1000, 486), "open_inventory")
-	_add_town_interaction_point("stash", "TownStashInteraction", "Stash", Vector2(330, 704), "open_inventory")
-	_add_town_interaction_point("training", "TownTrainingInteraction", "Training", Vector2(956, 704), "open_skills")
+	_add_town_interaction_point("tower_gate", "TownTowerGateInteraction", "Tower Gate", Vector2(450, 340), "enter_tower")
+	_add_town_interaction_point("merchant", "TownMerchantInteraction", "Merchant", Vector2(160, 486), "open_inventory")
+	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "Blacksmith", Vector2(730, 486), "open_inventory")
+	_add_town_interaction_point("stash", "TownStashInteraction", "Stash", Vector2(220, 675), "open_inventory")
+	_add_town_interaction_point("training", "TownTrainingInteraction", "Training", Vector2(720, 675), "open_skills")
 
 	town_player = CharacterBody2D.new()
 	town_player.name = "TownPlayer"
-	town_player.global_position = Vector2(640, 610)
+	town_player.global_position = Vector2(450, 610)
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 18.0
@@ -165,7 +174,7 @@ func _create_town_world_space() -> void:
 
 	town_interaction_hint = Label.new()
 	town_interaction_hint.name = "TownInteractionHint"
-	town_interaction_hint.position = Vector2(440, 728)
+	town_interaction_hint.position = Vector2(250, 682)
 	town_interaction_hint.size = Vector2(400, 30)
 	town_interaction_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_body_label(town_interaction_hint, 15, true)
@@ -231,13 +240,13 @@ func _add_town_interaction_point(id: String, node_name: String, display_name: St
 func _create_prep_panel() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "TownPrepPanel"
-	panel.position = Vector2(360, 162)
-	panel.size = Vector2(560, 330)
+	panel.position = TOWN_PANEL_POS
+	panel.size = TOWN_PANEL_SIZE
 	DarkArpgUiThemeScript.style_panel(panel, true)
 	add_child(panel)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 5)
+	box.add_theme_constant_override("separation", 6)
 	panel.add_child(box)
 
 	var panel_title := Label.new()
@@ -254,10 +263,10 @@ func _create_prep_panel() -> void:
 	growth_summary = _make_prep_label("TownGrowthSummary")
 	box.add_child(growth_summary)
 	start_summary = _make_prep_label("TownStartSummary")
-	start_summary.custom_minimum_size = Vector2(520, 46)
+	start_summary.custom_minimum_size = Vector2(320, 54)
 	box.add_child(start_summary)
 	prep_recommendations = _make_prep_label("TownPrepRecommendations")
-	prep_recommendations.custom_minimum_size = Vector2(520, 52)
+	prep_recommendations.custom_minimum_size = Vector2(320, 64)
 	box.add_child(prep_recommendations)
 	prep_action_button = Button.new()
 	prep_action_button.name = "TownPrepActionButton"
@@ -271,7 +280,7 @@ func _make_prep_label(label_name: String) -> Label:
 	var label := Label.new()
 	label.name = label_name
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size = Vector2(520, 24)
+	label.custom_minimum_size = Vector2(320, 24)
 	DarkArpgUiThemeScript.style_body_label(label, 15)
 	return label
 
@@ -333,7 +342,7 @@ func _move_town_player(direction: Vector2, delta: float) -> void:
 	town_player.global_position = _clamp_town_player_position(next_position)
 
 func _clamp_town_player_position(position: Vector2) -> Vector2:
-	return Vector2(clampf(position.x, 180.0, 1100.0), clampf(position.y, 310.0, 720.0))
+	return Vector2(clampf(position.x, 70.0, 830.0), clampf(position.y, 300.0, 685.0))
 
 func _update_town_interaction_hint() -> void:
 	if not is_instance_valid(town_interaction_hint):

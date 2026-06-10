@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 115`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 116`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -144,6 +144,15 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 主城支持 WASD / 方向键移动，靠近交互点可按 `E` 触发。
 - 商人、铁匠、仓库当前先复用已有背包窗口，后续可替换为独立窗口。
 - 新增回归：`regression_town_playable_space_contract.gd`。
+
+## 2026-06-11 更新：主城截图 QA 与布局修复
+
+- 通过 `tools/qa_capture_town_screenshot.gd` 导出 1280x720 主城截图，确认 V1 主城整备面板遮挡可玩空间的问题。
+- 主城调整为左侧可行走世界、右侧整备栏，玩家、通天塔入口、商人、铁匠、仓库、训练点均保持在可见可玩区域内。
+- 右侧按钮组重新排版，`Main Menu` 在 720p 下不再出屏。
+- 互动提示移动到屏幕内，保留后续商人、铁匠、仓库独立窗口的接口位置。
+- 新增回归：`regression_town_playable_space_visual_layout.gd`。
+- 截图验收文件：`docs/qa/screenshots/town_playable_space_1280x720.png`。
 
 ## License
 
