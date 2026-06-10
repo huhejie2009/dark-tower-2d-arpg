@@ -25,10 +25,11 @@ const FACILITY_CONFIGS := {
 	"stash": {
 		"id": "stash",
 		"title": "Stash",
-		"subtitle": "Shared storage is reserved for the town systems pass.",
-		"description": "The storage UI will use the same item instance contract as the bag, without consuming bag capacity.",
+		"subtitle": "Shared storage for gear and materials.",
+		"description": "Move items between your bag and stash. Stashed items keep their instance data and do not consume bag slots.",
 		"actions": [
-			{"id": "open_inventory", "label": "Review Bag", "kind": "inventory_filter", "filter_mode": "all", "primary": true},
+			{"id": "open_stash", "label": "Open Stash", "kind": "stash_window", "primary": true},
+			{"id": "open_inventory", "label": "Review Bag", "kind": "inventory_filter", "filter_mode": "all"},
 		],
 	},
 	"training": {

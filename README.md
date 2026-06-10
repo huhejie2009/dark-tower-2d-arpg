@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 119`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 120`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -169,6 +169,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 已装备物品不能直接存入仓库，背包满时不能从仓库取出，失败操作不改变数据。
 - `SaveSchema` 规范化 `stash` 字段，为旧存档和后续仓库窗口做兼容保护。
 - 新增回归：`regression_stash_storage_rules.gd`。
+
+## 2026-06-11 更新：仓库窗口 V1
+
+- 新增 `StashWindow`，主城仓库设施可以打开独立仓库窗口。
+- 仓库窗口支持背包与仓库之间整件/整栈存取，并保存玩家背包和当前存档槽仓库数据。
+- 打开仓库时会关闭设施面板，避免窗口互相遮挡。
+- 新增截图验收：`docs/qa/screenshots/town_stash_window_1280x720.png`。
+- 新增回归：`regression_stash_window_contract.gd`。
 
 ## License
 

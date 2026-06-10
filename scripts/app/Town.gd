@@ -4,6 +4,7 @@ const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const TownFacilityWindowScript := preload("res://scripts/ui/TownFacilityWindow.gd")
+const StashWindowScript := preload("res://scripts/ui/StashWindow.gd")
 const TownFacilityServiceScript := preload("res://scripts/data/TownFacilityService.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
 const TownPrepSummaryServiceScript := preload("res://scripts/data/TownPrepSummaryService.gd")
@@ -20,6 +21,7 @@ var prep_recommendations: Label
 var prep_action_button: Button
 var inventory_window: Control
 var facility_window: Control
+var stash_window: Control
 var town_world_root: Node2D
 var town_player: CharacterBody2D
 var town_interaction_hint: Label
@@ -38,6 +40,7 @@ func _ready() -> void:
 	_build_ui()
 	_create_inventory_window()
 	_create_facility_window()
+	_create_stash_window()
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -304,6 +307,14 @@ func _create_facility_window() -> void:
 	facility_window.close_requested.connect(func(): pass)
 	facility_window.action_requested.connect(_on_town_facility_action_requested)
 
+func _create_stash_window() -> void:
+	stash_window = StashWindowScript.new()
+	add_child(stash_window)
+	stash_window.set_context(player_data, SaveManagerScript.get_active_stash())
+	stash_window.player_data_changed.connect(_on_player_data_changed)
+	stash_window.stash_changed.connect(_on_stash_changed)
+	stash_window.close_requested.connect(func(): stash_window.visible = false)
+
 func _toggle_inventory_window() -> void:
 	inventory_window.visible = not inventory_window.visible
 	if inventory_window.visible:
@@ -340,6 +351,8 @@ func _update_town_player_movement(delta: float) -> void:
 	if is_instance_valid(inventory_window) and inventory_window.visible:
 		return
 	if is_instance_valid(facility_window) and facility_window.visible:
+		return
+	if is_instance_valid(stash_window) and stash_window.visible:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	if direction.length_squared() <= 0.001:
@@ -414,6 +427,8 @@ func _on_town_facility_action_requested(facility_id: String, action_id: String) 
 			_open_inventory_filter(str(action.get("filter_mode", "all")))
 		"skill_panel":
 			_open_prep_action("open_skills")
+		"stash_window":
+			_open_stash_window()
 		"inventory_action":
 			_open_inventory_filter("all")
 			match str(action.get("inventory_action", "")):
@@ -435,6 +450,16 @@ func _open_inventory_filter(filter_mode: String) -> void:
 	inventory_window.set_player_data(player_data)
 	if inventory_window.has_method("set_filter_mode"):
 		inventory_window.call("set_filter_mode", filter_mode)
+
+func _open_stash_window() -> void:
+	if not is_instance_valid(stash_window):
+		return
+	if is_instance_valid(inventory_window):
+		inventory_window.visible = false
+	if is_instance_valid(facility_window):
+		facility_window.visible = false
+	stash_window.visible = true
+	stash_window.call("set_context", player_data, SaveManagerScript.get_active_stash())
 
 func get_town_interaction_points_for_test() -> Dictionary:
 	return town_interaction_points.duplicate(true)
@@ -478,6 +503,9 @@ func _on_player_data_changed(updated: Dictionary) -> void:
 	player_data = updated.duplicate(true)
 	SaveManagerScript.save_active_player_data(player_data, int(player_data.get("highest_floor", 1)))
 	_update_summary()
+
+func _on_stash_changed(updated: Dictionary) -> void:
+	SaveManagerScript.save_active_stash(updated.duplicate(true))
 
 func _update_summary() -> void:
 	var prep := TownPrepSummaryServiceScript.build_summary(player_data)

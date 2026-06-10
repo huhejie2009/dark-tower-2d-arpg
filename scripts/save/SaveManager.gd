@@ -97,6 +97,18 @@ static func save_active_player_data(player_data: Dictionary, highest_floor: int 
 	slot["highest_floor"] = maxi(int(slot.get("highest_floor", 1)), highest_floor)
 	save_data(data)
 
+static func get_active_stash() -> Dictionary:
+	var data := load_save()
+	var slot := get_active_slot(data)
+	return Dictionary(slot.get("stash", {})).duplicate(true)
+
+static func save_active_stash(stash: Dictionary) -> void:
+	var data := load_save()
+	var slot_id := str(data.get("active_slot_id", "slot_1"))
+	var slot: Dictionary = data["slots"][slot_id]
+	slot["stash"] = stash.duplicate(true)
+	save_data(data)
+
 static func apply_floor_clear(floor: int, rewards: Dictionary, player_data: Dictionary) -> void:
 	var data := load_save()
 	var slot_id := str(data.get("active_slot_id", "slot_1"))
