@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 120`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 121`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -177,6 +177,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 打开仓库时会关闭设施面板，避免窗口互相遮挡。
 - 新增截图验收：`docs/qa/screenshots/town_stash_window_1280x720.png`。
 - 新增回归：`regression_stash_window_contract.gd`。
+
+## 2026-06-11 更新：商人交易数据服务 V1
+
+- 新增 `VendorTransactionService`，先做商人系统数据底座，不继续打磨占位 UI。
+- 支持单件卖出、买回池、买回恢复。
+- 锁定、收藏、不可出售、已装备物品会被保护，不能误卖。
+- V1 买回价等于卖出价，优先保证误卖恢复；后续经济系统再统一调数值。
+- 新增回归：`regression_vendor_transaction_rules.gd`。
 
 ## License
 
