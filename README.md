@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 118`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 119`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -161,6 +161,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 商人、铁匠、仓库、训练不再直接强行打开背包窗口，为后续正式商店、仓库、铁匠系统预留接口。
 - 新增截图验收：`docs/qa/screenshots/town_merchant_facility_1280x720.png`。
 - 新增回归：`regression_town_facility_service_contract.gd`、`regression_town_facility_window_contract.gd`。
+
+## 2026-06-11 更新：仓库数据服务 V1
+
+- 新增 `StashStorageService`，支持背包与仓库之间整件/整栈存取。
+- 仓库默认 80 格，容量摘要复用背包容量规则。
+- 已装备物品不能直接存入仓库，背包满时不能从仓库取出，失败操作不改变数据。
+- `SaveSchema` 规范化 `stash` 字段，为旧存档和后续仓库窗口做兼容保护。
+- 新增回归：`regression_stash_storage_rules.gd`。
 
 ## License
 

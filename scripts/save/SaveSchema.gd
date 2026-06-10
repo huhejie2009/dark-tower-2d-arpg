@@ -59,4 +59,6 @@ static func normalize_slot(slot_id: String, slot: Dictionary) -> Dictionary:
 		result["currencies"] = {"gold": 0, "crystal": 0}
 	if not (result.get("pending_rewards", {}) is Dictionary):
 		result["pending_rewards"] = {"gold": 0, "crystal": 0}
+	if not (result.get("stash", {}) is Dictionary):
+		result["stash"] = {}
 	return result
