@@ -37,7 +37,9 @@ func _run() -> void:
 			town.call("trigger_town_interaction_for_test", "merchant")
 			await process_frame
 			var inventory := town.find_child("InventoryEquipmentWindow", true, false) as Control
-			_expect(inventory != null and inventory.visible, "merchant placeholder should route to inventory window for now")
+			var facility := town.find_child("TownFacilityWindow", true, false) as Control
+			_expect(facility != null and facility.visible, "merchant should open a town facility panel")
+			_expect(inventory != null and not inventory.visible, "merchant should not immediately force inventory open")
 		town.queue_free()
 		await process_frame
 	_finish()

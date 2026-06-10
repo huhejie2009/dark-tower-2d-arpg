@@ -3,6 +3,8 @@ extends Control
 const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
+const TownFacilityWindowScript := preload("res://scripts/ui/TownFacilityWindow.gd")
+const TownFacilityServiceScript := preload("res://scripts/data/TownFacilityService.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
 const TownPrepSummaryServiceScript := preload("res://scripts/data/TownPrepSummaryService.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
@@ -17,6 +19,7 @@ var start_summary: Label
 var prep_recommendations: Label
 var prep_action_button: Button
 var inventory_window: Control
+var facility_window: Control
 var town_world_root: Node2D
 var town_player: CharacterBody2D
 var town_interaction_hint: Label
@@ -34,6 +37,7 @@ func _ready() -> void:
 	_setup_input_actions()
 	_build_ui()
 	_create_inventory_window()
+	_create_facility_window()
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -147,10 +151,10 @@ func _create_town_world_space() -> void:
 	_add_world_rect("TownTrainingCircle", Vector2(720, 610), Vector2(128, 78), Color(0.07, 0.08, 0.08, 1.0), Color(0.18, 0.26, 0.28, 1.0))
 
 	_add_town_interaction_point("tower_gate", "TownTowerGateInteraction", "Tower Gate", Vector2(450, 340), "enter_tower")
-	_add_town_interaction_point("merchant", "TownMerchantInteraction", "Merchant", Vector2(160, 486), "open_inventory")
-	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "Blacksmith", Vector2(730, 486), "open_inventory")
-	_add_town_interaction_point("stash", "TownStashInteraction", "Stash", Vector2(220, 675), "open_inventory")
-	_add_town_interaction_point("training", "TownTrainingInteraction", "Training", Vector2(720, 675), "open_skills")
+	_add_town_interaction_point("merchant", "TownMerchantInteraction", "Merchant", Vector2(160, 486), "open_facility")
+	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "Blacksmith", Vector2(730, 486), "open_facility")
+	_add_town_interaction_point("stash", "TownStashInteraction", "Stash", Vector2(220, 675), "open_facility")
+	_add_town_interaction_point("training", "TownTrainingInteraction", "Training", Vector2(720, 675), "open_facility")
 
 	town_player = CharacterBody2D.new()
 	town_player.name = "TownPlayer"
@@ -294,6 +298,12 @@ func _create_inventory_window() -> void:
 	inventory_window.player_data_changed.connect(_on_player_data_changed)
 	inventory_window.close_requested.connect(func(): inventory_window.visible = false)
 
+func _create_facility_window() -> void:
+	facility_window = TownFacilityWindowScript.new()
+	add_child(facility_window)
+	facility_window.close_requested.connect(func(): pass)
+	facility_window.action_requested.connect(_on_town_facility_action_requested)
+
 func _toggle_inventory_window() -> void:
 	inventory_window.visible = not inventory_window.visible
 	if inventory_window.visible:
@@ -328,6 +338,8 @@ func _update_town_player_movement(delta: float) -> void:
 	if not is_instance_valid(town_player):
 		return
 	if is_instance_valid(inventory_window) and inventory_window.visible:
+		return
+	if is_instance_valid(facility_window) and facility_window.visible:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	if direction.length_squared() <= 0.001:
@@ -379,12 +391,50 @@ func _trigger_town_interaction(id: String) -> void:
 	match str(data.get("action_id", "")):
 		"enter_tower":
 			_enter_fresh_tower_run()
-		"open_skills":
-			_open_prep_action("open_skills")
-		"open_inventory":
-			_open_prep_action("open_inventory")
+		"open_facility":
+			_open_town_facility(id)
 		_:
 			pass
+
+func _open_town_facility(id: String) -> void:
+	if not is_instance_valid(facility_window):
+		return
+	if TownFacilityServiceScript.get_facility_config(id).is_empty():
+		return
+	if is_instance_valid(inventory_window):
+		inventory_window.visible = false
+	facility_window.call("open_facility", id)
+
+func _on_town_facility_action_requested(facility_id: String, action_id: String) -> void:
+	var action := TownFacilityServiceScript.get_action_config(facility_id, action_id)
+	if action.is_empty():
+		return
+	match str(action.get("kind", "")):
+		"inventory_filter":
+			_open_inventory_filter(str(action.get("filter_mode", "all")))
+		"skill_panel":
+			_open_prep_action("open_skills")
+		"inventory_action":
+			_open_inventory_filter("all")
+			match str(action.get("inventory_action", "")):
+				"sell_junk":
+					if inventory_window.has_method("sell_junk_items"):
+						inventory_window.call("sell_junk_items")
+				"salvage_junk":
+					if inventory_window.has_method("salvage_junk_items"):
+						inventory_window.call("salvage_junk_items")
+				_:
+					pass
+		_:
+			pass
+
+func _open_inventory_filter(filter_mode: String) -> void:
+	if not is_instance_valid(inventory_window):
+		return
+	inventory_window.visible = true
+	inventory_window.set_player_data(player_data)
+	if inventory_window.has_method("set_filter_mode"):
+		inventory_window.call("set_filter_mode", filter_mode)
 
 func get_town_interaction_points_for_test() -> Dictionary:
 	return town_interaction_points.duplicate(true)
@@ -399,6 +449,15 @@ func move_town_player_for_test(direction: Vector2, seconds: float) -> void:
 
 func trigger_town_interaction_for_test(id: String) -> void:
 	_trigger_town_interaction(id)
+
+func get_open_town_facility_id_for_test() -> String:
+	if not is_instance_valid(facility_window) or not facility_window.has_method("get_open_facility_id"):
+		return ""
+	return str(facility_window.call("get_open_facility_id"))
+
+func trigger_town_facility_action_for_test(facility_id: String, action_id: String) -> void:
+	_open_town_facility(facility_id)
+	_on_town_facility_action_requested(facility_id, action_id)
 
 func trigger_prep_action_for_test() -> void:
 	_on_prep_action_pressed()

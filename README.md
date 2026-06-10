@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 116`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 118`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -153,6 +153,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 互动提示移动到屏幕内，保留后续商人、铁匠、仓库独立窗口的接口位置。
 - 新增回归：`regression_town_playable_space_visual_layout.gd`。
 - 截图验收文件：`docs/qa/screenshots/town_playable_space_1280x720.png`。
+
+## 2026-06-11 更新：主城设施窗口 V1
+
+- 新增 `TownFacilityService`，集中维护商人、铁匠、仓库、训练设施配置。
+- 新增 `TownFacilityWindow`，主城设施交互先打开独立设施窗口，再桥接背包、装备、卖废品、分解废品或技能页。
+- 商人、铁匠、仓库、训练不再直接强行打开背包窗口，为后续正式商店、仓库、铁匠系统预留接口。
+- 新增截图验收：`docs/qa/screenshots/town_merchant_facility_1280x720.png`。
+- 新增回归：`regression_town_facility_service_contract.gd`、`regression_town_facility_window_contract.gd`。
 
 ## License
 
