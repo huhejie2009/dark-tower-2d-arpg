@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 114`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 115`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -136,6 +136,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - `Sell Junk` / `Salvage` 会先显示处理数量、保护数量和预计收益，确认后才执行。
 - 新增待确认预览接口，后续商人和铁匠可以复用同一套确认流程。
 - 新增回归：`regression_inventory_junk_action_confirmation.gd`。
+
+## 2026-06-11 更新：主城可走动空间 V1
+
+- 主城新增 `TownWorldRoot` 世界层和 `TownPlayer` 可移动玩家。
+- 新增通天塔入口、商人、铁匠、仓库、训练五个交互点占位。
+- 主城支持 WASD / 方向键移动，靠近交互点可按 `E` 触发。
+- 商人、铁匠、仓库当前先复用已有背包窗口，后续可替换为独立窗口。
+- 新增回归：`regression_town_playable_space_contract.gd`。
 
 ## License
 
