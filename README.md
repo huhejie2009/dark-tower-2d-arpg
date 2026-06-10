@@ -106,7 +106,7 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 
 最近验证标记：
 
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 121`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 122`
 - `HEADLESS_BOOT_EXIT 0`
 - `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
 
@@ -185,6 +185,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 锁定、收藏、不可出售、已装备物品会被保护，不能误卖。
 - V1 买回价等于卖出价，优先保证误卖恢复；后续经济系统再统一调数值。
 - 新增回归：`regression_vendor_transaction_rules.gd`。
+
+## 2026-06-11 更新：商人买回池存档桥接
+
+- `SaveSchema` 新增 `vendor_buyback` 字段，旧存档缺失时自动规范化为空数组。
+- `SaveManager` 新增 `get_active_vendor_buyback()` 与 `save_active_vendor_buyback()`。
+- 卖出后的买回池可保存到当前存档槽，重新读取后仍可买回原物品。
+- 新增回归：`regression_vendor_buyback_save_bridge.gd`。
 
 ## License
 

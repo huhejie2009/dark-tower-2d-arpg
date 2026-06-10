@@ -23,6 +23,7 @@ static func empty_slot(slot_id: String) -> Dictionary:
 		"highest_floor": 1,
 		"player": {},
 		"stash": {},
+		"vendor_buyback": [],
 		"currencies": {"gold": 0, "crystal": 0},
 		"pending_rewards": {"gold": 0, "crystal": 0},
 	}
@@ -61,4 +62,6 @@ static func normalize_slot(slot_id: String, slot: Dictionary) -> Dictionary:
 		result["pending_rewards"] = {"gold": 0, "crystal": 0}
 	if not (result.get("stash", {}) is Dictionary):
 		result["stash"] = {}
+	if not (result.get("vendor_buyback", []) is Array):
+		result["vendor_buyback"] = []
 	return result
