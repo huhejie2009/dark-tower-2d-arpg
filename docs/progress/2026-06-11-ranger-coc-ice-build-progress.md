@@ -41,6 +41,7 @@ D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
 
 - `FOCUSED_RANGER_COC_ICE_BUILD_OK`
 - `RANGER_COC_FOCUSED_AND_IMPACTED_OK`
+- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 121`
 - `NEW_PROJECT_SCENE_BOOT_ALL_OK`
 
 覆盖的影响面包括：
@@ -56,7 +57,7 @@ D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
 - 楼层模板生成。
 - 四个主场景启动。
 
-Godot headless 退出时仍会打印项目已知的 `ObjectDB instances leaked` / `resources still in use` 警告；所有目标脚本退出码为 0，按非阻断处理。
+Godot headless 退出时仍会打印项目已知的 `ObjectDB instances leaked` / `resources still in use` 警告；全量回归中 `godot_ai` 插件也会输出部分解析警告文本，但测试脚本整体退出码为 0，按非阻断处理。
 
 ## 后续建议
 
