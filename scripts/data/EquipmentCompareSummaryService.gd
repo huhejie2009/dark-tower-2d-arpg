@@ -3,6 +3,15 @@ class_name EquipmentCompareSummaryService
 
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 
+const RANGER_COC_REASON_TEXT := {
+	"critical_chance": "更频繁触发冰矛",
+	"attack_speed": "更多寒冰射击尝试，但仍受触发冷却限制",
+	"cold_damage": "增强寒冰射击和冰矛",
+	"ice_lance_pierce": "冰矛穿透，清理密集敌人更强",
+	"ice_lance_split": "冰矛分裂，提升清图覆盖",
+	"coc_cooldown_recovery": "允许更高频率触发冰矛",
+}
+
 static func build_summary(player_data: Dictionary, candidate_item_id: String, candidate_equipment: Dictionary) -> Dictionary:
 	var slot := EquipmentDataServiceScript.resolve_equip_slot(player_data, candidate_equipment)
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
@@ -49,12 +58,14 @@ static func _build_stat_deltas(candidate_equipment: Dictionary, equipped_equipme
 		if delta == 0:
 			continue
 		var sign := "+" if delta > 0 else ""
+		var reason := _build_stat_reason(str(stat_id), delta)
 		rows.append({
 			"stat_id": str(stat_id),
 			"candidate_value": candidate_value,
 			"equipped_value": equipped_value,
 			"delta": delta,
 			"compact_text": "%s %s%d" % [str(stat_id), sign, delta],
+			"reason_text": reason,
 			"positive": delta > 0,
 		})
 	return rows
@@ -76,17 +87,39 @@ static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_i
 	else:
 		reasons.append("Score %s%d vs equipped" % [score_sign, score_delta])
 	var sorted_deltas := stat_deltas.duplicate(true)
-	sorted_deltas.sort_custom(func(a, b): return abs(int(Dictionary(a).get("delta", 0))) > abs(int(Dictionary(b).get("delta", 0))))
+	sorted_deltas.sort_custom(_sort_reason_rows)
 	for row in sorted_deltas:
-		if reasons.size() >= 3:
+		if reasons.size() >= 4:
 			break
 		var data: Dictionary = Dictionary(row)
 		var delta := int(data.get("delta", 0))
 		if delta == 0:
 			continue
+		var reason := str(data.get("reason_text", ""))
+		if delta > 0 and reason != "":
+			reasons.append(reason)
+			continue
 		var sign := "+" if delta > 0 else ""
 		reasons.append("%s %s%d" % [str(data.get("stat_id", "")), sign, delta])
 	return reasons
+
+static func _build_stat_reason(stat_id: String, delta: int) -> String:
+	if delta <= 0:
+		return ""
+	return str(RANGER_COC_REASON_TEXT.get(stat_id, ""))
+
+static func _sort_reason_rows(a: Variant, b: Variant) -> bool:
+	var data_a: Dictionary = Dictionary(a)
+	var data_b: Dictionary = Dictionary(b)
+	var reason_a := str(data_a.get("reason_text", "")) != ""
+	var reason_b := str(data_b.get("reason_text", "")) != ""
+	if reason_a != reason_b:
+		return reason_a
+	var positive_a := int(data_a.get("delta", 0)) > 0
+	var positive_b := int(data_b.get("delta", 0)) > 0
+	if positive_a != positive_b:
+		return positive_a
+	return abs(int(data_a.get("delta", 0))) > abs(int(data_b.get("delta", 0)))
 
 static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_item_id: String, reason_lines: Array[String] = []) -> String:
 	var score_sign := "+" if score_delta > 0 else ""

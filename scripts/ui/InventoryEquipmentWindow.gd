@@ -496,6 +496,8 @@ func _describe_item(entry: Dictionary) -> String:
 			lines.append("Compare Summary:")
 			lines.append(str(compare_summary.get("headline", "")))
 			lines.append(str(compare_summary.get("compact_text", "")))
+			for reason in Array(compare_summary.get("reason_lines", [])):
+				lines.append("- %s" % str(reason))
 		lines.append_array(_build_compare_lines(equipment))
 	else:
 		lines.append("Amount: %d" % int(entry.get("amount", 1)))
@@ -510,6 +512,9 @@ func _build_compare_lines(candidate_equipment: Dictionary) -> Array[String]:
 	var lines: Array[String] = ["Compare:"]
 	for row in Array(summary.get("stat_deltas", [])):
 		lines.append(str(Dictionary(row).get("compact_text", "")))
+		var reason := str(Dictionary(row).get("reason_text", ""))
+		if reason != "":
+			lines.append("  %s" % reason)
 	if lines.size() == 1:
 		lines.append("No stat change")
 	return lines
