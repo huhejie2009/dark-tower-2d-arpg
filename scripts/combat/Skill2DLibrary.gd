@@ -29,3 +29,6 @@ static func cast_basic_skill(caster: Node2D, skill_id: String, direction: Vector
 		if is_instance_valid(parent):
 			Vfx2DFactoryScript.spawn_hit(parent, enemy_2d.global_position)
 	return {"skill_id": skill_id, "hit_count": hit_count, "cooldown": float(profile.get("cooldown", 0.35))}
+
+static func cast_triggered_skill(caster: Node2D, skill_id: String, direction: Vector2, damage: int) -> Dictionary:
+	return cast_basic_skill(caster, skill_id, direction, damage)
