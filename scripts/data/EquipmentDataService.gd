@@ -2,6 +2,7 @@ extends RefCounted
 class_name EquipmentDataService
 
 const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
+const GemSocketServiceScript := preload("res://scripts/data/GemSocketService.gd")
 
 static func normalize_equipment(equipment: Variant) -> Dictionary:
 	if equipment is Dictionary:
@@ -102,6 +103,11 @@ static func build_stat_totals(player_data: Dictionary) -> Dictionary:
 		"critical_chance": 0,
 		"projectile_count": 0,
 		"summon_damage": 0,
+		"cold_damage": 0,
+		"attack_speed": 0,
+		"coc_cooldown_recovery": 0,
+		"ice_lance_pierce": 0,
+		"ice_lance_split": 0,
 	}
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
 	var equipped := normalize_equipped_items(player_data.get("equipped_items", {}))
@@ -113,6 +119,9 @@ static func build_stat_totals(player_data: Dictionary) -> Dictionary:
 		var affixes: Dictionary = Dictionary(equipment.get("affixes", {}))
 		for stat_id in affixes.keys():
 			totals[stat_id] = int(totals.get(stat_id, 0)) + int(affixes[stat_id])
+		var socket_totals := GemSocketServiceScript.build_socket_stat_totals(equipment)
+		for stat_id in socket_totals.keys():
+			totals[stat_id] = int(totals.get(stat_id, 0)) + int(socket_totals[stat_id])
 	return totals
 
 static func get_equipment_score(equipment: Dictionary) -> int:
@@ -127,10 +136,15 @@ static func get_equipment_score(equipment: Dictionary) -> int:
 	var affixes: Dictionary = Dictionary(equipment.get("affixes", {}))
 	for stat_id in affixes.keys():
 		var value := int(affixes[stat_id])
-		if str(stat_id) == "critical_chance" or str(stat_id) == "projectile_count":
+		if str(stat_id) == "critical_chance" or str(stat_id) == "projectile_count" or str(stat_id).begins_with("ice_lance"):
 			score += value * 8
+		elif str(stat_id) == "cold_damage" or str(stat_id) == "attack_speed" or str(stat_id) == "coc_cooldown_recovery":
+			score += value * 3
 		else:
 			score += value
+	var socket_totals := GemSocketServiceScript.build_socket_stat_totals(equipment)
+	for stat_id in socket_totals.keys():
+		score += int(socket_totals[stat_id]) * 3
 	return score
 
 static func get_item_score(player_data: Dictionary, item_id: String) -> int:
