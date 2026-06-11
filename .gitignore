@@ -9,6 +9,7 @@ user://
 
 # Runtime and scratch outputs
 tmp/
+.worktrees/
 *.log
 
 # OS/editor noise
