@@ -21,6 +21,30 @@ static func spawn_slash(parent: Node, position: Vector2, direction: Vector2) -> 
 	root.add_child(edge)
 	_fade(parent, root, 0.16)
 
+static func spawn_projectile_trail(parent: Node, origin: Vector2, direction: Vector2, distance: float, color: Color = Color(0.62, 0.88, 1.0, 0.88)) -> void:
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	direction = direction.normalized()
+	var root := Node2D.new()
+	root.name = "ProjectileTrailVFX"
+	root.set_meta("vfx_role", "projectile_trail")
+	parent.add_child(root)
+	root.global_position = origin
+	root.rotation = direction.angle()
+	var trail := Line2D.new()
+	trail.name = "ProjectileTrailLine"
+	trail.width = 5.0
+	trail.default_color = color
+	trail.points = PackedVector2Array([Vector2(18, 0), Vector2(maxf(42.0, distance), 0)])
+	root.add_child(trail)
+	var head := Polygon2D.new()
+	head.name = "ProjectileTrailHead"
+	var head_x := maxf(42.0, distance)
+	head.polygon = PackedVector2Array([Vector2(head_x + 14, 0), Vector2(head_x - 10, -8), Vector2(head_x - 6, 0), Vector2(head_x - 10, 8)])
+	head.color = color
+	root.add_child(head)
+	_fade(parent, root, 0.14)
+
 static func spawn_hit(parent: Node, position: Vector2) -> void:
 	var root := Node2D.new()
 	root.name = "HitImpactVFX"

@@ -542,6 +542,8 @@ func _spawn_player() -> void:
 func _apply_default_player_art() -> void:
 	if not is_instance_valid(player) or not player.has_method("apply_visual_asset_manifest"):
 		return
+	if str(player_data.get("base_class", "warrior")) != "warrior":
+		return
 	if not FileAccess.file_exists(DEFAULT_PLAYER_IMAGE2_SPRITE_PATH):
 		return
 	player.apply_visual_asset_manifest({
