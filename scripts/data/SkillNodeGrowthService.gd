@@ -29,6 +29,46 @@ const NODES := {
 		"max_level": 5,
 		"skill_point_cost": 1,
 	},
+	"ranger_coc_precision": {
+		"node_id": "ranger_coc_precision",
+		"title": "CoC Precision",
+		"stat_id": "critical_chance",
+		"stat_label": "Crit",
+		"stat_gain": 3,
+		"max_level": 5,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_trigger_flow": {
+		"node_id": "ranger_trigger_flow",
+		"title": "Trigger Flow",
+		"stat_id": "coc_cooldown_recovery",
+		"stat_label": "Trigger Recovery",
+		"stat_gain": 4,
+		"max_level": 3,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_ice_mastery": {
+		"node_id": "ranger_ice_mastery",
+		"title": "Ice Mastery",
+		"stat_id": "cold_damage",
+		"stat_label": "Cold Damage",
+		"stat_gain": 5,
+		"max_level": 5,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_projectile_split": {
+		"node_id": "ranger_projectile_split",
+		"title": "Split Lance",
+		"stat_id": "ice_lance_split",
+		"stat_label": "Ice Lance Split",
+		"stat_gain": 1,
+		"max_level": 1,
+		"skill_point_cost": 2,
+		"class_tag": "ranger",
+	},
 }
 
 static func list_nodes() -> Array:
@@ -112,6 +152,30 @@ static func upgrade_node(player_data: Dictionary, node_id: String) -> Dictionary
 		"player_data": result,
 	}
 
+static func reset_skill_nodes(player_data: Dictionary) -> Dictionary:
+	var result := _normalize_growth_data(player_data)
+	var nodes: Dictionary = Dictionary(result.get("unlocked_skill_nodes", {}))
+	var refunded := 0
+	for node_id in nodes.keys():
+		var node := get_node(str(node_id))
+		if node.is_empty():
+			continue
+		var level := clampi(int(nodes[node_id]), 0, int(node.get("max_level", 1)))
+		var cost := int(node.get("skill_point_cost", 1))
+		var stat_id := str(node.get("stat_id", ""))
+		var stat_gain := int(node.get("stat_gain", 0)) * level
+		refunded += level * cost
+		if stat_id != "" and stat_gain != 0:
+			result[stat_id] = int(result.get(stat_id, 0)) - stat_gain
+			if stat_id == "max_health":
+				result["max_health"] = maxi(1, int(result.get("max_health", 1)))
+				result["health"] = clampi(int(result.get("health", 1)), 1, int(result["max_health"]))
+			else:
+				result[stat_id] = maxi(0, int(result.get(stat_id, 0)))
+	result["unlocked_skill_nodes"] = {}
+	result["skill_points"] = int(result.get("skill_points", 0)) + refunded
+	return {"ok": true, "refunded_skill_points": refunded, "player_data": result}
+
 static func _normalize_growth_data(player_data: Dictionary) -> Dictionary:
 	var result := player_data.duplicate(true)
 	result["skill_points"] = maxi(0, int(result.get("skill_points", 0)))
@@ -121,6 +185,9 @@ static func _normalize_growth_data(player_data: Dictionary) -> Dictionary:
 	result["max_health"] = maxi(1, int(result.get("max_health", 1)))
 	result["health"] = clampi(int(result.get("health", result["max_health"])), 1, int(result["max_health"]))
 	result["critical_chance"] = maxi(0, int(result.get("critical_chance", 0)))
+	result["cold_damage"] = maxi(0, int(result.get("cold_damage", 0)))
+	result["coc_cooldown_recovery"] = maxi(0, int(result.get("coc_cooldown_recovery", 0)))
+	result["ice_lance_split"] = maxi(0, int(result.get("ice_lance_split", 0)))
 	return result
 
 static func _build_summary_text(node: Dictionary, current_level: int, next_level: int, max_level: int) -> String:

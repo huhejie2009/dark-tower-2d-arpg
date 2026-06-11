@@ -36,6 +36,10 @@ static func build_starter_player(slot_id: String, character_name: String, base_c
 		"max_mana": int(class_data.get("max_mana", 60)),
 		"mana": int(class_data.get("max_mana", 60)),
 		"attack_damage": int(class_data.get("attack_damage", 24)),
+		"critical_chance": 8 if normalized_class == "ranger" else 0,
+		"cold_damage": 0,
+		"coc_cooldown_recovery": 0,
+		"ice_lance_split": 0,
 		"skill_points": 0,
 		"unlocked_skill_nodes": {},
 		"active_skill_id": "whirlwind_core" if normalized_class == "warrior" else "",
@@ -59,6 +63,10 @@ static func normalize_player_data(data: Variant) -> Dictionary:
 	result["health"] = clampi(int(result.get("health", result["max_health"])), 1, int(result["max_health"]))
 	result["max_mana"] = maxi(1, int(result.get("max_mana", 50)))
 	result["mana"] = clampi(int(result.get("mana", result["max_mana"])), 0, int(result["max_mana"]))
+	result["critical_chance"] = maxi(0, int(result.get("critical_chance", 0)))
+	result["cold_damage"] = maxi(0, int(result.get("cold_damage", 0)))
+	result["coc_cooldown_recovery"] = maxi(0, int(result.get("coc_cooldown_recovery", 0)))
+	result["ice_lance_split"] = maxi(0, int(result.get("ice_lance_split", 0)))
 	result["inventory"] = InventoryDataServiceScript.normalize_inventory(result.get("inventory", {}))
 	result["equipped_items"] = EquipmentDataServiceScript.normalize_equipped_items(result.get("equipped_items", {}))
 	return result
