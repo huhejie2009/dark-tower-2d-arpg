@@ -201,6 +201,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added documentation: `docs/content/2026-06-11-pixel-actor-art-trial-pipeline.md`.
 - Added regression: `tests/regression/regression_pixel_actor_art_trial_contract.gd`.
 
+## 2026-06-11 Update: Pixel Actor Production Pack
+
+- Added a first-pass production pack for player warrior, rot melee, and shadow archer 4-direction pixel actor sheets.
+- Added a concept preview image at `docs/concepts/pixel_actor_trial/pixel_actor_lineup_preview_v1.png`.
+- Production pack defines target file names, frame order, animation segments, IMAGE2 prompts, and import acceptance gates.
+- Added regression: `tests/regression/regression_pixel_actor_production_pack.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。
