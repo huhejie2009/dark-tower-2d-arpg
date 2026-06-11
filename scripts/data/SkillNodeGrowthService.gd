@@ -66,7 +66,7 @@ const NODES := {
 		"stat_label": "Ice Lance Split",
 		"stat_gain": 1,
 		"max_level": 1,
-		"skill_point_cost": 2,
+		"skill_point_cost": 1,
 		"class_tag": "ranger",
 	},
 }
