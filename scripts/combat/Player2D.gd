@@ -3,6 +3,7 @@ class_name Player2D
 
 const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
 const Skill2DLibraryScript := preload("res://scripts/combat/Skill2DLibrary.gd")
+const Vfx2DFactoryScript := preload("res://scripts/combat/Vfx2DFactory.gd")
 const CombatFeelServiceScript := preload("res://scripts/data/CombatFeelService.gd")
 const DamageFeedbackServiceScript := preload("res://scripts/data/DamageFeedbackService.gd")
 const TriggerRuleServiceScript := preload("res://scripts/data/TriggerRuleService.gd")
@@ -121,6 +122,10 @@ func cast_basic(direction: Vector2) -> Dictionary:
 	if bool(result.get("triggered", false)):
 		var trigger_result := Skill2DLibraryScript.cast_triggered_skill(self, str(result["trigger_skill_id"]), direction, attack_damage)
 		result["trigger_hit_count"] = int(trigger_result.get("hit_count", 0))
+		var parent := get_parent()
+		if is_instance_valid(parent):
+			var flash_direction := direction.normalized() if direction.length_squared() > 0.001 else facing_direction
+			Vfx2DFactoryScript.spawn_coc_trigger_flash(parent, global_position + flash_direction * 18.0)
 	_start_attack_feel()
 	attack_cooldown_remaining = float(attack_feel_profile.get("cooldown", result.get("cooldown", 0.35)))
 	result["cooldown"] = attack_cooldown_remaining

@@ -32,7 +32,13 @@ static func cast_basic_skill(caster: Node2D, skill_id: String, direction: Vector
 		if is_instance_valid(parent):
 			Vfx2DFactoryScript.spawn_hit(parent, enemy_2d.global_position)
 	if is_instance_valid(parent) and cast_style == "projectile":
-		Vfx2DFactoryScript.spawn_projectile_trail(parent, caster.global_position + direction * 24.0, direction, first_hit_distance)
+		var origin := caster.global_position + direction * 24.0
+		if skill_id == "ranger_ice_shot":
+			Vfx2DFactoryScript.spawn_ice_arrow_trail(parent, origin, direction, first_hit_distance)
+		elif skill_id == "ice_lance":
+			Vfx2DFactoryScript.spawn_ice_lance_trail(parent, origin, direction, first_hit_distance)
+		else:
+			Vfx2DFactoryScript.spawn_projectile_trail(parent, origin, direction, first_hit_distance)
 	return {"skill_id": skill_id, "hit_count": hit_count, "cooldown": float(profile.get("cooldown", 0.35)), "cast_style": cast_style}
 
 static func cast_triggered_skill(caster: Node2D, skill_id: String, direction: Vector2, damage: int) -> Dictionary:
