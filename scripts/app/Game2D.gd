@@ -31,6 +31,7 @@ const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
 const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 64
 const IMAGE2_ENVIRONMENT_BACKGROUND_PATH := "res://assets/generated/environments/tower_interior_brutalist_room_v1.png"
 const DEFAULT_PLAYER_IMAGE2_SPRITE_PATH := "res://assets/generated/actors/player_warrior_sheet_v3.png"
+const RANGER_PLAYER_SPRITE_PATH := "res://assets/generated/actors/player_ranger_sheet_v1.png"
 
 var player_data: Dictionary = {}
 var player: CharacterBody2D
@@ -542,11 +543,36 @@ func _spawn_player() -> void:
 func _apply_default_player_art() -> void:
 	if not is_instance_valid(player) or not player.has_method("apply_visual_asset_manifest"):
 		return
-	if str(player_data.get("base_class", "warrior")) != "warrior":
+	var manifest := _build_player_visual_manifest()
+	if manifest.is_empty():
 		return
+	player.apply_visual_asset_manifest(manifest)
+
+func _build_player_visual_manifest() -> Dictionary:
+	var base_class := str(player_data.get("base_class", "warrior"))
+	if base_class == "ranger":
+		if not FileAccess.file_exists(RANGER_PLAYER_SPRITE_PATH):
+			return {}
+		return {
+			"asset_pipeline": "generated",
+			"pose_variation_version": "ranger_ice_coc_v1",
+			"direction_mode": "runtime_flip_2dir",
+			"enabled": true,
+			"sprite_sheet_path": RANGER_PLAYER_SPRITE_PATH,
+			"frame_size": Vector2i(160, 160),
+			"hide_procedural_body": true,
+			"animations": {
+				"idle": {"from": 0, "to": 3, "fps": 6},
+				"run": {"from": 4, "to": 9, "fps": 9},
+				"attack": {"from": 10, "to": 15, "fps": 12},
+				"death": {"from": 16, "to": 19, "fps": 6},
+			},
+		}
+	if base_class != "warrior":
+		return {}
 	if not FileAccess.file_exists(DEFAULT_PLAYER_IMAGE2_SPRITE_PATH):
-		return
-	player.apply_visual_asset_manifest({
+		return {}
+	return {
 		"asset_pipeline": "IMAGE2",
 		"pose_variation_version": "production_dark_armor_v3",
 		"direction_mode": "runtime_flip_2dir",
@@ -560,7 +586,7 @@ func _apply_default_player_art() -> void:
 			"attack": {"from": 10, "to": 15, "fps": 10},
 			"death": {"from": 16, "to": 19, "fps": 6},
 		},
-	})
+	}
 
 func _is_default_player_art_loaded() -> bool:
 	if not is_instance_valid(player):
