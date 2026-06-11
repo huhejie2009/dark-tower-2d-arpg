@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await _expect_class_cast_style("warrior", "warrior_cleave", "melee_arc", "attack_trail")
-	await _expect_class_cast_style("ranger", "ranger_ice_shot", "projectile", "projectile_trail")
+	await _expect_class_cast_style("ranger", "ranger_ice_shot", "projectile", "ice_arrow_trail")
 	await _expect_class_cast_style("mage", "mage_bolt", "projectile", "projectile_trail")
 	await _expect_class_cast_style("acolyte", "bone_spike", "projectile", "projectile_trail")
 	_expect_game2d_default_art_scope()
