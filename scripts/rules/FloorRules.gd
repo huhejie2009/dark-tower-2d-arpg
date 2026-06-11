@@ -50,6 +50,15 @@ const TEMPLATE_SEQUENCE := ["standard_clear", "dense_room", "ranged_pressure", "
 const ROT_MELEE_IMAGE2_MANIFEST := {
 	"asset_pipeline": "image2",
 	"pose_variation_version": "production_dark_armor_v3",
+	"art_family": "dark_high_res_pixel_actor",
+	"environment_pairing": "painterly_brutalist_tower",
+	"texture_filter": "nearest",
+	"directional_target": "4dir",
+	"separate_combat_vfx": true,
+	"contact_shadow": {
+		"required": true,
+		"style": "soft_grounded_cold_ambient",
+	},
 	"direction_mode": "runtime_flip_2dir",
 	"enabled": true,
 	"hide_procedural_body": true,
@@ -66,6 +75,15 @@ const ROT_MELEE_IMAGE2_MANIFEST := {
 const SHADOW_ARCHER_IMAGE2_MANIFEST := {
 	"asset_pipeline": "image2",
 	"pose_variation_version": "production_dark_armor_v3",
+	"art_family": "dark_high_res_pixel_actor",
+	"environment_pairing": "painterly_brutalist_tower",
+	"texture_filter": "nearest",
+	"directional_target": "4dir",
+	"separate_combat_vfx": true,
+	"contact_shadow": {
+		"required": true,
+		"style": "soft_grounded_cold_ambient",
+	},
 	"direction_mode": "runtime_flip_2dir",
 	"enabled": true,
 	"hide_procedural_body": true,

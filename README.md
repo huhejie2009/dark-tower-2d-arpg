@@ -193,6 +193,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - 卖出后的买回池可保存到当前存档槽，重新读取后仍可买回原物品。
 - 新增回归：`regression_vendor_buyback_save_bridge.gd`。
 
+## 2026-06-11 Update: Pixel Actor Art Trial
+
+- Added a narrow art-only trial for dark high-resolution pixel actors paired with painterly brutalist tower environments.
+- Player, rot melee, and shadow archer manifests now declare `art_family`, `environment_pairing`, `texture_filter`, `directional_target`, separated combat VFX, and contact shadow requirements.
+- `Player2D` and `Enemy2D` can apply nearest texture filtering from the visual manifest, preparing the project for crisp pixel actor sheets.
+- Added documentation: `docs/content/2026-06-11-pixel-actor-art-trial-pipeline.md`.
+- Added regression: `tests/regression/regression_pixel_actor_art_trial_contract.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。

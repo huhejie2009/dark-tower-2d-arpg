@@ -524,6 +524,15 @@ func _apply_default_player_art() -> void:
 	player.apply_visual_asset_manifest({
 		"asset_pipeline": "IMAGE2",
 		"pose_variation_version": "production_dark_armor_v3",
+		"art_family": "dark_high_res_pixel_actor",
+		"environment_pairing": "painterly_brutalist_tower",
+		"texture_filter": "nearest",
+		"directional_target": "4dir",
+		"separate_combat_vfx": true,
+		"contact_shadow": {
+			"required": true,
+			"style": "soft_grounded_cold_ambient",
+		},
 		"direction_mode": "runtime_flip_2dir",
 		"enabled": true,
 		"sprite_sheet_path": DEFAULT_PLAYER_IMAGE2_SPRITE_PATH,
@@ -595,11 +604,18 @@ func _get_environment_asset_contract_for_test() -> Dictionary:
 	}
 
 func _get_default_actor_art_contract_for_test() -> Dictionary:
+	var manifest := {}
+	if is_instance_valid(player) and player.has_method("get_visual_asset_manifest"):
+		manifest = player.get_visual_asset_manifest()
 	return {
 		"player_asset_pipeline": "IMAGE2",
 		"player_sprite_path": DEFAULT_PLAYER_IMAGE2_SPRITE_PATH,
 		"player_sprite_loaded": _is_default_player_art_loaded(),
 		"player_procedural_hidden": _is_player_procedural_body_hidden(),
+		"actor_art_family": str(manifest.get("art_family", "")),
+		"actor_environment_pairing": str(manifest.get("environment_pairing", "")),
+		"actor_texture_filter": str(manifest.get("texture_filter", "")),
+		"actor_directional_target": str(manifest.get("directional_target", "")),
 	}
 
 func _spawn_wave() -> void:

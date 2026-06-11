@@ -316,6 +316,7 @@ func apply_visual_asset_manifest(manifest: Dictionary) -> void:
 	if is_instance_valid(actor_sprite):
 		actor_sprite.visible = bool(visual_asset_manifest.get("enabled", false))
 		actor_sprite.region_enabled = true
+		_apply_actor_sprite_filter()
 		_load_actor_sprite_texture()
 	_update_procedural_visual_visibility()
 	var animations := Dictionary(visual_asset_manifest.get("animations", {}))
@@ -497,6 +498,13 @@ func _load_actor_sprite_texture() -> void:
 	actor_sprite.texture = ImageTexture.create_from_image(image)
 	_update_procedural_visual_visibility()
 
+func _apply_actor_sprite_filter() -> void:
+	var filter := str(visual_asset_manifest.get("texture_filter", "linear"))
+	if filter == "nearest":
+		actor_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	else:
+		actor_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
 func _trigger_death_animation() -> void:
 	var animations := Dictionary(visual_asset_manifest.get("animations", {}))
 	if animations.has("death"):
@@ -571,6 +579,7 @@ func get_actor_presentation_state_for_test() -> Dictionary:
 		"attack_arc_visible": is_instance_valid(attack_arc) and attack_arc.visible,
 		"facing_bucket": _get_facing_bucket(),
 		"sprite_flipped_h": actor_sprite.flip_h if is_instance_valid(actor_sprite) else false,
+		"texture_filter": actor_sprite.texture_filter if is_instance_valid(actor_sprite) else CanvasItem.TEXTURE_FILTER_PARENT_NODE,
 		"direction_mode": str(visual_asset_manifest.get("direction_mode", "runtime_flip_2dir")),
 		"resolved_frame_index": _get_resolved_actor_frame_index(),
 		"direction_frame_offset": _get_direction_frame_offset(),
