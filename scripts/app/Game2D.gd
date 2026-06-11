@@ -17,6 +17,7 @@ const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const P2LootLoopMetricsRecorderScript := preload("res://scripts/data/P2LootLoopMetricsRecorder.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
+const AutoCombatControllerScript := preload("res://scripts/data/AutoCombatController.gd")
 
 const ROOM_VISUAL_MODE := "topdown_production"
 const ENVIRONMENT_FAMILY := "brutalist_tower_interior"
@@ -84,6 +85,7 @@ var death_settlement_active: bool = false
 var death_presentation_pending: bool = false
 var death_presentation_delay_override := -1.0
 var p2_loot_loop_metrics: Dictionary = P2LootLoopMetricsRecorderScript.create_metrics()
+var combat_control_mode := "manual"
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -119,10 +121,31 @@ func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(player) or _is_menu_blocking_combat():
 		return
 	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.add_elapsed_seconds(p2_loot_loop_metrics, _delta)
-	player.set_move_vector(_get_move_vector())
-	player.face_world_position(get_global_mouse_position())
+	if combat_control_mode == "auto":
+		var intent := AutoCombatControllerScript.build_intent(player.global_position, _build_auto_enemy_snapshots(), 280.0)
+		player.set_move_vector(intent.get("move_vector", Vector2.ZERO))
+		if bool(intent.get("has_target", false)):
+			player.face_world_position(intent.get("target_position", player.global_position + Vector2.RIGHT))
+		if bool(intent.get("should_attack", false)):
+			player.cast_basic(intent.get("attack_direction", Vector2.RIGHT))
+	else:
+		player.set_move_vector(_get_move_vector())
+		player.face_world_position(get_global_mouse_position())
 	player.global_position = player.global_position.clamp(room_rect.position + Vector2(24, 24), room_rect.end - Vector2(24, 24))
 	_update_foot_anchor_z_sort()
+
+func _build_auto_enemy_snapshots() -> Array:
+	var result: Array = []
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if enemy is Node2D:
+			result.append({"position": (enemy as Node2D).global_position, "alive": true})
+	return result
+
+func set_combat_control_mode_for_test(mode: String) -> void:
+	combat_control_mode = "auto" if mode == "auto" else "manual"
+
+func get_combat_control_mode_for_test() -> String:
+	return combat_control_mode
 
 func _ensure_input_actions() -> void:
 	_add_key_action("move_left", [KEY_A, KEY_LEFT])
