@@ -1,0 +1,199 @@
+{
+	"alpha_threshold": 16,
+	"anchor": "bottom_center",
+	"anchor_y": 288,
+	"approved_for_manifest_switch": false,
+	"frame01_lockback": false,
+	"frame_count": 8,
+	"frame_size": {
+		"x": 192,
+		"y": 320
+	},
+	"frames": [
+		{
+			"bounds_height": 278,
+			"bounds_width": 160,
+			"has_pixels": true,
+			"local_center_x": 95.5,
+			"max_x": 175,
+			"max_y": 288,
+			"min_x": 16,
+			"min_y": 11,
+			"pixel_count": 29808
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 152,
+			"has_pixels": true,
+			"local_center_x": 95.5,
+			"max_x": 363,
+			"max_y": 288,
+			"min_x": 212,
+			"min_y": 12,
+			"pixel_count": 29405
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 161,
+			"has_pixels": true,
+			"local_center_x": 95.0,
+			"max_x": 559,
+			"max_y": 288,
+			"min_x": 399,
+			"min_y": 12,
+			"pixel_count": 29920
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 151,
+			"has_pixels": true,
+			"local_center_x": 95.0,
+			"max_x": 746,
+			"max_y": 288,
+			"min_x": 596,
+			"min_y": 12,
+			"pixel_count": 29643
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 168,
+			"has_pixels": true,
+			"local_center_x": 95.5,
+			"max_x": 947,
+			"max_y": 288,
+			"min_x": 780,
+			"min_y": 12,
+			"pixel_count": 30174
+		},
+		{
+			"bounds_height": 275,
+			"bounds_width": 182,
+			"has_pixels": true,
+			"local_center_x": 95.5,
+			"max_x": 1146,
+			"max_y": 288,
+			"min_x": 965,
+			"min_y": 14,
+			"pixel_count": 30624
+		},
+		{
+			"bounds_height": 275,
+			"bounds_width": 157,
+			"has_pixels": true,
+			"local_center_x": 95.0,
+			"max_x": 1325,
+			"max_y": 288,
+			"min_x": 1169,
+			"min_y": 14,
+			"pixel_count": 29620
+		},
+		{
+			"bounds_height": 272,
+			"bounds_width": 160,
+			"has_pixels": true,
+			"local_center_x": 95.5,
+			"max_x": 1519,
+			"max_y": 288,
+			"min_x": 1360,
+			"min_y": 17,
+			"pixel_count": 30287
+		}
+	],
+	"max_center_drift_px": 0.5,
+	"max_foot_baseline_drift_px": 0,
+	"normalized_strip": "res://assets/generated/actors/candidates/player_warrior_body_down_idle_normalized_v1.png",
+	"placement": [
+		{
+			"dest_x": 16,
+			"dest_y": 11,
+			"frame": 0,
+			"source_rect": {
+				"h": 278,
+				"w": 160,
+				"x": 80,
+				"y": 221
+			}
+		},
+		{
+			"dest_x": 20,
+			"dest_y": 12,
+			"frame": 1,
+			"source_rect": {
+				"h": 277,
+				"w": 152,
+				"x": 348,
+				"y": 222
+			}
+		},
+		{
+			"dest_x": 15,
+			"dest_y": 12,
+			"frame": 2,
+			"source_rect": {
+				"h": 277,
+				"w": 161,
+				"x": 599,
+				"y": 222
+			}
+		},
+		{
+			"dest_x": 20,
+			"dest_y": 12,
+			"frame": 3,
+			"source_rect": {
+				"h": 277,
+				"w": 151,
+				"x": 870,
+				"y": 222
+			}
+		},
+		{
+			"dest_x": 12,
+			"dest_y": 12,
+			"frame": 4,
+			"source_rect": {
+				"h": 277,
+				"w": 168,
+				"x": 1116,
+				"y": 222
+			}
+		},
+		{
+			"dest_x": 5,
+			"dest_y": 14,
+			"frame": 5,
+			"source_rect": {
+				"h": 275,
+				"w": 182,
+				"x": 1365,
+				"y": 224
+			}
+		},
+		{
+			"dest_x": 17,
+			"dest_y": 14,
+			"frame": 6,
+			"source_rect": {
+				"h": 275,
+				"w": 157,
+				"x": 1651,
+				"y": 224
+			}
+		},
+		{
+			"dest_x": 16,
+			"dest_y": 17,
+			"frame": 7,
+			"source_rect": {
+				"h": 272,
+				"w": 160,
+				"x": 1910,
+				"y": 225
+			}
+		}
+	],
+	"runtime_connected": false,
+	"source": "res://assets/generated/actors/candidates/player_warrior_body_down_idle_candidate_v1.png",
+	"source_cell_width": 271,
+	"weapon_layer_mode": "body_only_no_weapon"
+}
