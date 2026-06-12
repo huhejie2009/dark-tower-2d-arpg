@@ -1,0 +1,104 @@
+{
+	"alpha_threshold": 16,
+	"approved_for_manifest_switch": false,
+	"cell_width": 271,
+	"frame_count": 8,
+	"frames": [
+		{
+			"bounds_height": 278,
+			"bounds_width": 160,
+			"has_pixels": true,
+			"local_center_x": 159.5,
+			"max_x": 239,
+			"max_y": 498,
+			"min_x": 80,
+			"min_y": 221,
+			"pixel_count": 29808
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 152,
+			"has_pixels": true,
+			"local_center_x": 152.5,
+			"max_x": 499,
+			"max_y": 498,
+			"min_x": 348,
+			"min_y": 222,
+			"pixel_count": 29405
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 161,
+			"has_pixels": true,
+			"local_center_x": 137.0,
+			"max_x": 759,
+			"max_y": 498,
+			"min_x": 599,
+			"min_y": 222,
+			"pixel_count": 29920
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 151,
+			"has_pixels": true,
+			"local_center_x": 132.0,
+			"max_x": 1020,
+			"max_y": 498,
+			"min_x": 870,
+			"min_y": 222,
+			"pixel_count": 29643
+		},
+		{
+			"bounds_height": 277,
+			"bounds_width": 168,
+			"has_pixels": true,
+			"local_center_x": 115.5,
+			"max_x": 1283,
+			"max_y": 498,
+			"min_x": 1116,
+			"min_y": 222,
+			"pixel_count": 30174
+		},
+		{
+			"bounds_height": 275,
+			"bounds_width": 182,
+			"has_pixels": true,
+			"local_center_x": 100.5,
+			"max_x": 1546,
+			"max_y": 498,
+			"min_x": 1365,
+			"min_y": 224,
+			"pixel_count": 30624
+		},
+		{
+			"bounds_height": 275,
+			"bounds_width": 157,
+			"has_pixels": true,
+			"local_center_x": 103.0,
+			"max_x": 1807,
+			"max_y": 498,
+			"min_x": 1651,
+			"min_y": 224,
+			"pixel_count": 29620
+		},
+		{
+			"bounds_height": 272,
+			"bounds_width": 160,
+			"has_pixels": true,
+			"local_center_x": 92.5,
+			"max_x": 2069,
+			"max_y": 496,
+			"min_x": 1910,
+			"min_y": 225,
+			"pixel_count": 30287
+		}
+	],
+	"global_foot_y": 498,
+	"image_height": 724,
+	"image_width": 2172,
+	"max_foot_baseline_drift_px": 2,
+	"max_foot_y": 498,
+	"min_foot_y": 496,
+	"runtime_connected": false,
+	"source": "res://assets/generated/actors/candidates/player_warrior_body_down_idle_candidate_v1.png"
+}

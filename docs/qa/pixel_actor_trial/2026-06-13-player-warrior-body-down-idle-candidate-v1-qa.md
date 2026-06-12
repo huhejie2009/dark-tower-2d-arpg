@@ -32,13 +32,44 @@ assets/generated/actors/candidates/player_warrior_body_down_idle_candidate_v1.pn
 - 像素颗粒仍偏软，部分细节更像缩小厚涂。
 - 披风和腿部边缘需要切格后检查透明边缘是否干净。
 - 需要后续生成带锚线的预览图，检查脚底基线是否稳定。
+- 2026-06-13 切格分析显示脚底基线稳定，但角色在 cell 内的横向中心漂移明显，后续必须做归一化重排。
 
 ## 下一步
 
-1. 对透明候选按 8 等分切格。
-2. 输出每格有效像素边界和脚底基线偏差。
-3. 生成一张带 cell 框和 foot baseline 的 QA 预览图。
-4. 如果锚点稳定，再尝试制作 `player_warrior_body_down_run_v1`。
+1. 使用归一化脚本把 8 帧重新居中到底部锚点。
+2. 输出归一化后的 preview sheet。
+3. 再次检查脚底基线、中心漂移和 idle 呼吸幅度。
+4. 如果归一化后表现稳定，再尝试制作 `player_warrior_body_down_run_v1`。
+
+## 2026-06-13 切格与锚线指标
+
+指标文件：
+
+```text
+docs/qa/pixel_actor_trial/player_warrior_body_down_idle_candidate_v1_metrics.json
+```
+
+锚线预览：
+
+```text
+docs/qa/pixel_actor_trial/player_warrior_body_down_idle_candidate_v1_baseline_preview.png
+```
+
+关键结果：
+
+```text
+frame_count: 8
+cell_width: 271
+global_foot_y: 498
+max_foot_baseline_drift_px: 2
+runtime_connected: false
+approved_for_manifest_switch: false
+```
+
+判断：
+
+- 脚底基线通过初筛。
+- 原始 cell 内横向中心不稳定，需要归一化后才允许进入运行时测试。
 
 ## 资产状态
 
