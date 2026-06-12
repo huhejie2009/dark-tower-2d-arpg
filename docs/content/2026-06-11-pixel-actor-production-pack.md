@@ -149,3 +149,22 @@ docs/qa/pixel_actor_trial/2026-06-13-player-warrior-down-strip-candidate-v1-qa.m
 ```
 
 该候选只进入切格/锚点评估，不接入运行时 manifest。
+
+## 2026-06-13 动作与武器管线修正
+
+正式玩家素材不再使用“idle/run/attack/death 混在同一次生成”的方式。`4dir * 20 = 80` 只作为最终合成表目标，不作为 IMAGE2 一次生成目标。
+
+新的正式生产顺序：
+
+1. 单方向、单动作生成，例如 `player_warrior_body_down_run_v1.png`。
+2. 每个动作单独 QA：帧数、脚底锚点、动作流畅度。
+3. 玩家身体帧不包含烘焙武器。
+4. 武器使用独立 `WeaponSprite` / weapon sheet，通过 `weapon_anchor_tracks` 挂到手上。
+5. 单动作、单方向通过后，再扩展其他方向。
+6. 所有动作和方向通过后，再合成为运行时 spritesheet。
+
+详见：
+
+```text
+docs/content/2026-06-13-layered-weapon-action-separated-pipeline.md
+```

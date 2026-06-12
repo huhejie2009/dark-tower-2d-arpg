@@ -528,6 +528,21 @@ func _apply_default_player_art() -> void:
 		"environment_pairing": "painterly_brutalist_tower",
 		"texture_filter": "nearest",
 		"directional_target": "4dir",
+		"animation_pipeline": "action_separated",
+		"weapon_layer_mode": "external_attach",
+		"body_sprites_must_exclude_weapon": true,
+		"smooth_animation_requirements": {
+			"idle_min_frames": 6,
+			"run_min_frames": 8,
+			"attack_min_frames": 10,
+			"death_min_frames": 8,
+			"target_fps_min": 8,
+			"target_fps_max": 12,
+		},
+		"weapon_anchor_tracks": {
+			"required": true,
+			"tracks": ["weapon_socket_position", "weapon_socket_rotation", "weapon_draw_order"],
+		},
 		"separate_combat_vfx": true,
 		"contact_shadow": {
 			"required": true,
@@ -616,6 +631,10 @@ func _get_default_actor_art_contract_for_test() -> Dictionary:
 		"actor_environment_pairing": str(manifest.get("environment_pairing", "")),
 		"actor_texture_filter": str(manifest.get("texture_filter", "")),
 		"actor_directional_target": str(manifest.get("directional_target", "")),
+		"actor_animation_pipeline": str(manifest.get("animation_pipeline", "")),
+		"weapon_layer_mode": str(manifest.get("weapon_layer_mode", "")),
+		"body_sprites_must_exclude_weapon": bool(manifest.get("body_sprites_must_exclude_weapon", false)),
+		"smooth_animation_requirements": Dictionary(manifest.get("smooth_animation_requirements", {})).duplicate(true),
 	}
 
 func _spawn_wave() -> void:

@@ -26,8 +26,10 @@ var max_health := 120
 var attack_damage := 24
 var basic_skill_id := "warrior_cleave"
 var visual_asset_manifest: Dictionary = {}
+var weapon_visual_manifest: Dictionary = {}
 var actor_visual_root: Node2D
 var actor_sprite: Sprite2D
+var weapon_sprite: Sprite2D
 var actor_animation_name := "idle"
 var actor_animation_frame := 0
 var actor_animation_elapsed := 0.0
@@ -240,6 +242,11 @@ func _create_actor_visual_asset_slot() -> void:
 	actor_sprite.name = "ActorSprite"
 	actor_sprite.visible = false
 	actor_visual_root.add_child(actor_sprite)
+	weapon_sprite = Sprite2D.new()
+	weapon_sprite.name = "WeaponSprite"
+	weapon_sprite.visible = false
+	weapon_sprite.z_index = 3
+	actor_visual_root.add_child(weapon_sprite)
 
 func apply_visual_asset_manifest(manifest: Dictionary) -> void:
 	visual_asset_manifest = manifest.duplicate(true)
@@ -255,6 +262,16 @@ func apply_visual_asset_manifest(manifest: Dictionary) -> void:
 
 func get_visual_asset_manifest() -> Dictionary:
 	return visual_asset_manifest.duplicate(true)
+
+func apply_weapon_visual_manifest(manifest: Dictionary) -> void:
+	weapon_visual_manifest = manifest.duplicate(true)
+	if not is_instance_valid(weapon_sprite):
+		return
+	weapon_sprite.visible = bool(weapon_visual_manifest.get("enabled", false))
+	weapon_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if str(weapon_visual_manifest.get("texture_filter", "nearest")) == "nearest" else CanvasItem.TEXTURE_FILTER_LINEAR
+
+func get_weapon_visual_manifest() -> Dictionary:
+	return weapon_visual_manifest.duplicate(true)
 
 func set_actor_animation(animation_name: String, force_restart: bool = false) -> void:
 	var animations := Dictionary(visual_asset_manifest.get("animations", {}))
@@ -442,6 +459,12 @@ func apply_visual_asset_manifest_for_test(manifest: Dictionary) -> void:
 
 func get_visual_asset_manifest_for_test() -> Dictionary:
 	return get_visual_asset_manifest()
+
+func apply_weapon_visual_manifest_for_test(manifest: Dictionary) -> void:
+	apply_weapon_visual_manifest(manifest)
+
+func get_weapon_visual_manifest_for_test() -> Dictionary:
+	return get_weapon_visual_manifest()
 
 func set_actor_animation_for_test(animation_name: String) -> void:
 	set_actor_animation(animation_name)
