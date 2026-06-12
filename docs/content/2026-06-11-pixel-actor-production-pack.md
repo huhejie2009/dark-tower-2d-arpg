@@ -130,3 +130,22 @@ docs/concepts/pixel_actor_trial/pixel_actor_lineup_preview_v1.png
 ```
 
 该图只用于方向判断，不作为最终游戏资源。
+
+## 2026-06-13 生产策略补充
+
+一次生成完整 4 向 80 帧表容易出现帧数不足和锚点漂移。第一批正式生产改为分阶段：
+
+1. 先生成单方向 20 帧小条。
+2. 通过切格、透明背景、脚底锚点和动作可读性 QA。
+3. 再按同一角色扩展其他方向。
+4. 最后合成为 `4dir * 20 = 80` 帧正式表。
+
+当前玩家下方向候选：
+
+```text
+docs/concepts/pixel_actor_trial/player_warrior_down_pixel_strip_candidate_v1_green.png
+assets/generated/actors/candidates/player_warrior_down_pixel_strip_candidate_v1.png
+docs/qa/pixel_actor_trial/2026-06-13-player-warrior-down-strip-candidate-v1-qa.md
+```
+
+该候选只进入切格/锚点评估，不接入运行时 manifest。
