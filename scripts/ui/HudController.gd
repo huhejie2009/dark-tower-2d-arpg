@@ -6,6 +6,7 @@ const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 var hud_panel: PanelContainer
 var status_label: Label
 var log_label: Label
+var objective_label: Label
 var health_label: Label
 var health_bar: ProgressBar
 var mana_label: Label
@@ -22,33 +23,37 @@ func _ready() -> void:
 	hud_panel = PanelContainer.new()
 	hud_panel.name = "DarkArpgHudPanel"
 	hud_panel.position = Vector2(14, 14)
-	hud_panel.size = Vector2(292, 184)
+	hud_panel.size = Vector2(292, 214)
 	DarkArpgUiThemeScript.style_panel(hud_panel)
 	add_child(hud_panel)
 
 	status_label = _make_label("StatusLabel", Vector2(20, 18), 20, DarkArpgUiThemeScript.COLOR_GOLD)
-	log_label = _make_label("LogLabel", Vector2(20, 54), 15, DarkArpgUiThemeScript.COLOR_BONE)
-	health_label = _make_label("HealthLabel", Vector2(20, 86), 15, DarkArpgUiThemeScript.COLOR_BONE)
-	health_bar = _make_bar("HealthBar", Vector2(88, 90), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_HEALTH)
-	mana_label = _make_label("ManaLabel", Vector2(20, 108), 15, DarkArpgUiThemeScript.COLOR_BONE)
-	mana_bar = _make_bar("ManaBar", Vector2(88, 112), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_MANA)
-	level_label = _make_label("LevelLabel", Vector2(20, 136), 16, DarkArpgUiThemeScript.COLOR_BONE)
+	log_label = _make_label("LogLabel", Vector2(20, 52), 14, DarkArpgUiThemeScript.COLOR_BONE)
+	log_label.size = Vector2(260, 26)
+	objective_label = _make_label("ObjectiveLabel", Vector2(20, 78), 14, DarkArpgUiThemeScript.COLOR_GOLD)
+	objective_label.size = Vector2(260, 36)
+	health_label = _make_label("HealthLabel", Vector2(20, 116), 15, DarkArpgUiThemeScript.COLOR_BONE)
+	health_bar = _make_bar("HealthBar", Vector2(88, 120), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_HEALTH)
+	mana_label = _make_label("ManaLabel", Vector2(20, 138), 15, DarkArpgUiThemeScript.COLOR_BONE)
+	mana_bar = _make_bar("ManaBar", Vector2(88, 142), Vector2(190, 12), DarkArpgUiThemeScript.COLOR_MANA)
+	level_label = _make_label("LevelLabel", Vector2(20, 166), 16, DarkArpgUiThemeScript.COLOR_BONE)
 	experience_bar = ProgressBar.new()
 	experience_bar.name = "ExperienceBar"
-	experience_bar.position = Vector2(20, 164)
+	experience_bar.position = Vector2(20, 194)
 	experience_bar.size = Vector2(260, 14)
 	experience_bar.min_value = 0
 	experience_bar.max_value = 100
 	experience_bar.value = 0
 	experience_bar.show_percentage = false
 	DarkArpgUiThemeScript.style_bar(experience_bar, DarkArpgUiThemeScript.COLOR_XP)
-	skill_point_label = _make_label("SkillPointLabel", Vector2(290, 154), 14, DarkArpgUiThemeScript.COLOR_GOLD)
+	skill_point_label = _make_label("SkillPointLabel", Vector2(236, 164), 14, DarkArpgUiThemeScript.COLOR_GOLD)
 	inventory_label = _make_label("InventoryLabel", Vector2(960, 18), 16, DarkArpgUiThemeScript.COLOR_BONE)
 	loot_notification_label = _make_label("LootNotificationLabel", Vector2(860, 54), 15, DarkArpgUiThemeScript.COLOR_BONE)
 	loot_notification_label.size = Vector2(380, 110)
 	loot_notification_label.visible = false
 	add_child(status_label)
 	add_child(log_label)
+	add_child(objective_label)
 	add_child(health_label)
 	add_child(health_bar)
 	add_child(mana_label)
@@ -68,6 +73,13 @@ func set_status(text: String) -> void:
 func set_log(text: String) -> void:
 	if is_instance_valid(log_label):
 		log_label.text = text
+
+func set_objective(text: String) -> void:
+	if is_instance_valid(objective_label):
+		objective_label.text = text
+
+func get_objective_text_for_test() -> String:
+	return objective_label.text if is_instance_valid(objective_label) else ""
 
 func set_inventory(text: String) -> void:
 	if is_instance_valid(inventory_label):

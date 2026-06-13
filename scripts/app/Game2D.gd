@@ -11,6 +11,7 @@ const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlemen
 const LootNotificationServiceScript := preload("res://scripts/data/LootNotificationService.gd")
 const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
 const FloorRulesScript := preload("res://scripts/rules/FloorRules.gd")
+const RoomObjectiveServiceScript := preload("res://scripts/data/RoomObjectiveService.gd")
 const TowerProgressServiceScript := preload("res://scripts/data/TowerProgressService.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
@@ -68,6 +69,7 @@ var safe_spawn_directions: Array[Vector2] = [
 ]
 var current_floor: int = 1
 var current_floor_template: Dictionary = {}
+var room_objective_state: Dictionary = {}
 var enemies_alive: int = 0
 var kill_index: int = 0
 var floor_kill_count: int = 0
@@ -642,6 +644,7 @@ func _spawn_wave() -> void:
 
 func _spawn_floor_template(template: Dictionary) -> void:
 	current_floor_template = template.duplicate(true)
+	room_objective_state = RoomObjectiveServiceScript.build_state(current_floor_template)
 	_clear_active_enemies()
 	enemies_alive = 0
 	floor_kill_count = 0
@@ -673,7 +676,9 @@ func _on_enemy_died(enemy: Node) -> void:
 	enemies_alive = maxi(0, enemies_alive - 1)
 	kill_index += 1
 	floor_kill_count += 1
-	var xp_result := _award_enemy_experience(_build_enemy_experience_source(enemy))
+	var defeated_enemy_data := _build_enemy_experience_source(enemy)
+	room_objective_state = RoomObjectiveServiceScript.record_enemy_defeated(room_objective_state, defeated_enemy_data)
+	var xp_result := _award_enemy_experience(defeated_enemy_data)
 	if enemy is Node2D:
 		_spawn_drop((enemy as Node2D).global_position)
 	if enemies_alive <= 0:
@@ -1210,6 +1215,9 @@ func _get_p2_loot_loop_metrics_for_test() -> Dictionary:
 func _get_p2_loot_loop_report_for_test() -> Dictionary:
 	return P2LootLoopMetricsRecorderScript.build_acceptance_report(p2_loot_loop_metrics)
 
+func get_room_objective_state_for_test() -> Dictionary:
+	return room_objective_state.duplicate(true)
+
 func _set_p2_loot_loop_elapsed_seconds_for_test(seconds: float) -> void:
 	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_elapsed_seconds(p2_loot_loop_metrics, seconds)
 
@@ -1227,6 +1235,8 @@ func _update_hud(message: String) -> void:
 		return
 	hud.set_status("Floor %d | Enemies %d" % [current_floor, enemies_alive])
 	hud.set_log(message)
+	if hud.has_method("set_objective"):
+		hud.set_objective(str(room_objective_state.get("hud_text", "")))
 	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
 	hud.set_inventory(str(capacity.get("summary_text", "Bag 0/40")))
 	if hud.has_method("set_player_vitals"):
