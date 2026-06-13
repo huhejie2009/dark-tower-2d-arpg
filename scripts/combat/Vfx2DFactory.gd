@@ -48,6 +48,52 @@ static func spawn_hit(parent: Node, position: Vector2) -> void:
 		sparks.add_child(spark)
 	_fade(parent, root, 0.18)
 
+static func spawn_divine_pressure_warning(parent: Node, position: Vector2, radius: float, warning_seconds: float) -> Node2D:
+	var root := Node2D.new()
+	root.name = "DivinePressureWarning"
+	root.set_meta("vfx_role", "enemy_pressure_warning")
+	parent.add_child(root)
+	root.global_position = position
+	var ring := Line2D.new()
+	ring.name = "WarningRing"
+	ring.width = 5.0
+	ring.closed = true
+	ring.default_color = Color(0.45, 0.70, 1.0, 0.72)
+	for i in range(40):
+		var angle := TAU * float(i) / 40.0
+		ring.add_point(Vector2(cos(angle), sin(angle)) * radius)
+	root.add_child(ring)
+	var fill := Polygon2D.new()
+	fill.name = "WarningFill"
+	var points := PackedVector2Array()
+	for i in range(40):
+		var angle := TAU * float(i) / 40.0
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	fill.polygon = points
+	fill.color = Color(0.12, 0.28, 0.58, 0.18)
+	root.add_child(fill)
+	var tween := parent.create_tween()
+	tween.tween_property(root, "modulate:a", 0.42, warning_seconds * 0.5)
+	tween.tween_property(root, "modulate:a", 1.0, warning_seconds * 0.5)
+	return root
+
+static func spawn_divine_pressure_impact(parent: Node, position: Vector2, radius: float) -> void:
+	var root := Node2D.new()
+	root.name = "DivinePressureImpact"
+	root.set_meta("vfx_role", "enemy_pressure_impact")
+	parent.add_child(root)
+	root.global_position = position
+	var ring := Line2D.new()
+	ring.name = "ImpactRing"
+	ring.width = 7.0
+	ring.closed = true
+	ring.default_color = Color(0.72, 0.92, 1.0, 0.9)
+	for i in range(40):
+		var angle := TAU * float(i) / 40.0
+		ring.add_point(Vector2(cos(angle), sin(angle)) * radius)
+	root.add_child(ring)
+	_fade(parent, root, 0.22)
+
 static func _fade(parent: Node, root: Node2D, duration: float) -> void:
 	var tween := parent.create_tween()
 	tween.set_parallel(true)

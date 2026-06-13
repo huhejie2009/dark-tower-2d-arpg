@@ -3,11 +3,13 @@ extends Node2D
 const Player2DScript := preload("res://scripts/combat/Player2D.gd")
 const Enemy2DScript := preload("res://scripts/combat/Enemy2D.gd")
 const DropItem2DScript := preload("res://scripts/combat/DropItem2D.gd")
+const Vfx2DFactoryScript := preload("res://scripts/combat/Vfx2DFactory.gd")
 const HudControllerScript := preload("res://scripts/ui/HudController.gd")
 const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
 const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.gd")
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
 const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlementService.gd")
+const DivinePressureServiceScript := preload("res://scripts/data/DivinePressureService.gd")
 const LootNotificationServiceScript := preload("res://scripts/data/LootNotificationService.gd")
 const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
 const FloorRulesScript := preload("res://scripts/rules/FloorRules.gd")
@@ -86,6 +88,8 @@ var death_settlement_active: bool = false
 var death_presentation_pending: bool = false
 var death_presentation_delay_override := -1.0
 var p2_loot_loop_metrics: Dictionary = P2LootLoopMetricsRecorderScript.create_metrics()
+var divine_pressure_state: Dictionary = {"active": false}
+var divine_pressure_warning_node: Node2D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -680,7 +684,10 @@ func _on_enemy_died(enemy: Node) -> void:
 	room_objective_state = RoomObjectiveServiceScript.record_enemy_defeated(room_objective_state, defeated_enemy_data)
 	var xp_result := _award_enemy_experience(defeated_enemy_data)
 	if enemy is Node2D:
-		_spawn_drop((enemy as Node2D).global_position)
+		var enemy_position := (enemy as Node2D).global_position
+		_spawn_drop(enemy_position)
+		if DivinePressureServiceScript.should_trigger_after_enemy(defeated_enemy_data, bool(divine_pressure_state.get("active", false))):
+			_trigger_divine_pressure(enemy_position, "elite_defeated")
 	if enemies_alive <= 0:
 		_on_floor_cleared()
 	else:
@@ -1217,6 +1224,40 @@ func _get_p2_loot_loop_report_for_test() -> Dictionary:
 
 func get_room_objective_state_for_test() -> Dictionary:
 	return room_objective_state.duplicate(true)
+
+func _trigger_divine_pressure(position: Vector2, trigger: String) -> void:
+	if not is_instance_valid(arena_root) or bool(divine_pressure_state.get("active", false)):
+		return
+	var config := DivinePressureServiceScript.build_event_config(trigger, current_floor)
+	divine_pressure_state = config.duplicate(true)
+	divine_pressure_state["active"] = true
+	divine_pressure_state["position"] = position
+	divine_pressure_warning_node = Vfx2DFactoryScript.spawn_divine_pressure_warning(
+		arena_root,
+		position,
+		float(config.get("radius", 96.0)),
+		float(config.get("warning_seconds", 0.6))
+	)
+	get_tree().create_timer(float(config.get("warning_seconds", 0.6))).timeout.connect(_resolve_divine_pressure)
+
+func _resolve_divine_pressure() -> void:
+	if not bool(divine_pressure_state.get("active", false)):
+		return
+	var position: Vector2 = divine_pressure_state.get("position", Vector2.ZERO)
+	var radius := float(divine_pressure_state.get("radius", 96.0))
+	if is_instance_valid(arena_root):
+		Vfx2DFactoryScript.spawn_divine_pressure_impact(arena_root, position, radius)
+	if is_instance_valid(divine_pressure_warning_node):
+		divine_pressure_warning_node.queue_free()
+	if is_instance_valid(player) and player.global_position.distance_to(position) <= radius and player.has_method("take_damage"):
+		player.take_damage(int(divine_pressure_state.get("damage", 0)), self)
+	divine_pressure_state["active"] = false
+
+func trigger_divine_pressure_for_test(position: Vector2, trigger: String = "test") -> void:
+	_trigger_divine_pressure(position, trigger)
+
+func get_divine_pressure_state_for_test() -> Dictionary:
+	return divine_pressure_state.duplicate(true)
 
 func _set_p2_loot_loop_elapsed_seconds_for_test(seconds: float) -> void:
 	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_elapsed_seconds(p2_loot_loop_metrics, seconds)
