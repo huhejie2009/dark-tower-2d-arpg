@@ -586,6 +586,19 @@ func get_actor_presentation_state_for_test() -> Dictionary:
 		"footstep_offset_x": footstep_offset_x,
 	}
 
+func get_attack_readability_snapshot_for_test() -> Dictionary:
+	var manifest_animations: Dictionary = Dictionary(visual_asset_manifest.get("animations", {}))
+	return {
+		"minimum_attack_warning_seconds": 0.1,
+		"current_attack_windup_remaining": attack_windup_remaining,
+		"actor_animation_name": actor_animation_name,
+		"has_attack_arc_node": is_instance_valid(attack_arc),
+		"separate_hit_vfx": true,
+		"required_animation_states": ["idle", "run", "attack", "death"],
+		"manifest_has_attack": manifest_animations.has("attack"),
+		"manifest_has_death": manifest_animations.has("death"),
+	}
+
 func update_actor_animation_state_for_test(movement: Vector2, attacking: bool) -> void:
 	update_actor_animation_state(movement, attacking)
 
