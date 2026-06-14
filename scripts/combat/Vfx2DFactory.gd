@@ -48,10 +48,11 @@ static func spawn_hit(parent: Node, position: Vector2) -> void:
 		sparks.add_child(spark)
 	_fade(parent, root, 0.18)
 
-static func spawn_divine_pressure_warning(parent: Node, position: Vector2, radius: float, warning_seconds: float) -> Node2D:
+static func spawn_divine_pressure_warning(parent: Node, position: Vector2, radius: float, warning_seconds: float, manifest: Dictionary = {}) -> Node2D:
 	var root := Node2D.new()
 	root.name = "DivinePressureWarning"
 	root.set_meta("vfx_role", "enemy_pressure_warning")
+	_apply_vfx_manifest_meta(root, manifest)
 	parent.add_child(root)
 	root.global_position = position
 	var ring := Line2D.new()
@@ -77,10 +78,11 @@ static func spawn_divine_pressure_warning(parent: Node, position: Vector2, radiu
 	tween.tween_property(root, "modulate:a", 1.0, warning_seconds * 0.5)
 	return root
 
-static func spawn_divine_pressure_impact(parent: Node, position: Vector2, radius: float) -> void:
+static func spawn_divine_pressure_impact(parent: Node, position: Vector2, radius: float, manifest: Dictionary = {}) -> void:
 	var root := Node2D.new()
 	root.name = "DivinePressureImpact"
 	root.set_meta("vfx_role", "enemy_pressure_impact")
+	_apply_vfx_manifest_meta(root, manifest)
 	parent.add_child(root)
 	root.global_position = position
 	var ring := Line2D.new()
@@ -93,6 +95,13 @@ static func spawn_divine_pressure_impact(parent: Node, position: Vector2, radius
 		ring.add_point(Vector2(cos(angle), sin(angle)) * radius)
 	root.add_child(ring)
 	_fade(parent, root, 0.22)
+
+static func _apply_vfx_manifest_meta(root: Node2D, manifest: Dictionary) -> void:
+	if manifest.is_empty():
+		return
+	root.set_meta("vfx_manifest", manifest.duplicate(true))
+	root.set_meta("fallback_programmatic", bool(manifest.get("fallback_programmatic", false)))
+	root.set_meta("vfx_interface_id", str(manifest.get("interface_id", "")))
 
 static func _fade(parent: Node, root: Node2D, duration: float) -> void:
 	var tween := parent.create_tween()

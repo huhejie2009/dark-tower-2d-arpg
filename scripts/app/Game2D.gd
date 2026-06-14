@@ -1232,11 +1232,13 @@ func _trigger_divine_pressure(position: Vector2, trigger: String) -> void:
 	divine_pressure_state = config.duplicate(true)
 	divine_pressure_state["active"] = true
 	divine_pressure_state["position"] = position
+	var vfx_manifest: Dictionary = Dictionary(config.get("vfx_manifest", {}))
 	divine_pressure_warning_node = Vfx2DFactoryScript.spawn_divine_pressure_warning(
 		arena_root,
 		position,
 		float(config.get("radius", 96.0)),
-		float(config.get("warning_seconds", 0.6))
+		float(config.get("warning_seconds", 0.6)),
+		vfx_manifest
 	)
 	get_tree().create_timer(float(config.get("warning_seconds", 0.6))).timeout.connect(_resolve_divine_pressure)
 
@@ -1245,8 +1247,9 @@ func _resolve_divine_pressure() -> void:
 		return
 	var position: Vector2 = divine_pressure_state.get("position", Vector2.ZERO)
 	var radius := float(divine_pressure_state.get("radius", 96.0))
+	var vfx_manifest: Dictionary = Dictionary(divine_pressure_state.get("vfx_manifest", {}))
 	if is_instance_valid(arena_root):
-		Vfx2DFactoryScript.spawn_divine_pressure_impact(arena_root, position, radius)
+		Vfx2DFactoryScript.spawn_divine_pressure_impact(arena_root, position, radius, vfx_manifest)
 	if is_instance_valid(divine_pressure_warning_node):
 		divine_pressure_warning_node.queue_free()
 	if is_instance_valid(player) and player.global_position.distance_to(position) <= radius and player.has_method("take_damage"):

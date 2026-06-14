@@ -12,6 +12,20 @@ static func build_event_config(trigger: String, floor: int) -> Dictionary:
 		"damage": 10 + int(float(safe_floor) * 1.5),
 		"color_role": "enemy_pressure_warning",
 		"blocks_portal": false,
+		"vfx_manifest": build_vfx_manifest(),
+	}
+
+static func build_vfx_manifest() -> Dictionary:
+	return {
+		"interface_id": "divine_pressure_vfx",
+		"interface_version": 1,
+		"asset_family": "cold_megastructure_divine_pressure",
+		"warning_role": "enemy_pressure_warning",
+		"impact_role": "enemy_pressure_impact",
+		"warning_scene_path": "",
+		"impact_scene_path": "",
+		"fallback_programmatic": true,
+		"authored_asset_required_before_art_lock": true,
 	}
 
 static func should_trigger_after_enemy(enemy_data: Dictionary, event_active: bool) -> bool:
