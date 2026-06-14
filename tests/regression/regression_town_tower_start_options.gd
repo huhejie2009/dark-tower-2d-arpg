@@ -24,7 +24,7 @@ func _run() -> void:
 		_expect(fresh_button != null, "town should keep the main enter tower button")
 		_expect(best_button != null, "town should expose best floor challenge button")
 		if fresh_button != null:
-			_expect(str(fresh_button.text).contains("Floor 1"), "main enter tower button should start a fresh floor 1 run")
+			_expect(str(fresh_button.text).contains("第 1 层"), "main enter tower button should start a fresh floor 1 run")
 		if best_button != null:
 			_expect(str(best_button.text).contains("37"), "best floor button should show saved best floor")
 		town.queue_free()

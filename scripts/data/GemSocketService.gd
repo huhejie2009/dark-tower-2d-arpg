@@ -9,6 +9,36 @@ const GEM_DEFS := {
 	"split_gem": {"name": "分裂宝石", "stats": {"ice_lance_split": 1}, "mechanic": true},
 }
 
+static func get_gem_definition(gem_id: String) -> Dictionary:
+	return Dictionary(GEM_DEFS.get(gem_id, {})).duplicate(true)
+
+static func get_gem_name(gem_id: String) -> String:
+	return str(get_gem_definition(gem_id).get("name", gem_id))
+
+static func choose_drop_gem_id(base_class: String, floor: int, kill_index: int) -> String:
+	var safe_floor := maxi(1, floor)
+	var safe_kill := maxi(1, kill_index)
+	if base_class == "ranger":
+		if safe_floor >= 7 and safe_kill % 21 == 0:
+			return "split_gem"
+		if safe_floor >= 4 and safe_kill % 14 == 0:
+			return "pierce_gem"
+		var ranger_pool: Array[String] = ["frost_gem", "precision_gem", "haste_gem"]
+		return ranger_pool[int((safe_kill / 7) - 1) % ranger_pool.size()]
+	var generic_pool: Array[String] = ["precision_gem", "haste_gem"]
+	return generic_pool[int((safe_kill / 7) - 1) % generic_pool.size()]
+
+static func build_drop_payload(base_class: String, floor: int, kill_index: int) -> Dictionary:
+	var gem_id := choose_drop_gem_id(base_class, floor, kill_index)
+	var gem_def := get_gem_definition(gem_id)
+	return {
+		"id": gem_id,
+		"gem_id": gem_id,
+		"name": str(gem_def.get("name", gem_id)),
+		"type": "gem",
+		"amount": 1,
+	}
+
 static func get_socket_limit(slot: String) -> int:
 	match slot:
 		"weapon", "armor":

@@ -12,8 +12,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var inventory := {}
-	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "gold", "name": "Gold", "type": "currency", "amount": 120})
-	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "crystal_shard", "name": "Crystal", "type": "material", "amount": 14})
+	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "gold", "name": "金币", "type": "currency", "amount": 120})
+	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "crystal_shard", "name": "水晶", "type": "material", "amount": 14})
 	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("sword_a"))
 	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("sword_b"))
 
@@ -27,7 +27,7 @@ func _run() -> void:
 		var capacity: Dictionary = Dictionary(inventory_service.call("build_capacity_summary", inventory))
 		_expect(int(capacity.get("used_slots", 0)) == 4, "capacity summary should include used slots")
 		_expect(int(capacity.get("capacity", 0)) == 40, "capacity summary should expose default 40 slot cap")
-		_expect(str(capacity.get("summary_text", "")).contains("Bag 4/40"), "capacity summary should produce compact UI text")
+		_expect(str(capacity.get("summary_text", "")).contains("背包 4/40"), "capacity summary should produce compact UI text")
 		_expect(not bool(capacity.get("pressure", true)), "4/40 should not be bag pressure")
 
 	var player := PlayerDataServiceScript.build_starter_player("slot_1", "Capacity", "warrior")
@@ -44,7 +44,7 @@ func _run() -> void:
 	_expect(int(bag_item.get("capacity", 0)) == 40, "bag recommendation should expose capacity")
 
 	var summary: Dictionary = TownPrepSummaryServiceScript.build_summary(player)
-	_expect(str(summary.get("resource_text", "")).contains("Bag 32/40"), "town summary should show bag capacity instead of raw item count")
+	_expect(str(summary.get("resource_text", "")).contains("背包 32/40"), "town summary should show bag capacity instead of raw item count")
 	_expect(Dictionary(summary.get("inventory_capacity", {})).has("pressure_ratio"), "town summary should expose capacity payload for future UI")
 	_finish()
 

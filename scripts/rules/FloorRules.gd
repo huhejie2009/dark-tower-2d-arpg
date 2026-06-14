@@ -3,7 +3,7 @@ class_name FloorRules
 
 const ENEMY_TYPES := {
 	"rot_melee": {
-		"name": "Rot Melee",
+		"name": "腐化近战兵",
 		"max_health": 58,
 		"move_speed": 112.0,
 		"attack_damage": 9,
@@ -13,7 +13,7 @@ const ENEMY_TYPES := {
 		"color": Color(0.72, 0.18, 0.14, 1.0),
 	},
 	"shadow_archer": {
-		"name": "Shadow Archer",
+		"name": "暗影弓手",
 		"max_health": 42,
 		"move_speed": 92.0,
 		"attack_damage": 7,
@@ -24,7 +24,7 @@ const ENEMY_TYPES := {
 		"color": Color(0.28, 0.28, 0.72, 1.0),
 	},
 	"tower_guardian": {
-		"name": "Tower Guardian",
+		"name": "塔卫",
 		"max_health": 104,
 		"move_speed": 68.0,
 		"attack_damage": 14,
@@ -34,7 +34,7 @@ const ENEMY_TYPES := {
 		"color": Color(0.58, 0.42, 0.22, 1.0),
 	},
 	"tower_gatekeeper": {
-		"name": "Tower Gatekeeper",
+		"name": "守门者",
 		"max_health": 190,
 		"move_speed": 64.0,
 		"attack_damage": 18,

@@ -25,7 +25,7 @@ const STARTER_EQUIPMENT := {
 		"affixes": {"attack_damage": 6, "mana": 15},
 	},
 	"starter_acolyte_wand": {
-		"name": "骨烛短杖",
+		"name": "骨烬短杖",
 		"slot": "weapon",
 		"equipment_pool": "acolyte",
 		"equipment_type": "wand",
@@ -97,7 +97,7 @@ static func build_boss_clear_reward(floor: int, base_class: String) -> Dictionar
 	return {
 		"instance_id": item_id,
 		"template_id": "boss_clear_reward",
-		"name": "Gatekeeper Trophy %d" % safe_floor,
+		"name": "守门者战利品 %d" % safe_floor,
 		"slot": "weapon",
 		"equipment_pool": pool,
 		"equipment_type": "boss_trophy",

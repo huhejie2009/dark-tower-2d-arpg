@@ -31,7 +31,7 @@ func _build_ui() -> void:
 	add_child(background)
 
 	var title := Label.new()
-	title.text = "Tower Approach"
+	title.text = "暗塔入口"
 	title.position = Vector2(460, 52)
 	DarkArpgUiThemeScript.style_title(title, 34)
 	add_child(title)
@@ -49,7 +49,7 @@ func _build_ui() -> void:
 	var enter := Button.new()
 	enter.name = "EnterTowerButton"
 	var start_options := TowerRunStartServiceScript.build_start_options(player_data)
-	enter.text = str(start_options.get("fresh_label", "Enter Tower: Floor 1"))
+	enter.text = str(start_options.get("fresh_label", "进入暗塔：第 1 层"))
 	enter.position = Vector2(500, 500)
 	enter.size = Vector2(280, 54)
 	DarkArpgUiThemeScript.style_button(enter, true)
@@ -58,7 +58,7 @@ func _build_ui() -> void:
 
 	var best_floor := Button.new()
 	best_floor.name = "EnterBestFloorButton"
-	best_floor.text = str(start_options.get("best_label", "Challenge Best Floor"))
+	best_floor.text = str(start_options.get("best_label", "挑战最高层"))
 	best_floor.position = Vector2(500, 562)
 	best_floor.size = Vector2(280, 44)
 	DarkArpgUiThemeScript.style_button(best_floor)
@@ -67,7 +67,7 @@ func _build_ui() -> void:
 
 	var inventory := Button.new()
 	inventory.name = "OpenInventoryButton"
-	inventory.text = "Inventory / Equipment"
+	inventory.text = "背包 / 装备"
 	inventory.position = Vector2(500, 618)
 	inventory.size = Vector2(280, 48)
 	DarkArpgUiThemeScript.style_button(inventory)
@@ -76,7 +76,7 @@ func _build_ui() -> void:
 
 	var menu := Button.new()
 	menu.name = "ReturnMainMenuButton"
-	menu.text = "Main Menu"
+	menu.text = "主菜单"
 	menu.position = Vector2(500, 676)
 	menu.size = Vector2(280, 48)
 	DarkArpgUiThemeScript.style_button(menu)
@@ -97,7 +97,7 @@ func _create_prep_panel() -> void:
 	panel.add_child(box)
 
 	var panel_title := Label.new()
-	panel_title.text = "Preparation"
+	panel_title.text = "出发准备"
 	DarkArpgUiThemeScript.style_title(panel_title, 20)
 	box.add_child(panel_title)
 
@@ -117,7 +117,7 @@ func _create_prep_panel() -> void:
 	box.add_child(prep_recommendations)
 	prep_action_button = Button.new()
 	prep_action_button.name = "TownPrepActionButton"
-	prep_action_button.text = "Open Prep"
+	prep_action_button.text = "打开准备"
 	prep_action_button.custom_minimum_size = Vector2(220, 34)
 	DarkArpgUiThemeScript.style_button(prep_action_button, true)
 	prep_action_button.pressed.connect(_on_prep_action_pressed)
@@ -194,8 +194,8 @@ func _on_player_data_changed(updated: Dictionary) -> void:
 func _update_summary() -> void:
 	var prep := TownPrepSummaryServiceScript.build_summary(player_data)
 	if is_instance_valid(summary):
-		summary.text = "%s | Best Floor %d" % [
-		str(player_data.get("character_name", "Hero")),
+		summary.text = "%s | 最高层 %d" % [
+		str(player_data.get("character_name", "英雄")),
 		int(player_data.get("highest_floor", 1)),
 	]
 	if is_instance_valid(character_summary):
@@ -214,4 +214,4 @@ func _update_summary() -> void:
 		var recommendations := Dictionary(prep.get("recommendations", {}))
 		var has_action := bool(recommendations.get("has_action", false))
 		prep_action_button.disabled = not has_action
-		prep_action_button.text = str(recommendations.get("primary_button_text", "Ready"))
+		prep_action_button.text = str(recommendations.get("primary_button_text", "准备完毕"))

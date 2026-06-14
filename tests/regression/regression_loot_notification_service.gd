@@ -25,7 +25,7 @@ func _run() -> void:
 			"affixes": {"attack_damage": 28},
 		},
 	}
-	var material_payload := {"id": "crystal_shard", "name": "Crystal Shard", "type": "material", "amount": 2}
+	var material_payload := {"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 2}
 	var boss_payload := better_payload.duplicate(true)
 
 	var equipment_note: Dictionary = LootNotificationServiceScript.build_pickup_notification(player, better_payload)

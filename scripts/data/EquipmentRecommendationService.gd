@@ -57,16 +57,16 @@ static func _build_rank(score_delta: int, upgrade: bool) -> String:
 
 static func _build_recommendation_text(score_delta: int, upgrade: bool) -> String:
 	if upgrade:
-		return "+%d upgrade" % score_delta
+		return "+%d 提升" % score_delta
 	if score_delta < 0:
-		return "%d below equipped" % score_delta
-	return "sidegrade"
+		return "比已装备低 %d" % abs(score_delta)
+	return "平替"
 
 static func _source_label(source: String) -> String:
 	match source:
 		"boss":
-			return "Boss reward"
+			return "Boss 奖励"
 		"elite":
-			return "Elite drop"
+			return "精英掉落"
 		_:
-			return "Drop"
+			return "掉落"

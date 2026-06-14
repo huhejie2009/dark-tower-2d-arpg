@@ -15,7 +15,7 @@ func _run() -> void:
 	var options: Dictionary = TowerRunStartServiceScript.build_start_options(player)
 	_expect(int(options.get("fresh_floor", 0)) == 1, "fresh run should start from floor 1")
 	_expect(int(options.get("best_floor", 0)) == 42, "best run should expose saved best floor")
-	_expect(str(options.get("fresh_label", "")).contains("Floor 1"), "fresh label should be readable")
+	_expect(str(options.get("fresh_label", "")).contains("第 1 层"), "fresh label should be readable")
 	_expect(str(options.get("best_label", "")).contains("42"), "best label should include best floor")
 
 	TowerRunStartServiceScript.request_start_floor(42)

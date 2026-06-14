@@ -32,8 +32,8 @@ func _run() -> void:
 	var reasons: Array = Array(summary.get("reason_lines", []))
 	_expect(reasons.size() >= 1, "compare summary should provide at least one reason")
 	_expect(reasons.size() <= 3, "compare summary should cap reasons for readable UI")
-	_expect(_contains_reason(reasons, "Score"), "reason_lines should explain score delta")
-	_expect(_contains_reason(reasons, "attack_damage") or _contains_reason(reasons, "critical_chance"), "reason_lines should explain important stat delta")
+	_expect(_contains_reason(reasons, "评分"), "reason_lines should explain score delta")
+	_expect(_contains_reason(reasons, "伤害") or _contains_reason(reasons, "暴击"), "reason_lines should explain important stat delta")
 	if not reasons.is_empty():
 		_expect(str(summary.get("primary_reason", "")) == str(reasons[0]), "primary_reason should mirror first reason")
 		_expect(str(summary.get("compact_text", "")).contains(str(reasons[0])), "compact text should include the primary reason")

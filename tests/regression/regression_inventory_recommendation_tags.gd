@@ -44,23 +44,23 @@ func _run() -> void:
 		var recommendation: Dictionary = Dictionary(window.call("get_item_recommendation_for_test", "boss_rare_weapon"))
 		_expect(bool(recommendation.get("upgrade", false)), "boss weapon should be recommended as an upgrade")
 		_expect(int(recommendation.get("score_delta", 0)) > 0, "recommendation should expose positive score delta")
-		_expect(str(recommendation.get("source_label", "")) == "Boss reward", "recommendation should expose readable boss source")
+		_expect(str(recommendation.get("source_label", "")) == "Boss 奖励", "recommendation should expose readable boss source")
 		_expect(str(recommendation.get("quality_tag", "")) == "boss_floor_10", "recommendation should preserve loot quality tag")
 
 	var visual_meta: Dictionary = Dictionary(window.call("get_item_visual_metadata_for_test", "boss_rare_weapon"))
 	_expect(str(visual_meta.get("recommendation_rank", "")) in ["minor", "strong", "major"], "visual metadata should expose recommendation rank")
 	_expect(int(visual_meta.get("score_delta", 0)) > 0, "visual metadata should expose score delta")
-	_expect(str(visual_meta.get("source_label", "")) == "Boss reward", "visual metadata should expose source label")
+	_expect(str(visual_meta.get("source_label", "")) == "Boss 奖励", "visual metadata should expose source label")
 	_expect(str(visual_meta.get("quality_tag", "")) == "boss_floor_10", "visual metadata should expose quality tag")
 	_expect(str(visual_meta.get("badge", "")) == "+", "recommended upgrade should keep upgrade badge")
 
 	window.call("select_item", "boss_rare_weapon")
 	await process_frame
 	var detail := str(window.find_child("ItemDetail", true, false).get("text"))
-	_expect(detail.contains("Source: Boss reward"), "detail should include readable source")
-	_expect(detail.contains("Quality: boss_floor_10"), "detail should include quality tag")
-	_expect(detail.contains("Recommendation:"), "detail should include recommendation text")
-	_expect(detail.contains("Score Delta: +"), "detail should include signed score delta")
+	_expect(detail.contains("来源：Boss 奖励"), "detail should include readable source")
+	_expect(detail.contains("品质：boss_floor_10"), "detail should include quality tag")
+	_expect(detail.contains("推荐："), "detail should include recommendation text")
+	_expect(detail.contains("评分差：+"), "detail should include signed score delta")
 
 	window.queue_free()
 	await process_frame

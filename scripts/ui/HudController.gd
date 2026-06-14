@@ -79,12 +79,12 @@ func set_player_vitals(health: int, max_health: int, mana: int, max_mana: int) -
 	var safe_max_mana := maxi(1, max_mana)
 	var safe_mana := clampi(mana, 0, safe_max_mana)
 	if is_instance_valid(health_label):
-		health_label.text = "HP %d/%d" % [safe_health, safe_max_health]
+		health_label.text = "生命 %d/%d" % [safe_health, safe_max_health]
 	if is_instance_valid(health_bar):
 		health_bar.max_value = safe_max_health
 		health_bar.value = safe_health
 	if is_instance_valid(mana_label):
-		mana_label.text = "MP %d/%d" % [safe_mana, safe_max_mana]
+		mana_label.text = "法力 %d/%d" % [safe_mana, safe_max_mana]
 	if is_instance_valid(mana_bar):
 		mana_bar.max_value = safe_max_mana
 		mana_bar.value = safe_mana
@@ -94,31 +94,46 @@ func set_player_progress(level: int, current_exp: int, exp_to_next_level: int, s
 	var safe_next := maxi(1, exp_to_next_level)
 	var safe_current := clampi(current_exp, 0, safe_next)
 	if is_instance_valid(level_label):
-		level_label.text = "Lv.%d  XP %d/%d" % [safe_level, safe_current, safe_next]
+		level_label.text = "等级%d  经验 %d/%d" % [safe_level, safe_current, safe_next]
 	if is_instance_valid(experience_bar):
 		experience_bar.max_value = safe_next
 		experience_bar.value = safe_current
 	if is_instance_valid(skill_point_label):
-		skill_point_label.text = "SP %d" % maxi(0, skill_points)
+		skill_point_label.text = "天赋点 %d" % maxi(0, skill_points)
 
 func show_loot_notification(notification: Dictionary) -> void:
 	last_loot_notification = notification.duplicate(true)
 	if not is_instance_valid(loot_notification_label):
 		return
-	var headline := str(notification.get("headline", "Loot acquired"))
-	var item_name := str(notification.get("item_name", "Item"))
-	var rarity := str(notification.get("rarity", "common")).capitalize()
+	var headline := str(notification.get("headline", "获得战利品"))
+	var item_name := str(notification.get("item_name", "物品"))
+	var rarity := _rarity_label(str(notification.get("rarity", "common")))
 	var score := int(notification.get("score", 0))
 	var short_tag := str(notification.get("short_tag", notification.get("source_label", "")))
 	var recommendation := str(notification.get("recommendation_text", ""))
 	var upgrade_text := "  +" if bool(notification.get("upgrade", false)) else ""
-	var score_text := "\nScore %d" % score if score > 0 else ""
+	var score_text := "\n评分 %d" % score if score > 0 else ""
 	var tag_text := "%s\n" % short_tag if short_tag != "" else ""
 	var recommendation_text := "\n%s" % recommendation if recommendation != "" and not short_tag.contains(recommendation) else ""
 	loot_notification_label.text = "%s%s\n%s%s\n%s%s%s" % [headline, upgrade_text, tag_text, item_name, rarity, score_text, recommendation_text]
 	loot_notification_label.visible = true
 	var accent := Color.html(str(notification.get("accent_color", "#9ca3af")))
 	loot_notification_label.add_theme_color_override("font_color", accent)
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"magic":
+			return "魔法"
+		"rare":
+			return "稀有"
+		"legendary":
+			return "传奇"
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		_:
+			return "普通"
 
 func get_last_loot_notification_for_test() -> Dictionary:
 	return last_loot_notification.duplicate(true)

@@ -28,8 +28,8 @@ func _run() -> void:
 	_expect(window.has_method("describe_item_for_test"), "window should expose describe_item_for_test")
 	if window.has_method("describe_item_for_test"):
 		var text := str(window.call("describe_item_for_test", "better_weapon"))
-		_expect(text.contains("Compare"), "equipment detail should include compare section")
-		_expect(text.contains("attack_damage") and text.contains("+15"), "compare should show attack damage delta")
+		_expect(text.contains("对比"), "equipment detail should include compare section")
+		_expect(text.contains("伤害") and text.contains("+15"), "compare should show attack damage delta")
 
 	window.queue_free()
 	await process_frame

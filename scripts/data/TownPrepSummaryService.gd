@@ -17,29 +17,29 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 	var gear_score := _get_total_equipment_score(player_data)
 	var gold := _get_inventory_amount(inventory, "gold")
 	var crystal := _get_inventory_amount(inventory, "crystal_shard")
-	var character_text := "%s | %s | Lv.%d" % [
-		str(player_data.get("character_name", "Hero")),
+	var character_text := "%s | %s | 等级%d" % [
+		str(player_data.get("character_name", "英雄")),
 		ClassRulesScript.get_class_name(str(player_data.get("base_class", "warrior"))),
 		int(player_data.get("player_level", 1)),
 	]
-	var progress_text := "Best Floor %d | Gear Score %d" % [
+	var progress_text := "最高层 %d | 装备评分 %d" % [
 		int(player_data.get("highest_floor", 1)),
 		gear_score,
 	]
-	var resource_text := "Gold %d | Crystal %d | %s" % [
+	var resource_text := "金币 %d | 水晶 %d | %s" % [
 		gold,
 		crystal,
-		str(inventory_capacity.get("summary_text", "Bag 0/40")),
+		str(inventory_capacity.get("summary_text", "背包 0/40")),
 	]
-	var growth_text := "SP %d | Damage %d | HP %d | MP %d" % [
+	var growth_text := "天赋点 %d | 伤害 %d | 生命 %d | 法力 %d" % [
 		int(player_data.get("skill_points", 0)),
 		int(stats.get("attack_damage", 0)),
 		int(player_data.get("max_health", stats.get("max_health", 0))),
 		int(player_data.get("max_mana", stats.get("max_mana", 0))),
 	]
 	var start_text := "%s\n%s" % [
-		str(start_options.get("fresh_label", "Enter Tower: Floor 1")),
-		str(start_options.get("best_label", "Challenge Best Floor")),
+		str(start_options.get("fresh_label", "进入暗塔：第 1 层")),
+		str(start_options.get("best_label", "挑战最高层")),
 	]
 	return {
 		"character_text": character_text,

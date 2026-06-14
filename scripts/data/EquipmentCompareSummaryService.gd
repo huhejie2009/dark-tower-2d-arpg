@@ -4,12 +4,12 @@ class_name EquipmentCompareSummaryService
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 
 const RANGER_COC_REASON_TEXT := {
-	"critical_chance": "更频繁触发冰矛",
+	"critical_chance": "更频繁触发冰矢",
 	"attack_speed": "更多寒冰射击尝试，但仍受触发冷却限制",
-	"cold_damage": "增强寒冰射击和冰矛",
-	"ice_lance_pierce": "冰矛穿透，清理密集敌人更强",
-	"ice_lance_split": "冰矛分裂，提升清图覆盖",
-	"coc_cooldown_recovery": "允许更高频率触发冰矛",
+	"cold_damage": "增强寒冰射击和冰矢",
+	"ice_lance_pierce": "冰矢穿透，清理密集敌人更强",
+	"ice_lance_split": "冰矢分裂，提升清图覆盖",
+	"coc_cooldown_recovery": "允许更高频率触发冰矢",
 }
 
 static func build_summary(player_data: Dictionary, candidate_item_id: String, candidate_equipment: Dictionary) -> Dictionary:
@@ -64,7 +64,7 @@ static func _build_stat_deltas(candidate_equipment: Dictionary, equipped_equipme
 			"candidate_value": candidate_value,
 			"equipped_value": equipped_value,
 			"delta": delta,
-			"compact_text": "%s %s%d" % [str(stat_id), sign, delta],
+			"compact_text": "%s %s%d" % [_stat_label(str(stat_id)), sign, delta],
 			"reason_text": reason,
 			"positive": delta > 0,
 		})
@@ -72,20 +72,20 @@ static func _build_stat_deltas(candidate_equipment: Dictionary, equipped_equipme
 
 static func _build_headline(score_delta: int, equipped_item_id: String) -> String:
 	if equipped_item_id == "":
-		return "Empty slot upgrade"
+		return "空槽位提升"
 	if score_delta > 0:
-		return "Upgrade candidate"
+		return "可提升装备"
 	if score_delta < 0:
-		return "Lower score"
-	return "Sidegrade"
+		return "评分更低"
+	return "平替"
 
 static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_item_id: String) -> Array[String]:
 	var reasons: Array[String] = []
 	var score_sign := "+" if score_delta > 0 else ""
 	if equipped_item_id == "":
-		reasons.append("Score %s%d vs empty slot" % [score_sign, score_delta])
+		reasons.append("评分 %s%d，对比空槽位" % [score_sign, score_delta])
 	else:
-		reasons.append("Score %s%d vs equipped" % [score_sign, score_delta])
+		reasons.append("评分 %s%d，对比已装备" % [score_sign, score_delta])
 	var sorted_deltas := stat_deltas.duplicate(true)
 	sorted_deltas.sort_custom(_sort_reason_rows)
 	for row in sorted_deltas:
@@ -100,7 +100,7 @@ static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_i
 			reasons.append(reason)
 			continue
 		var sign := "+" if delta > 0 else ""
-		reasons.append("%s %s%d" % [str(data.get("stat_id", "")), sign, delta])
+		reasons.append("%s %s%d" % [_stat_label(str(data.get("stat_id", ""))), sign, delta])
 	return reasons
 
 static func _build_stat_reason(stat_id: String, delta: int) -> String:
@@ -123,9 +123,9 @@ static func _sort_reason_rows(a: Variant, b: Variant) -> bool:
 
 static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_item_id: String, reason_lines: Array[String] = []) -> String:
 	var score_sign := "+" if score_delta > 0 else ""
-	var parts: Array[String] = ["Score %s%d" % [score_sign, score_delta]]
+	var parts: Array[String] = ["评分 %s%d" % [score_sign, score_delta]]
 	if equipped_item_id == "":
-		parts.append("empty slot")
+		parts.append("空槽位")
 	if not reason_lines.is_empty():
 		parts.append(str(reason_lines[0]))
 	var shown := 0
@@ -135,3 +135,28 @@ static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_i
 		parts.append(str(Dictionary(row).get("compact_text", "")))
 		shown += 1
 	return " | ".join(parts)
+
+static func _stat_label(stat_id: String) -> String:
+	match stat_id:
+		"attack_damage":
+			return "伤害"
+		"max_health":
+			return "生命"
+		"max_mana":
+			return "法力"
+		"defense":
+			return "防御"
+		"critical_chance":
+			return "暴击"
+		"attack_speed":
+			return "攻速"
+		"cold_damage":
+			return "冰冷伤害"
+		"ice_lance_pierce":
+			return "冰矢穿透"
+		"ice_lance_split":
+			return "冰矢分裂"
+		"coc_cooldown_recovery":
+			return "触发恢复"
+		_:
+			return stat_id

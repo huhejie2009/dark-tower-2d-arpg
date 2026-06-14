@@ -28,7 +28,7 @@ func _run() -> void:
 	_expect(int(recommendation.get("score", 0)) > int(recommendation.get("equipped_score", 0)), "candidate score should beat equipped score")
 	_expect(int(recommendation.get("score_delta", 0)) > 0, "recommendation should expose positive score delta")
 	_expect(["minor", "strong", "major"].has(str(recommendation.get("recommendation_rank", ""))), "recommendation should expose rank")
-	_expect(str(recommendation.get("source_label", "")) == "Elite drop", "elite source should have readable label")
+	_expect(str(recommendation.get("source_label", "")) == "精英掉落", "elite source should have readable label")
 	_expect(str(recommendation.get("quality_tag", "")) == "elite_floor_08", "quality tag should pass through")
 
 	var wrong_class := candidate.duplicate(true)

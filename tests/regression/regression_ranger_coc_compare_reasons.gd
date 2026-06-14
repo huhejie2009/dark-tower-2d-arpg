@@ -13,7 +13,7 @@ func _run() -> void:
 	var player := PlayerDataServiceScript.build_starter_player("slot_1", "CoC Explain", "ranger")
 	var bow := {
 		"instance_id": "explain_bow",
-		"name": "Explaining Ice Bow",
+		"name": "解释用冰弓",
 		"slot": "weapon",
 		"equipment_pool": "ranger",
 		"equipment_type": "bow",
@@ -23,7 +23,7 @@ func _run() -> void:
 	}
 	player["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player["inventory"]), {
 		"id": "explain_bow",
-		"name": "Explaining Ice Bow",
+		"name": "解释用冰弓",
 		"type": "equipment",
 		"equipment": bow,
 	})
@@ -35,13 +35,13 @@ func _run() -> void:
 
 	var summary: Dictionary = Dictionary(window.call("get_item_compare_summary_for_test", "explain_bow"))
 	var reasons := "\n".join(Array(summary.get("reason_lines", [])))
-	_expect(reasons.contains("更频繁触发冰矛"), "compare reasons should explain crit")
-	_expect(reasons.contains("增强寒冰射击和冰矛"), "compare reasons should explain cold damage")
-	_expect(reasons.contains("冰矛穿透"), "compare reasons should explain pierce")
+	_expect(reasons.contains("更频繁触发冰矢"), "compare reasons should explain crit")
+	_expect(reasons.contains("增强寒冰射击和冰矢"), "compare reasons should explain cold damage")
+	_expect(reasons.contains("冰矢穿透"), "compare reasons should explain pierce")
 	var detail := str(window.call("describe_item_for_test", "explain_bow"))
-	_expect(detail.contains("更频繁触发冰矛"), "detail should show crit reason")
-	_expect(detail.contains("增强寒冰射击和冰矛"), "detail should show cold reason")
-	_expect(detail.contains("冰矛穿透"), "detail should show pierce reason")
+	_expect(detail.contains("更频繁触发冰矢"), "detail should show crit reason")
+	_expect(detail.contains("增强寒冰射击和冰矢"), "detail should show cold reason")
+	_expect(detail.contains("冰矢穿透"), "detail should show pierce reason")
 
 	window.queue_free()
 	await process_frame

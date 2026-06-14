@@ -25,7 +25,7 @@ static func build_starter_player(slot_id: String, character_name: String, base_c
 	})
 	return {
 		"slot_id": slot_id,
-		"character_name": character_name if character_name.strip_edges() != "" else "New Hero",
+		"character_name": character_name if character_name.strip_edges() != "" else "新英雄",
 		"base_class": normalized_class,
 		"advanced_class": "",
 		"player_level": 1,
@@ -50,7 +50,7 @@ static func build_starter_player(slot_id: String, character_name: String, base_c
 
 static func normalize_player_data(data: Variant) -> Dictionary:
 	if not (data is Dictionary):
-		return build_starter_player("slot_1", "New Hero", "warrior")
+		return build_starter_player("slot_1", "新英雄", "warrior")
 	var result: Dictionary = Dictionary(data).duplicate(true)
 	result["base_class"] = ClassRulesScript.normalize_class(str(result.get("base_class", "warrior")))
 	result["player_level"] = maxi(1, int(result.get("player_level", 1)))

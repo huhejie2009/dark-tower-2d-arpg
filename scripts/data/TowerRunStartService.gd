@@ -8,8 +8,8 @@ static func build_start_options(player_data: Dictionary) -> Dictionary:
 	return {
 		"fresh_floor": 1,
 		"best_floor": best_floor,
-		"fresh_label": "Enter Tower: Floor 1",
-		"best_label": "Challenge Best Floor %d" % best_floor,
+		"fresh_label": "进入暗塔：第 1 层",
+		"best_label": "挑战最高层：第 %d 层" % best_floor,
 	}
 
 static func request_start_floor(floor: int) -> void:
