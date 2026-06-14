@@ -1,6 +1,8 @@
 extends RefCounted
 class_name DivinePressureService
 
+const DivinePressureVfxProfileScript := preload("res://scripts/data/DivinePressureVfxProfile.gd")
+
 const MIN_WARNING_SECONDS := 0.6
 
 static func build_event_config(trigger: String, floor: int) -> Dictionary:
@@ -15,18 +17,11 @@ static func build_event_config(trigger: String, floor: int) -> Dictionary:
 		"vfx_manifest": build_vfx_manifest(),
 	}
 
-static func build_vfx_manifest() -> Dictionary:
-	return {
-		"interface_id": "divine_pressure_vfx",
-		"interface_version": 1,
-		"asset_family": "cold_megastructure_divine_pressure",
-		"warning_role": "enemy_pressure_warning",
-		"impact_role": "enemy_pressure_impact",
-		"warning_scene_path": "",
-		"impact_scene_path": "",
-		"fallback_programmatic": true,
-		"authored_asset_required_before_art_lock": true,
-	}
+static func build_vfx_manifest(profile: Resource = null) -> Dictionary:
+	if profile != null and profile.has_method("to_manifest"):
+		return Dictionary(profile.call("to_manifest")).duplicate(true)
+	var default_profile := DivinePressureVfxProfileScript.new()
+	return default_profile.to_manifest()
 
 static func should_trigger_after_enemy(enemy_data: Dictionary, event_active: bool) -> bool:
 	if event_active:
