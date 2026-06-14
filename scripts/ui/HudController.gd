@@ -179,6 +179,13 @@ func get_visual_qa_rects_for_test(viewport_size: Vector2) -> Dictionary:
 	var loot_size := Vector2(minf(380.0, safe_width - 28.0), 110.0)
 	var loot_x := maxf(14.0, safe_width - loot_size.x - 20.0)
 	return {
+		"hud_panel": Rect2(Vector2(14.0, 14.0), Vector2(292.0, 214.0)),
+		"status": Rect2(Vector2(20.0, 18.0), Vector2(300.0, 80.0)),
+		"log": Rect2(Vector2(20.0, 52.0), Vector2(260.0, 26.0)),
+		"objective": Rect2(Vector2(20.0, 78.0), Vector2(260.0, 36.0)),
+		"health_bar": Rect2(Vector2(88.0, 120.0), Vector2(190.0, 12.0)),
+		"mana_bar": Rect2(Vector2(88.0, 142.0), Vector2(190.0, 12.0)),
+		"experience_bar": Rect2(Vector2(20.0, 194.0), Vector2(260.0, 14.0)),
 		"inventory": Rect2(Vector2(inventory_x, 18.0), inventory_size),
 		"loot": Rect2(Vector2(loot_x, 64.0), loot_size),
 	}
