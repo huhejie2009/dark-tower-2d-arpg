@@ -5,6 +5,7 @@ const SCENES := [
 	"res://scenes/CharacterSelect.tscn",
 	"res://scenes/Town.tscn",
 	"res://scenes/Game2D.tscn",
+	"res://scenes/prototypes/Prototype2_5DCombatRoom.tscn",
 ]
 
 var failures: Array[String] = []
