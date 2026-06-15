@@ -14,6 +14,10 @@ var camera: Camera3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
 var debug_hud: CanvasLayer
+var camera_follow_offset := Vector3(0.0, 10.0, 10.0)
+var player_move_input_override_enabled := false
+var player_move_input_override := Vector2.ZERO
+var active_move_input := Vector2.ZERO
 
 func _ready() -> void:
 	_build_visibility_baseline()
@@ -22,6 +26,12 @@ func _ready() -> void:
 	_build_actors()
 	_build_exit_marker()
 	_build_debug_hud()
+
+func _physics_process(_delta: float) -> void:
+	active_move_input = _read_player_move_input()
+	if player != null and player.has_method("set_move_input"):
+		player.call("set_move_input", active_move_input)
+	_update_camera_follow()
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -111,13 +121,16 @@ func _build_actors() -> void:
 	player = BillboardActor3D.new()
 	player.name = "PlayerBillboard"
 	player.position = Vector3(0.0, 0.0, 2.0)
+	player.set_movement_speed(4.5)
 	add_child(player)
 	_add_actor_visible_marker(player, Color(0.22, 0.65, 1.0), "PlayerReadableMarker")
+	_update_camera_follow()
 
 	for index in range(2):
 		var enemy := BillboardActor3D.new()
 		enemy.name = "EnemyBillboard%d" % (index + 1)
 		enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
+		enemy.set_movement_speed(3.2)
 		add_child(enemy)
 		_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
 		enemies.append(enemy)
@@ -168,6 +181,26 @@ func _make_material(albedo: Color, emission: Color) -> StandardMaterial3D:
 	material.roughness = 0.85
 	return material
 
+func _read_player_move_input() -> Vector2:
+	if player_move_input_override_enabled:
+		return player_move_input_override
+	return Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+
+func _update_camera_follow() -> void:
+	if camera == null or player == null:
+		return
+	var target_position := player.global_position
+	camera.global_position = target_position + camera_follow_offset
+	camera.look_at(target_position, Vector3.UP)
+
+func set_player_move_input_for_test(value: Vector2) -> void:
+	player_move_input_override_enabled = true
+	player_move_input_override = value
+
+func clear_player_move_input_override_for_test() -> void:
+	player_move_input_override_enabled = false
+	player_move_input_override = Vector2.ZERO
+
 func build_prototype_snapshot_for_test() -> Dictionary:
 	return {
 		"prototype_id": "2_5d_billboard_combat_room",
@@ -201,6 +234,26 @@ func build_visibility_snapshot_for_test() -> Dictionary:
 		"exit_marker_has_material": exit_marker != null and exit_marker.get("material_override") != null,
 		"has_debug_hud": debug_hud != null and debug_hud.has_node("PrototypeModeLabel"),
 		"camera_has_visible_background": world_environment != null and world_environment.environment != null,
+	}
+
+func build_player_control_snapshot_for_test() -> Dictionary:
+	var player_snapshot: Dictionary = {}
+	if player != null and player.has_method("build_contract_snapshot"):
+		player_snapshot = player.call("build_contract_snapshot")
+	return {
+		"can_control_player": player != null and player.has_method("set_move_input"),
+		"movement_plane": str(player_snapshot.get("plane", "")),
+		"player_position": player.global_position if player != null else Vector3.ZERO,
+		"player_movement_speed": float(player_snapshot.get("movement_speed", 0.0)),
+		"player_facing_direction": str(player_snapshot.get("facing_direction", "")),
+		"active_move_input": active_move_input,
+		"input_override_enabled": player_move_input_override_enabled,
+		"camera_current": camera != null and camera.current,
+		"camera_orthographic": camera != null and camera.projection == Camera3D.PROJECTION_ORTHOGONAL,
+		"camera_tracks_player": camera != null and player != null,
+		"camera_position": camera.global_position if camera != null else Vector3.ZERO,
+		"camera_follow_offset": camera_follow_offset,
+		"camera_size": camera.size if camera != null else 0.0,
 	}
 
 func _count_visible_materials(nodes: Array[Node3D]) -> int:
