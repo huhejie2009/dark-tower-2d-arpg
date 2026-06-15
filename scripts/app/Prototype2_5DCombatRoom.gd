@@ -1,6 +1,7 @@
 extends Node3D
 
 const BillboardActor3D := preload("res://scripts/prototype/BillboardActor3D.gd")
+const Prototype2_5DVisualQaService := preload("res://scripts/prototype/Prototype2_5DVisualQaService.gd")
 
 var player: Node3D
 var enemies: Array[Node3D] = []
@@ -114,3 +115,12 @@ func build_prototype_snapshot_for_test() -> Dictionary:
 		"enemy_count": enemies.size(),
 		"has_exit_marker": exit_marker != null,
 	}
+
+func build_visual_qa_snapshot_for_test() -> Dictionary:
+	var actor_snapshots: Array[Dictionary] = []
+	if player != null and player.has_method("build_contract_snapshot"):
+		actor_snapshots.append(player.call("build_contract_snapshot"))
+	for enemy in enemies:
+		if enemy != null and enemy.has_method("build_contract_snapshot"):
+			actor_snapshots.append(enemy.call("build_contract_snapshot"))
+	return Prototype2_5DVisualQaService.build_snapshot(build_prototype_snapshot_for_test(), actor_snapshots)
