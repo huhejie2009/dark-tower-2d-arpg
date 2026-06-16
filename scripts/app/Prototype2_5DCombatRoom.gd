@@ -1,12 +1,18 @@
 extends Node3D
 
 const BillboardActor3D := preload("res://scripts/prototype/BillboardActor3D.gd")
+const CombatPlane3DService := preload("res://scripts/prototype/CombatPlane3DService.gd")
 const Prototype2_5DVisualQaService := preload("res://scripts/prototype/Prototype2_5DVisualQaService.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
 const ENEMY_ATTACK_COOLDOWN := 0.8
 const ENEMY_MAX_HEALTH := 1
+const PLAYER_ATTACK_RANGE := 1.35
+const PLAYER_ATTACK_HALF_ANGLE := 80.0
+const PLAYER_ATTACK_DAMAGE := 1
+const PLAYER_ATTACK_COOLDOWN := 0.42
+const PLAYER_ATTACK_ACTIVE_TIME := 0.14
 
 var player: Node3D
 var enemies: Array[Node3D] = []
@@ -27,6 +33,13 @@ var camera_follow_offset := Vector3(0.0, 10.0, 10.0)
 var player_move_input_override_enabled := false
 var player_move_input_override := Vector2.ZERO
 var active_move_input := Vector2.ZERO
+var player_attack_direction_override_enabled := false
+var player_attack_direction_override := Vector2.RIGHT
+var last_player_attack_direction := Vector2.RIGHT
+var player_attack_cooldown_remaining := 0.0
+var player_attack_phase := "ready"
+var total_player_attack_count := 0
+var last_player_attack_hit_count := 0
 
 func _ready() -> void:
 	_build_visibility_baseline()
@@ -42,6 +55,11 @@ func _physics_process(_delta: float) -> void:
 		player.call("set_move_input", active_move_input)
 	_update_camera_follow()
 	_update_enemy_loop(_delta)
+	_tick_player_attack(_delta)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_perform_player_attack(_read_player_attack_direction())
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -213,6 +231,97 @@ func clear_player_move_input_override_for_test() -> void:
 	player_move_input_override_enabled = false
 	player_move_input_override = Vector2.ZERO
 
+func _tick_player_attack(delta: float) -> void:
+	if player_attack_cooldown_remaining <= 0.0:
+		player_attack_phase = "ready"
+		return
+	player_attack_cooldown_remaining = maxf(0.0, player_attack_cooldown_remaining - delta)
+	if player_attack_cooldown_remaining <= 0.0:
+		player_attack_phase = "ready"
+	elif player_attack_cooldown_remaining >= PLAYER_ATTACK_COOLDOWN - PLAYER_ATTACK_ACTIVE_TIME:
+		player_attack_phase = "active"
+	else:
+		player_attack_phase = "recovery"
+
+func _read_player_attack_direction() -> Vector2:
+	if player_attack_direction_override_enabled:
+		return _normalize_attack_direction(player_attack_direction_override)
+	if active_move_input.length_squared() > 0.0001:
+		return _normalize_attack_direction(active_move_input)
+	return _normalize_attack_direction(last_player_attack_direction)
+
+func _normalize_attack_direction(direction: Vector2) -> Vector2:
+	if direction.length_squared() <= 0.0001:
+		return Vector2.RIGHT
+	return direction.normalized()
+
+func _perform_player_attack(direction: Vector2) -> Dictionary:
+	var attack_direction := _normalize_attack_direction(direction)
+	if player_attack_cooldown_remaining > 0.0:
+		return {
+			"accepted": false,
+			"hit_count": 0,
+			"cooldown_remaining": player_attack_cooldown_remaining,
+			"attack_phase": player_attack_phase,
+		}
+	last_player_attack_direction = attack_direction
+	player_attack_cooldown_remaining = PLAYER_ATTACK_COOLDOWN
+	player_attack_phase = "active"
+	total_player_attack_count += 1
+	last_player_attack_hit_count = 0
+	var target := _find_player_attack_target(attack_direction)
+	if target != null:
+		_damage_enemy(target, PLAYER_ATTACK_DAMAGE)
+		last_player_attack_hit_count = 1
+	return {
+		"accepted": true,
+		"hit_count": last_player_attack_hit_count,
+		"cooldown_remaining": player_attack_cooldown_remaining,
+		"attack_phase": player_attack_phase,
+	}
+
+func _find_player_attack_target(direction: Vector2) -> Node3D:
+	if player == null:
+		return null
+	var forward := Vector3(direction.x, 0.0, direction.y)
+	var best_enemy: Node3D = null
+	var best_distance := INF
+	for enemy in enemies:
+		if enemy == null or not enemy_states.has(enemy):
+			continue
+		var state: Dictionary = enemy_states[enemy]
+		if not bool(state.get("alive", false)):
+			continue
+		if not CombatPlane3DService.is_inside_attack_arc_xz(player.global_position, enemy.global_position, forward, PLAYER_ATTACK_RANGE, PLAYER_ATTACK_HALF_ANGLE):
+			continue
+		var distance := CombatPlane3DService.distance_xz(player.global_position, enemy.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best_enemy = enemy
+	return best_enemy
+
+func _damage_enemy(enemy: Node3D, amount: int) -> void:
+	if enemy == null or not enemy_states.has(enemy):
+		return
+	var state: Dictionary = enemy_states[enemy]
+	if not bool(state.get("alive", false)):
+		return
+	state["health"] = maxi(0, int(state.get("health", 0)) - amount)
+	enemy_states[enemy] = state
+	if int(state.get("health", 0)) <= 0:
+		_defeat_enemy(enemy)
+
+func set_player_attack_direction_for_test(value: Vector2) -> void:
+	player_attack_direction_override_enabled = true
+	player_attack_direction_override = value
+	last_player_attack_direction = _normalize_attack_direction(value)
+
+func clear_player_attack_direction_override_for_test() -> void:
+	player_attack_direction_override_enabled = false
+
+func perform_player_attack_for_test(direction: Vector2) -> Dictionary:
+	return _perform_player_attack(direction)
+
 func _make_enemy_state() -> Dictionary:
 	return {
 		"health": ENEMY_MAX_HEALTH,
@@ -358,6 +467,20 @@ func build_player_control_snapshot_for_test() -> Dictionary:
 		"camera_position": camera.global_position if camera != null else Vector3.ZERO,
 		"camera_follow_offset": camera_follow_offset,
 		"camera_size": camera.size if camera != null else 0.0,
+	}
+
+func build_player_attack_snapshot_for_test() -> Dictionary:
+	return {
+		"attack_ready": player_attack_cooldown_remaining <= 0.0,
+		"attack_phase": player_attack_phase,
+		"attack_range": PLAYER_ATTACK_RANGE,
+		"attack_half_angle": PLAYER_ATTACK_HALF_ANGLE,
+		"attack_damage": PLAYER_ATTACK_DAMAGE,
+		"cooldown_remaining": player_attack_cooldown_remaining,
+		"total_attack_count": total_player_attack_count,
+		"last_hit_count": last_player_attack_hit_count,
+		"last_attack_direction": last_player_attack_direction,
+		"direction_override_enabled": player_attack_direction_override_enabled,
 	}
 
 func build_enemy_loop_snapshot_for_test() -> Dictionary:
