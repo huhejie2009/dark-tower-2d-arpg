@@ -3,8 +3,17 @@ extends Node3D
 const BillboardActor3D := preload("res://scripts/prototype/BillboardActor3D.gd")
 const Prototype2_5DVisualQaService := preload("res://scripts/prototype/Prototype2_5DVisualQaService.gd")
 
+const ENEMY_CHASE_RANGE := 20.0
+const ENEMY_ATTACK_RANGE := 1.05
+const ENEMY_ATTACK_COOLDOWN := 0.8
+const ENEMY_MAX_HEALTH := 1
+
 var player: Node3D
 var enemies: Array[Node3D] = []
+var enemy_states: Dictionary = {}
+var living_enemy_count := 0
+var room_cleared := false
+var exit_unlocked := false
 var wall_nodes: Array[Node3D] = []
 var column_nodes: Array[Node3D] = []
 var actor_visible_markers: Array[MeshInstance3D] = []
@@ -32,6 +41,7 @@ func _physics_process(_delta: float) -> void:
 	if player != null and player.has_method("set_move_input"):
 		player.call("set_move_input", active_move_input)
 	_update_camera_follow()
+	_update_enemy_loop(_delta)
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -134,6 +144,8 @@ func _build_actors() -> void:
 		add_child(enemy)
 		_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
 		enemies.append(enemy)
+		enemy_states[enemy] = _make_enemy_state()
+	living_enemy_count = enemies.size()
 
 func _build_exit_marker() -> void:
 	exit_marker = MeshInstance3D.new()
@@ -143,9 +155,9 @@ func _build_exit_marker() -> void:
 	mesh.bottom_radius = 0.55
 	mesh.height = 0.08
 	exit_marker.mesh = mesh
-	exit_marker.material_override = _make_material(Color(0.12, 0.55, 0.95), Color(0.03, 0.16, 0.28))
 	exit_marker.position = Vector3(0.0, 0.05, -4.8)
 	add_child(exit_marker)
+	_set_exit_locked_visual()
 
 func _build_debug_hud() -> void:
 	debug_hud = CanvasLayer.new()
@@ -201,6 +213,98 @@ func clear_player_move_input_override_for_test() -> void:
 	player_move_input_override_enabled = false
 	player_move_input_override = Vector2.ZERO
 
+func _make_enemy_state() -> Dictionary:
+	return {
+		"health": ENEMY_MAX_HEALTH,
+		"alive": true,
+		"mode": "idle",
+		"distance_to_player": 0.0,
+		"attack_timer": 0.0,
+		"attack_count": 0,
+	}
+
+func _update_enemy_loop(delta: float) -> void:
+	if player == null:
+		return
+	for enemy in enemies:
+		if enemy == null or not enemy_states.has(enemy):
+			continue
+		var state: Dictionary = enemy_states[enemy]
+		if not bool(state.get("alive", false)):
+			if enemy.has_method("set_move_input"):
+				enemy.call("set_move_input", Vector2.ZERO)
+			continue
+		var offset := player.global_position - enemy.global_position
+		offset.y = 0.0
+		var distance := offset.length()
+		state["distance_to_player"] = distance
+		if distance <= ENEMY_ATTACK_RANGE:
+			state["mode"] = "attack"
+			state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
+			if float(state.get("attack_timer", 0.0)) >= ENEMY_ATTACK_COOLDOWN:
+				state["attack_timer"] = 0.0
+				state["attack_count"] = int(state.get("attack_count", 0)) + 1
+			if enemy.has_method("set_move_input"):
+				enemy.call("set_move_input", Vector2.ZERO)
+		elif distance <= ENEMY_CHASE_RANGE:
+			state["mode"] = "chase"
+			state["attack_timer"] = 0.0
+			if enemy.has_method("set_move_input"):
+				enemy.call("set_move_input", Vector2(offset.x, offset.z))
+		else:
+			state["mode"] = "idle"
+			state["attack_timer"] = 0.0
+			if enemy.has_method("set_move_input"):
+				enemy.call("set_move_input", Vector2.ZERO)
+		enemy_states[enemy] = state
+
+func _defeat_enemy(enemy: Node3D) -> void:
+	if enemy == null or not enemy_states.has(enemy):
+		return
+	var state: Dictionary = enemy_states[enemy]
+	if not bool(state.get("alive", false)):
+		return
+	state["health"] = 0
+	state["alive"] = false
+	state["mode"] = "dead"
+	state["attack_timer"] = 0.0
+	enemy_states[enemy] = state
+	living_enemy_count = maxi(0, living_enemy_count - 1)
+	if enemy.has_method("set_move_input"):
+		enemy.call("set_move_input", Vector2.ZERO)
+	var collision := enemy.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision != null:
+		collision.disabled = true
+	enemy.visible = false
+	if living_enemy_count <= 0:
+		_unlock_exit()
+
+func _unlock_exit() -> void:
+	if exit_unlocked:
+		return
+	exit_unlocked = true
+	room_cleared = true
+	if exit_marker != null:
+		exit_marker.material_override = _make_material(Color(0.18, 0.65, 1.0), Color(0.08, 0.35, 0.8))
+		exit_marker.scale = Vector3(1.18, 1.0, 1.18)
+
+func _set_exit_locked_visual() -> void:
+	exit_unlocked = false
+	room_cleared = false
+	if exit_marker != null:
+		exit_marker.material_override = _make_material(Color(0.08, 0.12, 0.16), Color(0.01, 0.025, 0.04))
+		exit_marker.scale = Vector3.ONE
+
+func set_player_position_for_test(value: Vector3) -> void:
+	if player != null:
+		player.global_position = value
+	_update_camera_follow()
+
+func defeat_enemy_for_test(index: int) -> void:
+	if index < 0 or index >= enemies.size():
+		return
+	_defeat_enemy(enemies[index])
+
 func build_prototype_snapshot_for_test() -> Dictionary:
 	return {
 		"prototype_id": "2_5d_billboard_combat_room",
@@ -254,6 +358,33 @@ func build_player_control_snapshot_for_test() -> Dictionary:
 		"camera_position": camera.global_position if camera != null else Vector3.ZERO,
 		"camera_follow_offset": camera_follow_offset,
 		"camera_size": camera.size if camera != null else 0.0,
+	}
+
+func build_enemy_loop_snapshot_for_test() -> Dictionary:
+	var snapshots: Array[Dictionary] = []
+	for enemy in enemies:
+		var state: Dictionary = enemy_states.get(enemy, {})
+		var move_input := Vector2.ZERO
+		if enemy != null:
+			move_input = enemy.get("move_input")
+		snapshots.append({
+			"name": enemy.name if enemy != null else "",
+			"alive": bool(state.get("alive", false)),
+			"health": int(state.get("health", 0)),
+			"mode": str(state.get("mode", "")),
+			"distance_to_player": float(state.get("distance_to_player", 0.0)),
+			"attack_count": int(state.get("attack_count", 0)),
+			"position": enemy.global_position if enemy != null else Vector3.ZERO,
+			"move_input": move_input,
+		})
+	return {
+		"total_enemy_count": enemies.size(),
+		"living_enemy_count": living_enemy_count,
+		"room_cleared": room_cleared,
+		"exit_unlocked": exit_unlocked,
+		"enemy_attack_range": ENEMY_ATTACK_RANGE,
+		"enemy_chase_range": ENEMY_CHASE_RANGE,
+		"enemy_states": snapshots,
 	}
 
 func _count_visible_materials(nodes: Array[Node3D]) -> int:
