@@ -12,10 +12,12 @@ var actor_animation_name := "idle"
 var actor_animation_frame := 0
 var actor_animation_elapsed := 0.0
 var actor_animation_locked_until_end := false
+var contact_shadow_alpha := 0.0
 
 @onready var visual_root: Node3D = $VisualRoot
 @onready var actor_sprite: Sprite3D = $VisualRoot/ActorSprite
 @onready var weapon_sprite: Sprite3D = $VisualRoot/WeaponSprite
+@onready var contact_shadow: MeshInstance3D = $VisualRoot/ContactShadow
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 
 func _init() -> void:
@@ -35,6 +37,19 @@ func _init() -> void:
 		weapon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		weapon.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 		root_node.add_child(weapon)
+
+		var shadow := MeshInstance3D.new()
+		shadow.name = "ContactShadow"
+		var shadow_mesh := CylinderMesh.new()
+		shadow_mesh.top_radius = 0.5
+		shadow_mesh.bottom_radius = 0.5
+		shadow_mesh.height = 0.012
+		shadow_mesh.radial_segments = 48
+		shadow.mesh = shadow_mesh
+		shadow.position = Vector3(0.0, 0.018, 0.0)
+		shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		shadow.visible = false
+		root_node.add_child(shadow)
 
 	if not has_node("CollisionShape3D"):
 		var shape_node := CollisionShape3D.new()
@@ -104,6 +119,7 @@ func apply_visual_asset_manifest(manifest: Dictionary) -> void:
 		actor_sprite.region_enabled = true
 		_apply_actor_sprite_filter()
 		_load_actor_sprite_texture()
+	_apply_contact_shadow_manifest()
 	var animations := Dictionary(visual_asset_manifest.get("animations", {}))
 	if animations.has("idle"):
 		set_actor_animation("idle", true)
@@ -191,6 +207,10 @@ func get_actor_animation_state() -> Dictionary:
 		"body_weapon_separated": has_node("VisualRoot/ActorSprite") and has_node("VisualRoot/WeaponSprite") and actor_sprite != weapon_sprite,
 		"actor_sprite_visible": actor_sprite != null and actor_sprite.visible,
 		"actor_sprite_texture_loaded": actor_sprite != null and actor_sprite.texture != null,
+		"has_contact_shadow": contact_shadow != null,
+		"contact_shadow_visible": contact_shadow != null and contact_shadow.visible,
+		"contact_shadow_alpha": contact_shadow_alpha,
+		"contact_shadow_scale": contact_shadow.scale if contact_shadow != null else Vector3.ZERO,
 		"actor_sprite_region_enabled": actor_sprite != null and actor_sprite.region_enabled,
 		"actor_sprite_region_rect": actor_sprite.region_rect if actor_sprite != null else Rect2(),
 	}
@@ -229,6 +249,9 @@ func build_contract_snapshot() -> Dictionary:
 		"action_state": action_state,
 		"actor_animation_name": actor_animation_name,
 		"actor_animation_frame": actor_animation_frame,
+		"has_contact_shadow": has_node("VisualRoot/ContactShadow"),
+		"contact_shadow_visible": contact_shadow != null and contact_shadow.visible,
+		"contact_shadow_alpha": contact_shadow_alpha,
 		"profile_actor_id": profile_id,
 	}
 
@@ -292,3 +315,26 @@ func _apply_actor_sprite_filter() -> void:
 		actor_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	else:
 		actor_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+
+func _apply_contact_shadow_manifest() -> void:
+	if contact_shadow == null:
+		return
+	var shadow_data := Dictionary(visual_asset_manifest.get("contact_shadow", {}))
+	var visible := bool(shadow_data.get("required", false)) and bool(visual_asset_manifest.get("enabled", false))
+	contact_shadow.visible = visible
+	if not visible:
+		contact_shadow_alpha = 0.0
+		return
+	var radius := maxf(0.1, float(shadow_data.get("radius", 0.48)))
+	var depth := maxf(0.1, float(shadow_data.get("depth", radius * 0.62)))
+	contact_shadow_alpha = clampf(float(shadow_data.get("alpha", 0.34)), 0.0, 1.0)
+	contact_shadow.scale = Vector3(radius, 1.0, depth)
+	contact_shadow.material_override = _make_contact_shadow_material(contact_shadow_alpha)
+
+func _make_contact_shadow_material(alpha: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.0, 0.0, 0.0, alpha)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.roughness = 1.0
+	return material

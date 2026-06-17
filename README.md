@@ -228,6 +228,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - `BillboardActorAnimationProfile` can now export the same visual asset manifest format used by the runtime actor.
 - Added regressions: `tests/regression/regression_billboard_actor_real_texture_manifest.gd` and `tests/regression/regression_prototype_2_5d_real_actor_textures.gd`.
 
+## 2026-06-17 Update: 2.5D Visual Grounding QA
+
+- Added manifest-driven contact shadows for 2.5D billboard actors so production sheets read as grounded in the room.
+- Hid colored readability markers by default while keeping a QA toggle for debugging visibility.
+- Added a visual grounding snapshot covering contact shadow count, marker visibility, and soft shadow alpha.
+- Added regression: `tests/regression/regression_prototype_2_5d_visual_grounding_contract.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。

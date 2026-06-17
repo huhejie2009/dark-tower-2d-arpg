@@ -50,6 +50,7 @@ var last_player_attack_aim_source := "none"
 var last_player_attack_world_target := Vector3.ZERO
 var hit_vfx_lifetime_remaining := 0.0
 var last_hit_vfx_position := Vector3.ZERO
+var debug_readability_markers_enabled := false
 
 func _ready() -> void:
 	_build_visibility_baseline()
@@ -276,6 +277,8 @@ func _add_actor_visible_marker(actor: Node3D, color: Color, node_name: String) -
 	marker.mesh = mesh
 	marker.position = Vector3(0.0, 0.11, 0.0)
 	marker.material_override = _make_material(color, color * 0.25)
+	marker.visible = debug_readability_markers_enabled
+	marker.set_meta("debug_readability_marker", true)
 	actor.add_child(marker)
 	actor_visible_markers.append(marker)
 
@@ -633,9 +636,47 @@ func build_visibility_snapshot_for_test() -> Dictionary:
 		"wall_visible_material_count": _count_visible_materials(wall_nodes),
 		"column_visible_material_count": _count_visible_materials(column_nodes),
 		"actor_visible_marker_count": actor_visible_markers.size(),
+		"actor_visible_marker_visible_count": _count_visible_actor_markers(),
 		"exit_marker_has_material": exit_marker != null and exit_marker.get("material_override") != null,
 		"has_debug_hud": debug_hud != null and debug_hud.has_node("PrototypeModeLabel"),
 		"camera_has_visible_background": world_environment != null and world_environment.environment != null,
+	}
+
+func set_debug_readability_markers_enabled_for_test(enabled: bool) -> void:
+	debug_readability_markers_enabled = enabled
+	_set_actor_visible_markers_enabled(enabled)
+
+func build_visual_grounding_snapshot_for_test() -> Dictionary:
+	var actor_count := 0
+	var contact_shadow_count := 0
+	var visible_contact_shadow_count := 0
+	var total_shadow_alpha := 0.0
+	var all_actor_sprites_grounded := true
+	for actor in _get_all_billboard_actors():
+		actor_count += 1
+		var state := _get_actor_animation_snapshot(actor)
+		var has_shadow := bool(state.get("has_contact_shadow", false))
+		var shadow_visible := bool(state.get("contact_shadow_visible", false))
+		var sprite_visible := bool(state.get("actor_sprite_visible", false))
+		var texture_loaded := bool(state.get("actor_sprite_texture_loaded", false))
+		if has_shadow:
+			contact_shadow_count += 1
+		if shadow_visible:
+			visible_contact_shadow_count += 1
+			total_shadow_alpha += float(state.get("contact_shadow_alpha", 0.0))
+		all_actor_sprites_grounded = all_actor_sprites_grounded and has_shadow and shadow_visible and sprite_visible and texture_loaded
+	var average_alpha := 0.0
+	if visible_contact_shadow_count > 0:
+		average_alpha = total_shadow_alpha / float(visible_contact_shadow_count)
+	return {
+		"actor_count": actor_count,
+		"contact_shadow_count": contact_shadow_count,
+		"visible_contact_shadow_count": visible_contact_shadow_count,
+		"average_shadow_alpha": average_alpha,
+		"all_actor_sprites_grounded": all_actor_sprites_grounded,
+		"actor_visible_marker_count": actor_visible_markers.size(),
+		"actor_visible_marker_visible_count": _count_visible_actor_markers(),
+		"debug_readability_markers_enabled": debug_readability_markers_enabled,
 	}
 
 func build_player_control_snapshot_for_test() -> Dictionary:
@@ -777,3 +818,24 @@ func _count_visible_materials(nodes: Array[Node3D]) -> int:
 			if child is MeshInstance3D and child.material_override != null:
 				count += 1
 	return count
+
+func _set_actor_visible_markers_enabled(enabled: bool) -> void:
+	for marker in actor_visible_markers:
+		if marker != null:
+			marker.visible = enabled
+
+func _count_visible_actor_markers() -> int:
+	var count := 0
+	for marker in actor_visible_markers:
+		if marker != null and marker.visible:
+			count += 1
+	return count
+
+func _get_all_billboard_actors() -> Array[Node3D]:
+	var actors: Array[Node3D] = []
+	if player != null:
+		actors.append(player)
+	for enemy in enemies:
+		if enemy != null:
+			actors.append(enemy)
+	return actors

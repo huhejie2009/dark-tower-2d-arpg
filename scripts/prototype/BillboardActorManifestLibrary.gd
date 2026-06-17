@@ -9,7 +9,8 @@ static func make_player_warrior_v3() -> Dictionary:
 		"player_warrior_v3",
 		PLAYER_WARRIOR_SHEET,
 		Vector2i(160, 160),
-		{"idle": 6, "run": 9, "attack": 10, "death": 6}
+		{"idle": 6, "run": 9, "attack": 10, "death": 6},
+		0.54
 	)
 
 static func make_rot_melee_v3() -> Dictionary:
@@ -17,7 +18,8 @@ static func make_rot_melee_v3() -> Dictionary:
 		"enemy_rot_melee_v3",
 		ROT_MELEE_SHEET,
 		Vector2i(128, 128),
-		{"idle": 7, "run": 9, "attack": 11, "death": 7}
+		{"idle": 7, "run": 9, "attack": 11, "death": 7},
+		0.46
 	)
 
 static func make_shadow_archer_v3() -> Dictionary:
@@ -25,10 +27,11 @@ static func make_shadow_archer_v3() -> Dictionary:
 		"enemy_shadow_archer_v3",
 		SHADOW_ARCHER_SHEET,
 		Vector2i(128, 128),
-		{"idle": 6, "run": 8, "attack": 10, "death": 6}
+		{"idle": 6, "run": 8, "attack": 10, "death": 6},
+		0.42
 	)
 
-static func _make_manifest(actor_id: String, sprite_sheet_path: String, frame_size: Vector2i, fps_by_name: Dictionary) -> Dictionary:
+static func _make_manifest(actor_id: String, sprite_sheet_path: String, frame_size: Vector2i, fps_by_name: Dictionary, contact_shadow_radius: float) -> Dictionary:
 	return {
 		"actor_id": actor_id,
 		"asset_pipeline": "image2",
@@ -45,6 +48,9 @@ static func _make_manifest(actor_id: String, sprite_sheet_path: String, frame_si
 		"contact_shadow": {
 			"required": true,
 			"style": "soft_grounded_cold_ambient",
+			"radius": contact_shadow_radius,
+			"depth": contact_shadow_radius * 0.62,
+			"alpha": 0.34,
 		},
 		"direction_mode": "runtime_flip_2dir",
 		"enabled": true,
