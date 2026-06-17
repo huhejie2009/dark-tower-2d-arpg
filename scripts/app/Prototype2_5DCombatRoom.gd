@@ -13,6 +13,7 @@ const PLAYER_ATTACK_HALF_ANGLE := 80.0
 const PLAYER_ATTACK_DAMAGE := 1
 const PLAYER_ATTACK_COOLDOWN := 0.42
 const PLAYER_ATTACK_ACTIVE_TIME := 0.14
+const PLAYER_ATTACK_ARC_SEGMENTS := 12
 
 var player: Node3D
 var enemies: Array[Node3D] = []
@@ -25,6 +26,7 @@ var column_nodes: Array[Node3D] = []
 var actor_visible_markers: Array[MeshInstance3D] = []
 var floor_mesh: MeshInstance3D
 var exit_marker: Node3D
+var player_attack_arc_marker: MeshInstance3D
 var camera: Camera3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
@@ -40,6 +42,8 @@ var player_attack_cooldown_remaining := 0.0
 var player_attack_phase := "ready"
 var total_player_attack_count := 0
 var last_player_attack_hit_count := 0
+var last_player_attack_aim_source := "none"
+var last_player_attack_world_target := Vector3.ZERO
 
 func _ready() -> void:
 	_build_visibility_baseline()
@@ -47,6 +51,7 @@ func _ready() -> void:
 	_build_camera()
 	_build_actors()
 	_build_exit_marker()
+	_build_player_attack_arc_marker()
 	_build_debug_hud()
 
 func _physics_process(_delta: float) -> void:
@@ -59,7 +64,7 @@ func _physics_process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_perform_player_attack(_read_player_attack_direction())
+		_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -177,6 +182,14 @@ func _build_exit_marker() -> void:
 	add_child(exit_marker)
 	_set_exit_locked_visual()
 
+func _build_player_attack_arc_marker() -> void:
+	player_attack_arc_marker = MeshInstance3D.new()
+	player_attack_arc_marker.name = "PlayerAttackArcMarker"
+	player_attack_arc_marker.mesh = _make_attack_arc_mesh(PLAYER_ATTACK_RANGE, PLAYER_ATTACK_HALF_ANGLE)
+	player_attack_arc_marker.material_override = _make_translucent_material(Color(0.42, 0.74, 1.0, 0.34), Color(0.04, 0.18, 0.36))
+	player_attack_arc_marker.visible = false
+	add_child(player_attack_arc_marker)
+
 func _build_debug_hud() -> void:
 	debug_hud = CanvasLayer.new()
 	debug_hud.name = "PrototypeDebugHUD"
@@ -211,6 +224,28 @@ func _make_material(albedo: Color, emission: Color) -> StandardMaterial3D:
 	material.roughness = 0.85
 	return material
 
+func _make_translucent_material(albedo: Color, emission: Color) -> StandardMaterial3D:
+	var material := _make_material(albedo, emission)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return material
+
+func _make_attack_arc_mesh(radius: float, half_angle_degrees: float) -> ArrayMesh:
+	var mesh := ArrayMesh.new()
+	var vertices := PackedVector3Array()
+	var half_angle := deg_to_rad(half_angle_degrees)
+	for index in range(PLAYER_ATTACK_ARC_SEGMENTS):
+		var angle_a := lerpf(-half_angle, half_angle, float(index) / float(PLAYER_ATTACK_ARC_SEGMENTS))
+		var angle_b := lerpf(-half_angle, half_angle, float(index + 1) / float(PLAYER_ATTACK_ARC_SEGMENTS))
+		vertices.append(Vector3.ZERO)
+		vertices.append(Vector3(cos(angle_a) * radius, 0.0, sin(angle_a) * radius))
+		vertices.append(Vector3(cos(angle_b) * radius, 0.0, sin(angle_b) * radius))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
 func _read_player_move_input() -> Vector2:
 	if player_move_input_override_enabled:
 		return player_move_input_override
@@ -234,14 +269,27 @@ func clear_player_move_input_override_for_test() -> void:
 func _tick_player_attack(delta: float) -> void:
 	if player_attack_cooldown_remaining <= 0.0:
 		player_attack_phase = "ready"
+		_hide_player_attack_arc()
 		return
 	player_attack_cooldown_remaining = maxf(0.0, player_attack_cooldown_remaining - delta)
 	if player_attack_cooldown_remaining <= 0.0:
 		player_attack_phase = "ready"
+		_hide_player_attack_arc()
 	elif player_attack_cooldown_remaining >= PLAYER_ATTACK_COOLDOWN - PLAYER_ATTACK_ACTIVE_TIME:
 		player_attack_phase = "active"
 	else:
 		player_attack_phase = "recovery"
+
+func _read_player_attack_direction_from_mouse_event(event: InputEventMouseButton) -> Vector2:
+	if player_attack_direction_override_enabled:
+		last_player_attack_aim_source = "override"
+		return _read_player_attack_direction()
+	var direction := _attack_direction_from_screen_position(event.position)
+	if direction.length_squared() > 0.0001:
+		last_player_attack_aim_source = "mouse"
+		return direction
+	last_player_attack_aim_source = "fallback"
+	return _read_player_attack_direction()
 
 func _read_player_attack_direction() -> Vector2:
 	if player_attack_direction_override_enabled:
@@ -249,6 +297,24 @@ func _read_player_attack_direction() -> Vector2:
 	if active_move_input.length_squared() > 0.0001:
 		return _normalize_attack_direction(active_move_input)
 	return _normalize_attack_direction(last_player_attack_direction)
+
+func _attack_direction_from_screen_position(screen_position: Vector2) -> Vector2:
+	if camera == null or player == null:
+		return Vector2.ZERO
+	var ray_origin := camera.project_ray_origin(screen_position)
+	var ray_direction := camera.project_ray_normal(screen_position)
+	if absf(ray_direction.y) <= 0.0001:
+		return Vector2.ZERO
+	var plane_y := player.global_position.y
+	var distance_to_plane := (plane_y - ray_origin.y) / ray_direction.y
+	if distance_to_plane < 0.0:
+		return Vector2.ZERO
+	last_player_attack_world_target = ray_origin + ray_direction * distance_to_plane
+	var direction := Vector2(
+		last_player_attack_world_target.x - player.global_position.x,
+		last_player_attack_world_target.z - player.global_position.z
+	)
+	return _normalize_attack_direction(direction)
 
 func _normalize_attack_direction(direction: Vector2) -> Vector2:
 	if direction.length_squared() <= 0.0001:
@@ -269,6 +335,7 @@ func _perform_player_attack(direction: Vector2) -> Dictionary:
 	player_attack_phase = "active"
 	total_player_attack_count += 1
 	last_player_attack_hit_count = 0
+	_show_player_attack_arc(attack_direction)
 	var target := _find_player_attack_target(attack_direction)
 	if target != null:
 		_damage_enemy(target, PLAYER_ATTACK_DAMAGE)
@@ -315,12 +382,26 @@ func set_player_attack_direction_for_test(value: Vector2) -> void:
 	player_attack_direction_override_enabled = true
 	player_attack_direction_override = value
 	last_player_attack_direction = _normalize_attack_direction(value)
+	last_player_attack_aim_source = "override"
 
 func clear_player_attack_direction_override_for_test() -> void:
 	player_attack_direction_override_enabled = false
 
 func perform_player_attack_for_test(direction: Vector2) -> Dictionary:
+	last_player_attack_aim_source = "test"
 	return _perform_player_attack(direction)
+
+func _show_player_attack_arc(direction: Vector2) -> void:
+	if player_attack_arc_marker == null or player == null:
+		return
+	var normalized := _normalize_attack_direction(direction)
+	player_attack_arc_marker.visible = true
+	player_attack_arc_marker.global_position = player.global_position + Vector3(0.0, 0.045, 0.0)
+	player_attack_arc_marker.rotation = Vector3(0.0, -atan2(normalized.y, normalized.x), 0.0)
+
+func _hide_player_attack_arc() -> void:
+	if player_attack_arc_marker != null:
+		player_attack_arc_marker.visible = false
 
 func _make_enemy_state() -> Dictionary:
 	return {
@@ -481,7 +562,27 @@ func build_player_attack_snapshot_for_test() -> Dictionary:
 		"last_hit_count": last_player_attack_hit_count,
 		"last_attack_direction": last_player_attack_direction,
 		"direction_override_enabled": player_attack_direction_override_enabled,
+		"aim_source": last_player_attack_aim_source,
 	}
+
+func build_player_attack_visual_snapshot_for_test() -> Dictionary:
+	return {
+		"has_attack_arc_marker": player_attack_arc_marker != null,
+		"attack_arc_visible": player_attack_arc_marker != null and player_attack_arc_marker.visible,
+		"arc_position": player_attack_arc_marker.global_position if player_attack_arc_marker != null else Vector3.ZERO,
+		"arc_direction": last_player_attack_direction,
+		"arc_range": PLAYER_ATTACK_RANGE,
+		"arc_half_angle": PLAYER_ATTACK_HALF_ANGLE,
+		"last_world_target": last_player_attack_world_target,
+	}
+
+func get_player_screen_position_for_test() -> Vector2:
+	return camera.unproject_position(player.global_position) if camera != null and player != null else Vector2.ZERO
+
+func get_enemy_screen_position_for_test(index: int) -> Vector2:
+	if camera == null or index < 0 or index >= enemies.size() or enemies[index] == null:
+		return Vector2.ZERO
+	return camera.unproject_position(enemies[index].global_position)
 
 func build_enemy_loop_snapshot_for_test() -> Dictionary:
 	var snapshots: Array[Dictionary] = []
