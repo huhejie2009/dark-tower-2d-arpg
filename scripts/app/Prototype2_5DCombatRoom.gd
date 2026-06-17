@@ -8,6 +8,10 @@ const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
 const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
 const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
+const HudControllerScript := preload("res://scripts/ui/HudController.gd")
+const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
+const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
+const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -41,6 +45,11 @@ var hit_impact_marker: MeshInstance3D
 var camera: Camera3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
+var hud: CanvasLayer
+var ui_layer: CanvasLayer
+var inventory_window: Control
+var pause_overlay: CanvasLayer
+var pause_resume_button: Button
 var debug_hud: CanvasLayer
 var camera_follow_offset := Vector3(0.0, 10.0, 10.0)
 var player_move_input_override_enabled := false
@@ -69,8 +78,18 @@ func _ready() -> void:
 	_build_player_attack_arc_marker()
 	_build_hit_vfx()
 	_build_debug_hud()
+	_create_hud()
+	_create_inventory_window()
+	_create_pause_overlay()
+	_update_hud("Entered floor %d. Left click attacks, I/C opens inventory, Esc pauses." % current_floor)
 
 func _physics_process(_delta: float) -> void:
+	if _is_menu_blocking_combat():
+		active_move_input = Vector2.ZERO
+		if player != null and player.has_method("set_move_input"):
+			player.call("set_move_input", Vector2.ZERO)
+		_sync_player_action_state()
+		return
 	active_move_input = _read_player_move_input()
 	if player != null and player.has_method("set_move_input"):
 		player.call("set_move_input", active_move_input)
@@ -81,10 +100,21 @@ func _physics_process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
+		if not _is_menu_blocking_combat():
+			_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
+			_update_hud("Basic attack hit %d target(s)." % last_player_attack_hit_count)
+			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
-		if exit_unlocked:
+		if exit_unlocked and not _is_menu_blocking_combat():
 			_enter_next_floor()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_handle_cancel()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_I or event.keycode == KEY_C:
+			_toggle_inventory_window()
+			get_viewport().set_input_as_handled()
 
 func _initialize_main_flow_context() -> void:
 	player_data = SaveManagerScript.get_active_player_data()
@@ -285,6 +315,77 @@ func _build_debug_hud() -> void:
 	label.add_theme_color_override("font_color", Color(0.72, 0.86, 1.0))
 	label.add_theme_font_size_override("font_size", 20)
 	debug_hud.add_child(label)
+
+func _create_hud() -> void:
+	hud = HudControllerScript.new()
+	hud.name = "HudController"
+	add_child(hud)
+
+func _create_inventory_window() -> void:
+	ui_layer = CanvasLayer.new()
+	ui_layer.name = "PrototypeUiLayer"
+	ui_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(ui_layer)
+
+	inventory_window = InventoryEquipmentWindowScript.new()
+	inventory_window.process_mode = Node.PROCESS_MODE_ALWAYS
+	ui_layer.add_child(inventory_window)
+	inventory_window.set_player_data(player_data)
+	inventory_window.player_data_changed.connect(_on_player_data_changed)
+	inventory_window.close_requested.connect(func(): _set_inventory_window_visible(false))
+
+func _create_pause_overlay() -> void:
+	pause_overlay = CanvasLayer.new()
+	pause_overlay.name = "PauseOverlay"
+	pause_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	pause_overlay.visible = false
+	add_child(pause_overlay)
+
+	var veil := ColorRect.new()
+	veil.name = "PauseDarkVeil"
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.color = Color(0.0, 0.0, 0.0, 0.48)
+	pause_overlay.add_child(veil)
+
+	var panel := PanelContainer.new()
+	panel.position = Vector2(490, 205)
+	panel.size = Vector2(300, 230)
+	DarkArpgUiThemeScript.style_panel(panel, true)
+	pause_overlay.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	panel.add_child(box)
+
+	var title := Label.new()
+	title.text = "Paused"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	DarkArpgUiThemeScript.style_title(title, 24)
+	box.add_child(title)
+
+	pause_resume_button = Button.new()
+	pause_resume_button.name = "ResumeButton"
+	pause_resume_button.text = "Resume"
+	pause_resume_button.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(pause_resume_button, true)
+	pause_resume_button.pressed.connect(_toggle_pause)
+	box.add_child(pause_resume_button)
+
+	var inventory := Button.new()
+	inventory.name = "PauseInventoryButton"
+	inventory.text = "Inventory / Equipment"
+	inventory.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(inventory)
+	inventory.pressed.connect(_toggle_inventory_window)
+	box.add_child(inventory)
+
+	var town := Button.new()
+	town.name = "ReturnTownButton"
+	town.text = "Return To Town"
+	town.custom_minimum_size = Vector2(260, 42)
+	DarkArpgUiThemeScript.style_button(town)
+	town.pressed.connect(_return_to_town)
+	box.add_child(town)
 
 func _add_actor_visible_marker(actor: Node3D, color: Color, node_name: String) -> void:
 	var marker := MeshInstance3D.new()
@@ -596,6 +697,7 @@ func _defeat_enemy(enemy: Node3D) -> void:
 	if collision != null:
 		collision.disabled = true
 	enemy.visible = false
+	_update_hud("Enemy defeated. %d enemy/enemies remain." % living_enemy_count)
 	if living_enemy_count <= 0:
 		_unlock_exit()
 
@@ -607,6 +709,7 @@ func _unlock_exit() -> void:
 	if exit_marker != null:
 		exit_marker.material_override = _make_material(Color(0.18, 0.65, 1.0), Color(0.08, 0.35, 0.8))
 		exit_marker.scale = Vector3(1.18, 1.0, 1.18)
+	_update_hud("Floor clear. Press E at the exit marker to climb.")
 
 func _set_exit_locked_visual() -> void:
 	exit_unlocked = false
@@ -625,15 +728,102 @@ func _enter_next_floor() -> void:
 	_set_exit_locked_visual()
 	_reset_enemy_wave()
 	_update_camera_follow()
+	_update_hud("Entered floor %d." % current_floor)
 
 func _return_to_town() -> void:
 	player_data = _build_current_player_snapshot()
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
+	get_tree().paused = false
 	SceneRouterScript.go_to_town(get_tree())
 
 func _return_to_town_for_test() -> void:
 	player_data = _build_current_player_snapshot()
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
+
+func _toggle_pause() -> void:
+	if not is_instance_valid(pause_overlay):
+		return
+	pause_overlay.visible = not pause_overlay.visible
+	_sync_menu_pause_state()
+	if pause_overlay.visible:
+		_grab_focus_when_ready(pause_resume_button)
+
+func _toggle_pause_for_test() -> void:
+	_toggle_pause()
+
+func _handle_cancel() -> void:
+	if is_instance_valid(inventory_window) and inventory_window.visible:
+		_set_inventory_window_visible(false)
+		if is_instance_valid(pause_overlay) and pause_overlay.visible:
+			_grab_focus_when_ready(pause_resume_button)
+		return
+	_toggle_pause()
+
+func _handle_cancel_for_test() -> void:
+	_handle_cancel()
+
+func _grab_focus_when_ready(control: Control) -> void:
+	if not is_instance_valid(control):
+		return
+	control.call_deferred("grab_focus")
+
+func _toggle_inventory_window() -> void:
+	if not is_instance_valid(inventory_window):
+		return
+	_set_inventory_window_visible(not inventory_window.visible)
+
+func _toggle_inventory_window_for_test() -> void:
+	_toggle_inventory_window()
+
+func _set_inventory_window_visible(visible: bool) -> void:
+	if not is_instance_valid(inventory_window):
+		return
+	inventory_window.visible = visible
+	if visible:
+		inventory_window.set_player_data(player_data)
+	_sync_menu_pause_state()
+
+func _sync_menu_pause_state() -> void:
+	var pause_visible := is_instance_valid(pause_overlay) and pause_overlay.visible
+	var inventory_visible := is_instance_valid(inventory_window) and inventory_window.visible
+	get_tree().paused = pause_visible or inventory_visible
+
+func _is_menu_blocking_combat() -> bool:
+	return (is_instance_valid(pause_overlay) and pause_overlay.visible) or (is_instance_valid(inventory_window) and inventory_window.visible)
+
+func _on_player_data_changed(updated: Dictionary) -> void:
+	player_data = updated.duplicate(true)
+	SaveManagerScript.save_active_player_data(player_data, current_floor)
+	_update_hud("Equipment updated.")
+
+func _update_hud(message: String) -> void:
+	if not is_instance_valid(hud):
+		return
+	hud.call("set_status", "Floor %d | Enemies %d" % [current_floor, living_enemy_count])
+	hud.call("set_log", message)
+	if hud.has_method("set_objective"):
+		var objective := "Objective: defeat all enemies."
+		if exit_unlocked:
+			objective = "Objective: enter the blue exit marker."
+		hud.call("set_objective", objective)
+	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
+	hud.call("set_inventory", str(capacity.get("summary_text", "Bag 0/40")))
+	if hud.has_method("set_player_vitals"):
+		hud.call(
+			"set_player_vitals",
+			int(player_data.get("health", player_data.get("max_health", 1))),
+			int(player_data.get("max_health", 1)),
+			int(player_data.get("mana", 0)),
+			int(player_data.get("max_mana", 1))
+		)
+	if hud.has_method("set_player_progress"):
+		hud.call(
+			"set_player_progress",
+			int(player_data.get("player_level", 1)),
+			int(player_data.get("current_exp", 0)),
+			int(player_data.get("exp_to_next_level", 100)),
+			int(player_data.get("skill_points", 0))
+		)
 
 func _build_current_player_snapshot() -> Dictionary:
 	var snapshot := player_data.duplicate(true)
@@ -695,6 +885,40 @@ func build_main_flow_migration_snapshot_for_test() -> Dictionary:
 		"enemy_count": enemies.size(),
 		"living_enemy_count": living_enemy_count,
 		"can_return_to_town": has_method("_return_to_town"),
+	}
+
+func build_hud_inventory_pause_snapshot_for_test() -> Dictionary:
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	var status_text := ""
+	var inventory_text := ""
+	var objective_text := ""
+	var hud_level := 0
+	if is_instance_valid(hud):
+		var status_label := hud.get("status_label") as Label
+		var inventory_label := hud.get("inventory_label") as Label
+		var objective_label := hud.get("objective_label") as Label
+		if is_instance_valid(status_label):
+			status_text = status_label.text
+		if is_instance_valid(inventory_label):
+			inventory_text = inventory_label.text
+		if is_instance_valid(objective_label):
+			objective_text = objective_label.text
+		hud_level = int(player_data.get("player_level", 1))
+	return {
+		"has_hud": is_instance_valid(hud),
+		"has_inventory_window": is_instance_valid(inventory_window),
+		"has_pause_overlay": is_instance_valid(pause_overlay),
+		"pause_visible": is_instance_valid(pause_overlay) and pause_overlay.visible,
+		"inventory_visible": is_instance_valid(inventory_window) and inventory_window.visible,
+		"tree_paused": get_tree().paused,
+		"menu_blocks_combat": _is_menu_blocking_combat(),
+		"hud_status_text": status_text,
+		"hud_inventory_text": inventory_text,
+		"hud_objective_text": objective_text,
+		"hud_level": hud_level,
+		"pause_focus_name": focus_owner.name if focus_owner != null else "",
+		"inventory_process_always": is_instance_valid(inventory_window) and inventory_window.process_mode == Node.PROCESS_MODE_ALWAYS,
+		"pause_process_always": is_instance_valid(pause_overlay) and pause_overlay.process_mode == Node.PROCESS_MODE_ALWAYS,
 	}
 
 func build_visual_qa_snapshot_for_test() -> Dictionary:

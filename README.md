@@ -214,6 +214,15 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added independent hit-impact VFX feedback under a scene-level VFX root, separate from actor and weapon sprites.
 - Added regression: `tests/regression/regression_prototype_2_5d_attack_animation_vfx_contract.gd`.
 
+## 2026-06-18 Update: 2.5D HUD / Inventory / Pause Bridge
+
+- Connected the accepted 2.5D tower runtime to the shared `HudController`.
+- Connected the shared `InventoryEquipmentWindow` to the 2.5D runtime without creating a second inventory UI stack.
+- Opening inventory with `I` or `C` now pauses combat, so players can inspect equipment safely.
+- `Esc` closes inventory first, then toggles the pause overlay.
+- Added pause overlay actions for Resume, Inventory / Equipment, and Return To Town.
+- Added regression: `tests/regression/regression_prototype_2_5d_hud_inventory_pause_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
