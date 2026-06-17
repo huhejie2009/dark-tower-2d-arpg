@@ -214,6 +214,12 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added independent hit-impact VFX feedback under a scene-level VFX root, separate from actor and weapon sprites.
 - Added regression: `tests/regression/regression_prototype_2_5d_attack_animation_vfx_contract.gd`.
 
+## 2026-06-17 Update: 2.5D Billboard Animation Player
+
+- Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
+- Synced 2.5D player and enemy gameplay states into `idle`, `run`, `attack`, and `death` animation states.
+- Added regressions: `tests/regression/regression_billboard_actor_3d_animation_player.gd` and `tests/regression/regression_prototype_2_5d_animation_state_sync.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。

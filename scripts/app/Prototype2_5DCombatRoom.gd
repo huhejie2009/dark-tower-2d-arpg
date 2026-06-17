@@ -163,6 +163,7 @@ func _build_actors() -> void:
 	player.position = Vector3(0.0, 0.0, 2.0)
 	player.set_movement_speed(4.5)
 	add_child(player)
+	_apply_default_actor_animation_manifest(player)
 	_add_actor_visible_marker(player, Color(0.22, 0.65, 1.0), "PlayerReadableMarker")
 	_update_camera_follow()
 
@@ -172,10 +173,37 @@ func _build_actors() -> void:
 		enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
 		enemy.set_movement_speed(3.2)
 		add_child(enemy)
+		_apply_default_actor_animation_manifest(enemy)
 		_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
 		enemies.append(enemy)
 		enemy_states[enemy] = _make_enemy_state()
 	living_enemy_count = enemies.size()
+
+func _apply_default_actor_animation_manifest(actor: Node3D) -> void:
+	if actor == null or not actor.has_method("apply_visual_asset_manifest"):
+		return
+	actor.call("apply_visual_asset_manifest", _make_default_billboard_animation_manifest())
+
+func _make_default_billboard_animation_manifest() -> Dictionary:
+	return {
+		"asset_pipeline": "runtime_placeholder",
+		"enabled": false,
+		"sprite_sheet_path": "",
+		"frame_size": Vector2i(32, 48),
+		"direction_mode": "4dir",
+		"direction_frame_offsets": {
+			"down": 0,
+			"left": 12,
+			"right": 24,
+			"up": 36,
+		},
+		"animations": {
+			"idle": {"from": 0, "to": 1, "fps": 8, "loop": true},
+			"run": {"from": 4, "to": 5, "fps": 10, "loop": true},
+			"attack": {"from": 8, "to": 9, "fps": 10, "loop": false},
+			"death": {"from": 10, "to": 11, "fps": 6, "loop": false},
+		},
+	}
 
 func _build_exit_marker() -> void:
 	exit_marker = MeshInstance3D.new()
@@ -458,6 +486,11 @@ func _sync_player_action_state() -> void:
 		player.call("set_action_state", "run")
 	else:
 		player.call("set_action_state", "idle")
+	_update_actor_animation(player, active_move_input, player_attack_phase == "active" or player_attack_phase == "recovery", false)
+
+func _update_actor_animation(actor: Node3D, movement: Vector2, attacking: bool, dead: bool) -> void:
+	if actor != null and actor.has_method("update_actor_animation_state"):
+		actor.call("update_actor_animation_state", movement, attacking, dead)
 
 func _make_enemy_state() -> Dictionary:
 	return {
@@ -479,13 +512,17 @@ func _update_enemy_loop(delta: float) -> void:
 		if not bool(state.get("alive", false)):
 			if enemy.has_method("set_move_input"):
 				enemy.call("set_move_input", Vector2.ZERO)
+			_update_actor_animation(enemy, Vector2.ZERO, false, true)
 			continue
 		var offset := player.global_position - enemy.global_position
 		offset.y = 0.0
 		var distance := offset.length()
 		state["distance_to_player"] = distance
+		var enemy_movement := Vector2.ZERO
+		var enemy_attacking := false
 		if distance <= ENEMY_ATTACK_RANGE:
 			state["mode"] = "attack"
+			enemy_attacking = true
 			state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
 			if float(state.get("attack_timer", 0.0)) >= ENEMY_ATTACK_COOLDOWN:
 				state["attack_timer"] = 0.0
@@ -495,13 +532,15 @@ func _update_enemy_loop(delta: float) -> void:
 		elif distance <= ENEMY_CHASE_RANGE:
 			state["mode"] = "chase"
 			state["attack_timer"] = 0.0
+			enemy_movement = Vector2(offset.x, offset.z)
 			if enemy.has_method("set_move_input"):
-				enemy.call("set_move_input", Vector2(offset.x, offset.z))
+				enemy.call("set_move_input", enemy_movement)
 		else:
 			state["mode"] = "idle"
 			state["attack_timer"] = 0.0
 			if enemy.has_method("set_move_input"):
 				enemy.call("set_move_input", Vector2.ZERO)
+		_update_actor_animation(enemy, enemy_movement, enemy_attacking, false)
 		enemy_states[enemy] = state
 
 func _defeat_enemy(enemy: Node3D) -> void:
@@ -518,6 +557,7 @@ func _defeat_enemy(enemy: Node3D) -> void:
 	living_enemy_count = maxi(0, living_enemy_count - 1)
 	if enemy.has_method("set_move_input"):
 		enemy.call("set_move_input", Vector2.ZERO)
+	_update_actor_animation(enemy, Vector2.ZERO, false, true)
 	var collision := enemy.get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision != null:
 		collision.disabled = true
@@ -651,6 +691,31 @@ func build_player_attack_feedback_snapshot_for_test() -> Dictionary:
 		"last_hit_vfx_position": last_hit_vfx_position,
 		"hit_vfx_lifetime_remaining": hit_vfx_lifetime_remaining,
 	}
+
+func build_animation_state_snapshot_for_test() -> Dictionary:
+	var player_animation := _get_actor_animation_snapshot(player)
+	var enemy_animations: Array[Dictionary] = []
+	for enemy in enemies:
+		var enemy_animation := _get_actor_animation_snapshot(enemy)
+		var state: Dictionary = enemy_states.get(enemy, {})
+		enemy_animation["name"] = enemy.name if enemy != null else ""
+		enemy_animation["alive"] = bool(state.get("alive", false))
+		enemy_animation["mode"] = str(state.get("mode", ""))
+		enemy_animations.append(enemy_animation)
+	return {
+		"player_animation": str(player_animation.get("animation", "")),
+		"player_frame_index": int(player_animation.get("frame_index", -1)),
+		"player_resolved_frame_index": int(player_animation.get("resolved_frame_index", -1)),
+		"player_facing_direction": str(player_animation.get("facing_direction", "")),
+		"player_body_weapon_separated": bool(player_animation.get("body_weapon_separated", false)),
+		"player_animation_locked_until_end": bool(player_animation.get("animation_locked_until_end", false)),
+		"enemy_animations": enemy_animations,
+	}
+
+func _get_actor_animation_snapshot(actor: Node3D) -> Dictionary:
+	if actor != null and actor.has_method("get_actor_animation_state"):
+		return actor.call("get_actor_animation_state")
+	return {}
 
 func get_player_screen_position_for_test() -> Vector2:
 	return camera.unproject_position(player.global_position) if camera != null and player != null else Vector2.ZERO
