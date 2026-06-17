@@ -12,6 +12,10 @@ const HudControllerScript := preload("res://scripts/ui/HudController.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const InventoryDataServiceScript := preload("res://scripts/data/InventoryDataService.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
+const LootNotificationServiceScript := preload("res://scripts/data/LootNotificationService.gd")
+const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.gd")
+const TowerProgressServiceScript := preload("res://scripts/data/TowerProgressService.gd")
+const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -29,6 +33,12 @@ var player: Node3D
 var player_data: Dictionary = {}
 var current_floor := 1
 var legacy_fallback_scene := GameConstantsScript.GAME_2D_SCENE
+var kill_index := 0
+var floor_kill_count := 0
+var floor_pickup_names: Array[String] = []
+var last_floor_rewards: Dictionary = {}
+var last_loot_notification: Dictionary = {}
+var last_xp_result: Dictionary = {}
 var enemies: Array[Node3D] = []
 var enemy_states: Dictionary = {}
 var living_enemy_count := 0
@@ -227,8 +237,13 @@ func _create_enemy_actor(index: int) -> Node3D:
 	_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index))
 	_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
 	enemies.append(enemy)
-	enemy_states[enemy] = _make_enemy_state()
+	enemy_states[enemy] = _make_enemy_state(_get_enemy_type_for_index(index))
 	return enemy
+
+func _get_enemy_type_for_index(index: int) -> String:
+	if index == 0:
+		return "rot_melee"
+	return "shadow_archer"
 
 func _apply_actor_animation_manifest(actor: Node3D, manifest: Dictionary) -> void:
 	if actor == null or not actor.has_method("apply_visual_asset_manifest"):
@@ -627,7 +642,7 @@ func _update_actor_animation(actor: Node3D, movement: Vector2, attacking: bool, 
 	if actor != null and actor.has_method("update_actor_animation_state"):
 		actor.call("update_actor_animation_state", movement, attacking, dead)
 
-func _make_enemy_state() -> Dictionary:
+func _make_enemy_state(enemy_type: String = "rot_melee") -> Dictionary:
 	return {
 		"health": ENEMY_MAX_HEALTH,
 		"alive": true,
@@ -635,6 +650,10 @@ func _make_enemy_state() -> Dictionary:
 		"distance_to_player": 0.0,
 		"attack_timer": 0.0,
 		"attack_count": 0,
+		"enemy_type": enemy_type,
+		"display_rank": "normal",
+		"is_elite": false,
+		"is_boss": false,
 	}
 
 func _update_enemy_loop(delta: float) -> void:
@@ -697,9 +716,104 @@ func _defeat_enemy(enemy: Node3D) -> void:
 	if collision != null:
 		collision.disabled = true
 	enemy.visible = false
-	_update_hud("Enemy defeated. %d enemy/enemies remain." % living_enemy_count)
+	var xp_result := _record_enemy_defeat_rewards(state)
+	var level_note := " Level up!" if bool(xp_result.get("leveled_up", false)) else ""
+	_update_hud("Enemy defeated. %d enemy/enemies remain. +%d XP%s" % [living_enemy_count, int(xp_result.get("experience_gained", 0)), level_note])
 	if living_enemy_count <= 0:
-		_unlock_exit()
+		_on_floor_cleared()
+
+func _record_enemy_defeat_rewards(enemy_state: Dictionary) -> Dictionary:
+	kill_index += 1
+	floor_kill_count += 1
+	var enemy_data := _build_enemy_experience_source(enemy_state)
+	var xp_result := _award_enemy_experience(enemy_data)
+	_add_direct_enemy_drop(enemy_data)
+	SaveManagerScript.save_active_player_data(_build_current_player_snapshot(), current_floor)
+	return xp_result
+
+func _build_enemy_experience_source(enemy_state: Dictionary) -> Dictionary:
+	return {
+		"enemy_type": str(enemy_state.get("enemy_type", "rot_melee")),
+		"display_rank": str(enemy_state.get("display_rank", "normal")),
+		"is_elite": bool(enemy_state.get("is_elite", false)),
+		"is_boss": bool(enemy_state.get("is_boss", false)),
+	}
+
+func _award_enemy_experience(enemy_data: Dictionary) -> Dictionary:
+	var before_level := int(player_data.get("player_level", 1))
+	var experience := _get_enemy_experience_reward(enemy_data)
+	player_data = PlayerDataServiceScript.add_experience(player_data, experience)
+	last_xp_result = {
+		"experience_gained": experience,
+		"leveled_up": int(player_data.get("player_level", 1)) > before_level,
+		"player_level": int(player_data.get("player_level", 1)),
+	}
+	return last_xp_result.duplicate(true)
+
+func _get_enemy_experience_reward(enemy_data: Dictionary) -> int:
+	var base := 18 + current_floor * 3
+	match str(enemy_data.get("enemy_type", "rot_melee")):
+		"shadow_archer":
+			base += 4
+		"tower_guardian":
+			base += 10
+		"tower_gatekeeper":
+			base += 35
+	if bool(enemy_data.get("is_boss", false)) or str(enemy_data.get("display_rank", "")) == "boss":
+		base *= 4
+	elif bool(enemy_data.get("is_elite", false)) or str(enemy_data.get("display_rank", "")) == "elite":
+		base *= 2
+	return maxi(1, base)
+
+func _add_direct_enemy_drop(enemy_data: Dictionary) -> void:
+	var source := "elite" if bool(enemy_data.get("is_elite", false)) else "normal"
+	var payload := LootRulesScript.generate_enemy_drop_with_source(current_floor, str(player_data.get("base_class", "warrior")), kill_index, source)
+	_add_payload_to_player_inventory(payload, "drop")
+
+func _add_payload_to_player_inventory(payload: Dictionary, source: String) -> void:
+	var notification := _build_loot_notification(payload, source)
+	player_data["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player_data.get("inventory", {})), payload)
+	floor_pickup_names.append(str(payload.get("name", "Item")))
+	_show_loot_notification(notification)
+
+func _build_loot_notification(payload: Dictionary, source: String = "drop") -> Dictionary:
+	return LootNotificationServiceScript.build_pickup_notification(player_data, payload, source)
+
+func _show_loot_notification(notification: Dictionary) -> void:
+	last_loot_notification = notification.duplicate(true)
+	if is_instance_valid(hud) and hud.has_method("show_loot_notification"):
+		hud.call("show_loot_notification", notification)
+
+func _on_floor_cleared() -> void:
+	if exit_unlocked:
+		return
+	var rewards := _build_floor_clear_rewards(current_floor, str(player_data.get("base_class", "warrior")))
+	player_data = _apply_floor_clear_rewards_to_player(player_data, rewards)
+	var next_floor := TowerProgressServiceScript.next_floor_after_clear(current_floor)
+	player_data["highest_floor"] = maxi(next_floor, int(player_data.get("highest_floor", 1)))
+	last_floor_rewards = rewards.duplicate(true)
+	SaveManagerScript.apply_floor_clear(current_floor, rewards, _build_current_player_snapshot())
+	_unlock_exit()
+
+func _build_floor_clear_rewards(floor: int, base_class: String) -> Dictionary:
+	var rewards := TowerProgressServiceScript.build_floor_reward(floor)
+	if bool(rewards.get("guaranteed_magic_equipment", false)):
+		rewards["guaranteed_items"] = [LootRulesScript.generate_boss_clear_reward(floor, base_class)]
+	else:
+		rewards["guaranteed_items"] = []
+	return rewards
+
+func _apply_floor_clear_rewards_to_player(data: Dictionary, rewards: Dictionary) -> Dictionary:
+	var result := data.duplicate(true)
+	var inventory: Dictionary = Dictionary(result.get("inventory", {}))
+	for item in Array(rewards.get("guaranteed_items", [])):
+		var payload: Dictionary = Dictionary(item)
+		var notification := _build_loot_notification(payload, "boss_reward")
+		inventory = InventoryDataServiceScript.add_item(inventory, payload)
+		floor_pickup_names.append(str(payload.get("name", "Item")))
+		_show_loot_notification(notification)
+	result["inventory"] = inventory
+	return result
 
 func _unlock_exit() -> void:
 	if exit_unlocked:
@@ -836,6 +950,11 @@ func _reset_enemy_wave() -> void:
 			enemy.queue_free()
 	enemies.clear()
 	enemy_states.clear()
+	floor_kill_count = 0
+	floor_pickup_names = []
+	last_floor_rewards = {}
+	last_loot_notification = {}
+	last_xp_result = {}
 	actor_visible_markers = _get_surviving_actor_visible_markers()
 	for index in range(2):
 		_create_enemy_actor(index)
@@ -920,6 +1039,47 @@ func build_hud_inventory_pause_snapshot_for_test() -> Dictionary:
 		"inventory_process_always": is_instance_valid(inventory_window) and inventory_window.process_mode == Node.PROCESS_MODE_ALWAYS,
 		"pause_process_always": is_instance_valid(pause_overlay) and pause_overlay.process_mode == Node.PROCESS_MODE_ALWAYS,
 	}
+
+func build_loot_xp_reward_snapshot_for_test() -> Dictionary:
+	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
+	var status_text := ""
+	var inventory_text := ""
+	if is_instance_valid(hud):
+		var status_label := hud.get("status_label") as Label
+		var inventory_label := hud.get("inventory_label") as Label
+		if is_instance_valid(status_label):
+			status_text = status_label.text
+		if is_instance_valid(inventory_label):
+			inventory_text = inventory_label.text
+	return {
+		"current_floor": current_floor,
+		"kill_index": kill_index,
+		"floor_kill_count": floor_kill_count,
+		"floor_pickup_names": floor_pickup_names.duplicate(),
+		"last_floor_rewards": last_floor_rewards.duplicate(true),
+		"last_loot_notification": last_loot_notification.duplicate(true),
+		"last_xp_gained": int(last_xp_result.get("experience_gained", 0)),
+		"last_xp_leveled_up": bool(last_xp_result.get("leveled_up", false)),
+		"player_level": int(player_data.get("player_level", 1)),
+		"current_exp": int(player_data.get("current_exp", 0)),
+		"exp_to_next_level": int(player_data.get("exp_to_next_level", 100)),
+		"inventory_used_slots": int(capacity.get("used_slots", 0)),
+		"inventory_capacity": int(capacity.get("capacity", 0)),
+		"has_boss_reward_item": _inventory_has_boss_reward_item(),
+		"exit_unlocked": exit_unlocked,
+		"living_enemy_count": living_enemy_count,
+		"hud_status_text": status_text,
+		"hud_inventory_text": inventory_text,
+	}
+
+func _inventory_has_boss_reward_item() -> bool:
+	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
+	for entry_value in inventory.values():
+		var entry: Dictionary = Dictionary(entry_value)
+		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
+		if str(equipment.get("template_id", "")) == "boss_clear_reward":
+			return true
+	return false
 
 func build_visual_qa_snapshot_for_test() -> Dictionary:
 	var actor_snapshots: Array[Dictionary] = []

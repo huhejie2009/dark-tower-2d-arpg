@@ -223,6 +223,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added pause overlay actions for Resume, Inventory / Equipment, and Return To Town.
 - Added regression: `tests/regression/regression_prototype_2_5d_hud_inventory_pause_bridge.gd`.
 
+## 2026-06-18 Update: 2.5D Loot / XP / Reward Bridge
+
+- Connected the accepted 2.5D tower runtime to existing XP, loot, inventory, notification, and floor reward services.
+- Defeating enemies now grants XP, can level up the player, creates a deterministic drop, and adds that drop to the bag.
+- Clearing a floor now saves tower progress and pending floor rewards through the existing save bridge.
+- Boss floors now grant the same guaranteed equipment reward family used by the legacy 2D runtime.
+- Added regression: `tests/regression/regression_prototype_2_5d_loot_xp_reward_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
