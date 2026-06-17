@@ -235,6 +235,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added a visual grounding snapshot covering contact shadow count, marker visibility, and soft shadow alpha.
 - Added regression: `tests/regression/regression_prototype_2_5d_visual_grounding_contract.gd`.
 
+## 2026-06-18 Update: 2.5D Main Flow Migration Phase 1
+
+- Began migrating the accepted 2.5D combat room from isolated prototype into the main tower flow.
+- `Prototype2_5DCombatRoom` now loads active player data, consumes `TowerRunStartService` floor requests, tracks `current_floor`, saves progress on next-floor transition, and keeps a return-to-town save bridge.
+- `Game2D.tscn` remains available as the legacy fallback scene while the 2.5D runtime gains the missing gameplay systems.
+- Added regression: `tests/regression/regression_prototype_2_5d_main_flow_migration_contract.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。

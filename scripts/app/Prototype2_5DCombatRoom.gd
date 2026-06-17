@@ -4,6 +4,10 @@ const BillboardActor3D := preload("res://scripts/prototype/BillboardActor3D.gd")
 const BillboardActorManifestLibrary := preload("res://scripts/prototype/BillboardActorManifestLibrary.gd")
 const CombatPlane3DService := preload("res://scripts/prototype/CombatPlane3DService.gd")
 const Prototype2_5DVisualQaService := preload("res://scripts/prototype/Prototype2_5DVisualQaService.gd")
+const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
+const SaveManagerScript := preload("res://scripts/save/SaveManager.gd")
+const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
+const TowerRunStartServiceScript := preload("res://scripts/data/TowerRunStartService.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -18,6 +22,9 @@ const PLAYER_ATTACK_ARC_SEGMENTS := 12
 const PLAYER_HIT_VFX_LIFETIME := 0.22
 
 var player: Node3D
+var player_data: Dictionary = {}
+var current_floor := 1
+var legacy_fallback_scene := GameConstantsScript.GAME_2D_SCENE
 var enemies: Array[Node3D] = []
 var enemy_states: Dictionary = {}
 var living_enemy_count := 0
@@ -53,6 +60,7 @@ var last_hit_vfx_position := Vector3.ZERO
 var debug_readability_markers_enabled := false
 
 func _ready() -> void:
+	_initialize_main_flow_context()
 	_build_visibility_baseline()
 	_build_room()
 	_build_camera()
@@ -74,6 +82,13 @@ func _physics_process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
+		if exit_unlocked:
+			_enter_next_floor()
+
+func _initialize_main_flow_context() -> void:
+	player_data = SaveManagerScript.get_active_player_data()
+	current_floor = TowerRunStartServiceScript.consume_start_floor(player_data)
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -170,16 +185,20 @@ func _build_actors() -> void:
 	_update_camera_follow()
 
 	for index in range(2):
-		var enemy := BillboardActor3D.new()
-		enemy.name = "EnemyBillboard%d" % (index + 1)
-		enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
-		enemy.set_movement_speed(3.2)
-		add_child(enemy)
-		_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index))
-		_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
-		enemies.append(enemy)
-		enemy_states[enemy] = _make_enemy_state()
+		_create_enemy_actor(index)
 	living_enemy_count = enemies.size()
+
+func _create_enemy_actor(index: int) -> Node3D:
+	var enemy := BillboardActor3D.new()
+	enemy.name = "EnemyBillboard%d" % (index + 1)
+	enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
+	enemy.set_movement_speed(3.2)
+	add_child(enemy)
+	_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index))
+	_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
+	enemies.append(enemy)
+	enemy_states[enemy] = _make_enemy_state()
+	return enemy
 
 func _apply_actor_animation_manifest(actor: Node3D, manifest: Dictionary) -> void:
 	if actor == null or not actor.has_method("apply_visual_asset_manifest"):
@@ -596,6 +615,49 @@ func _set_exit_locked_visual() -> void:
 		exit_marker.material_override = _make_material(Color(0.08, 0.12, 0.16), Color(0.01, 0.025, 0.04))
 		exit_marker.scale = Vector3.ONE
 
+func _enter_next_floor() -> void:
+	if not exit_unlocked:
+		return
+	current_floor += 1
+	player_data = _build_current_player_snapshot()
+	player_data["highest_floor"] = current_floor
+	SaveManagerScript.save_active_player_data(player_data, current_floor)
+	_set_exit_locked_visual()
+	_reset_enemy_wave()
+	_update_camera_follow()
+
+func _return_to_town() -> void:
+	player_data = _build_current_player_snapshot()
+	SaveManagerScript.save_active_player_data(player_data, current_floor)
+	SceneRouterScript.go_to_town(get_tree())
+
+func _return_to_town_for_test() -> void:
+	player_data = _build_current_player_snapshot()
+	SaveManagerScript.save_active_player_data(player_data, current_floor)
+
+func _build_current_player_snapshot() -> Dictionary:
+	var snapshot := player_data.duplicate(true)
+	snapshot["highest_floor"] = maxi(current_floor, int(snapshot.get("highest_floor", 1)))
+	return snapshot
+
+func _reset_enemy_wave() -> void:
+	for enemy in enemies:
+		if is_instance_valid(enemy):
+			enemy.queue_free()
+	enemies.clear()
+	enemy_states.clear()
+	actor_visible_markers = _get_surviving_actor_visible_markers()
+	for index in range(2):
+		_create_enemy_actor(index)
+	living_enemy_count = enemies.size()
+
+func _get_surviving_actor_visible_markers() -> Array[MeshInstance3D]:
+	var surviving: Array[MeshInstance3D] = []
+	for marker in actor_visible_markers:
+		if is_instance_valid(marker) and marker.get_parent() == player:
+			surviving.append(marker)
+	return surviving
+
 func set_player_position_for_test(value: Vector3) -> void:
 	if player != null:
 		player.global_position = value
@@ -617,6 +679,22 @@ func build_prototype_snapshot_for_test() -> Dictionary:
 		"player_count": 1 if player != null else 0,
 		"enemy_count": enemies.size(),
 		"has_exit_marker": exit_marker != null,
+	}
+
+func build_main_flow_migration_snapshot_for_test() -> Dictionary:
+	return {
+		"runtime_id": "prototype_2_5d_main_tower_flow",
+		"active_game_scene": GameConstantsScript.ACTIVE_GAME_SCENE,
+		"legacy_fallback_scene": legacy_fallback_scene,
+		"current_floor": current_floor,
+		"active_player_name": str(player_data.get("character_name", "")),
+		"player_highest_floor": int(player_data.get("highest_floor", 1)),
+		"uses_save_manager": true,
+		"uses_tower_run_start_service": true,
+		"exit_unlocked": exit_unlocked,
+		"enemy_count": enemies.size(),
+		"living_enemy_count": living_enemy_count,
+		"can_return_to_town": has_method("_return_to_town"),
 	}
 
 func build_visual_qa_snapshot_for_test() -> Dictionary:
