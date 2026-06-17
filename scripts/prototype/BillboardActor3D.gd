@@ -5,6 +5,7 @@ const CombatPlane3DService := preload("res://scripts/prototype/CombatPlane3DServ
 var movement_speed: float = 160.0
 var move_input: Vector2 = Vector2.ZERO
 var facing_direction: String = "down"
+var action_state: String = "idle"
 var animation_profile: Resource = null
 
 @onready var visual_root: Node3D = $VisualRoot
@@ -44,6 +45,8 @@ func _physics_process(_delta: float) -> void:
 	velocity = Vector3(move_velocity.x, velocity.y, move_velocity.z)
 	if move_input.length_squared() > 0.0001:
 		facing_direction = _direction_from_input(move_input)
+	if action_state != "attack" and action_state != "death":
+		action_state = "run" if move_input.length_squared() > 0.0001 else "idle"
 	move_and_slide()
 
 func set_move_input(value: Vector2) -> void:
@@ -53,6 +56,13 @@ func set_move_input(value: Vector2) -> void:
 
 func set_movement_speed(value: float) -> void:
 	movement_speed = maxf(value, 0.0)
+
+func set_action_state(value: String) -> void:
+	var normalized := value.strip_edges()
+	action_state = normalized if normalized != "" else "idle"
+
+func get_action_state() -> String:
+	return action_state
 
 func apply_animation_profile(profile: Resource) -> void:
 	animation_profile = profile
@@ -74,6 +84,7 @@ func build_contract_snapshot() -> Dictionary:
 		"has_collision_shape": has_node("CollisionShape3D") and collision_shape.shape != null,
 		"movement_speed": movement_speed,
 		"facing_direction": facing_direction,
+		"action_state": action_state,
 		"profile_actor_id": profile_id,
 	}
 

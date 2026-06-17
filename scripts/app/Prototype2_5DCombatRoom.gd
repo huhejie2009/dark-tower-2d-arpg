@@ -14,6 +14,7 @@ const PLAYER_ATTACK_DAMAGE := 1
 const PLAYER_ATTACK_COOLDOWN := 0.42
 const PLAYER_ATTACK_ACTIVE_TIME := 0.14
 const PLAYER_ATTACK_ARC_SEGMENTS := 12
+const PLAYER_HIT_VFX_LIFETIME := 0.22
 
 var player: Node3D
 var enemies: Array[Node3D] = []
@@ -27,6 +28,8 @@ var actor_visible_markers: Array[MeshInstance3D] = []
 var floor_mesh: MeshInstance3D
 var exit_marker: Node3D
 var player_attack_arc_marker: MeshInstance3D
+var hit_vfx_root: Node3D
+var hit_impact_marker: MeshInstance3D
 var camera: Camera3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
@@ -44,6 +47,8 @@ var total_player_attack_count := 0
 var last_player_attack_hit_count := 0
 var last_player_attack_aim_source := "none"
 var last_player_attack_world_target := Vector3.ZERO
+var hit_vfx_lifetime_remaining := 0.0
+var last_hit_vfx_position := Vector3.ZERO
 
 func _ready() -> void:
 	_build_visibility_baseline()
@@ -52,6 +57,7 @@ func _ready() -> void:
 	_build_actors()
 	_build_exit_marker()
 	_build_player_attack_arc_marker()
+	_build_hit_vfx()
 	_build_debug_hud()
 
 func _physics_process(_delta: float) -> void:
@@ -61,6 +67,7 @@ func _physics_process(_delta: float) -> void:
 	_update_camera_follow()
 	_update_enemy_loop(_delta)
 	_tick_player_attack(_delta)
+	_tick_hit_vfx(_delta)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -190,6 +197,22 @@ func _build_player_attack_arc_marker() -> void:
 	player_attack_arc_marker.visible = false
 	add_child(player_attack_arc_marker)
 
+func _build_hit_vfx() -> void:
+	hit_vfx_root = Node3D.new()
+	hit_vfx_root.name = "PrototypeHitVfxRoot"
+	add_child(hit_vfx_root)
+
+	hit_impact_marker = MeshInstance3D.new()
+	hit_impact_marker.name = "HitImpactMarker"
+	hit_impact_marker.set_meta("vfx_role", "hit_impact")
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.16
+	mesh.height = 0.32
+	hit_impact_marker.mesh = mesh
+	hit_impact_marker.material_override = _make_translucent_material(Color(1.0, 0.76, 0.32, 0.62), Color(0.65, 0.32, 0.08))
+	hit_impact_marker.visible = false
+	hit_vfx_root.add_child(hit_impact_marker)
+
 func _build_debug_hud() -> void:
 	debug_hud = CanvasLayer.new()
 	debug_hud.name = "PrototypeDebugHUD"
@@ -270,6 +293,7 @@ func _tick_player_attack(delta: float) -> void:
 	if player_attack_cooldown_remaining <= 0.0:
 		player_attack_phase = "ready"
 		_hide_player_attack_arc()
+		_sync_player_action_state()
 		return
 	player_attack_cooldown_remaining = maxf(0.0, player_attack_cooldown_remaining - delta)
 	if player_attack_cooldown_remaining <= 0.0:
@@ -279,6 +303,17 @@ func _tick_player_attack(delta: float) -> void:
 		player_attack_phase = "active"
 	else:
 		player_attack_phase = "recovery"
+	_sync_player_action_state()
+
+func _tick_hit_vfx(delta: float) -> void:
+	if hit_impact_marker == null or hit_vfx_lifetime_remaining <= 0.0:
+		return
+	hit_vfx_lifetime_remaining = maxf(0.0, hit_vfx_lifetime_remaining - delta)
+	if hit_vfx_lifetime_remaining <= 0.0:
+		hit_impact_marker.visible = false
+		return
+	var progress := hit_vfx_lifetime_remaining / PLAYER_HIT_VFX_LIFETIME
+	hit_impact_marker.scale = Vector3.ONE * lerpf(0.7, 1.35, progress)
 
 func _read_player_attack_direction_from_mouse_event(event: InputEventMouseButton) -> Vector2:
 	if player_attack_direction_override_enabled:
@@ -333,11 +368,13 @@ func _perform_player_attack(direction: Vector2) -> Dictionary:
 	last_player_attack_direction = attack_direction
 	player_attack_cooldown_remaining = PLAYER_ATTACK_COOLDOWN
 	player_attack_phase = "active"
+	_sync_player_action_state()
 	total_player_attack_count += 1
 	last_player_attack_hit_count = 0
 	_show_player_attack_arc(attack_direction)
 	var target := _find_player_attack_target(attack_direction)
 	if target != null:
+		_show_hit_vfx(target.global_position)
 		_damage_enemy(target, PLAYER_ATTACK_DAMAGE)
 		last_player_attack_hit_count = 1
 	return {
@@ -402,6 +439,25 @@ func _show_player_attack_arc(direction: Vector2) -> void:
 func _hide_player_attack_arc() -> void:
 	if player_attack_arc_marker != null:
 		player_attack_arc_marker.visible = false
+
+func _show_hit_vfx(world_position: Vector3) -> void:
+	if hit_impact_marker == null:
+		return
+	last_hit_vfx_position = world_position + Vector3(0.0, 0.35, 0.0)
+	hit_impact_marker.global_position = last_hit_vfx_position
+	hit_impact_marker.scale = Vector3.ONE
+	hit_impact_marker.visible = true
+	hit_vfx_lifetime_remaining = PLAYER_HIT_VFX_LIFETIME
+
+func _sync_player_action_state() -> void:
+	if player == null or not player.has_method("set_action_state"):
+		return
+	if player_attack_phase == "active" or player_attack_phase == "recovery":
+		player.call("set_action_state", "attack")
+	elif active_move_input.length_squared() > 0.0001:
+		player.call("set_action_state", "run")
+	else:
+		player.call("set_action_state", "idle")
 
 func _make_enemy_state() -> Dictionary:
 	return {
@@ -574,6 +630,26 @@ func build_player_attack_visual_snapshot_for_test() -> Dictionary:
 		"arc_range": PLAYER_ATTACK_RANGE,
 		"arc_half_angle": PLAYER_ATTACK_HALF_ANGLE,
 		"last_world_target": last_player_attack_world_target,
+	}
+
+func build_player_attack_feedback_snapshot_for_test() -> Dictionary:
+	var player_snapshot: Dictionary = {}
+	if player != null and player.has_method("build_contract_snapshot"):
+		player_snapshot = player.call("build_contract_snapshot")
+	var parent_path := ""
+	if hit_impact_marker != null and hit_impact_marker.get_parent() != null:
+		parent_path = str(hit_impact_marker.get_parent().get_path())
+	return {
+		"player_action_state": str(player_snapshot.get("action_state", "")),
+		"attack_phase": player_attack_phase,
+		"hit_vfx_root_exists": hit_vfx_root != null,
+		"hit_vfx_marker_exists": hit_impact_marker != null,
+		"hit_vfx_visible": hit_impact_marker != null and hit_impact_marker.visible,
+		"hit_vfx_role": str(hit_impact_marker.get_meta("vfx_role", "")) if hit_impact_marker != null else "",
+		"hit_vfx_parent_path": parent_path,
+		"hit_vfx_independent_from_actor": hit_impact_marker != null and not parent_path.contains("PlayerBillboard") and not parent_path.contains("WeaponSprite"),
+		"last_hit_vfx_position": last_hit_vfx_position,
+		"hit_vfx_lifetime_remaining": hit_vfx_lifetime_remaining,
 	}
 
 func get_player_screen_position_for_test() -> Vector2:

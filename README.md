@@ -208,6 +208,12 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Production pack defines target file names, frame order, animation segments, IMAGE2 prompts, and import acceptance gates.
 - Added regression: `tests/regression/regression_pixel_actor_production_pack.gd`.
 
+## 2026-06-17 Update: 2.5D Attack Action/VFX Split
+
+- Added a prototype actor `action_state` contract for `idle`, `run`, and attack-driven state switching.
+- Added independent hit-impact VFX feedback under a scene-level VFX root, separate from actor and weapon sprites.
+- Added regression: `tests/regression/regression_prototype_2_5d_attack_animation_vfx_contract.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。
