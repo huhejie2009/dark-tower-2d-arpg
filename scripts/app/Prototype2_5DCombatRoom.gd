@@ -1,6 +1,7 @@
 extends Node3D
 
 const BillboardActor3D := preload("res://scripts/prototype/BillboardActor3D.gd")
+const BillboardActorManifestLibrary := preload("res://scripts/prototype/BillboardActorManifestLibrary.gd")
 const CombatPlane3DService := preload("res://scripts/prototype/CombatPlane3DService.gd")
 const Prototype2_5DVisualQaService := preload("res://scripts/prototype/Prototype2_5DVisualQaService.gd")
 
@@ -163,7 +164,7 @@ func _build_actors() -> void:
 	player.position = Vector3(0.0, 0.0, 2.0)
 	player.set_movement_speed(4.5)
 	add_child(player)
-	_apply_default_actor_animation_manifest(player)
+	_apply_actor_animation_manifest(player, BillboardActorManifestLibrary.make_player_warrior_v3())
 	_add_actor_visible_marker(player, Color(0.22, 0.65, 1.0), "PlayerReadableMarker")
 	_update_camera_follow()
 
@@ -173,16 +174,27 @@ func _build_actors() -> void:
 		enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
 		enemy.set_movement_speed(3.2)
 		add_child(enemy)
-		_apply_default_actor_animation_manifest(enemy)
+		_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index))
 		_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
 		enemies.append(enemy)
 		enemy_states[enemy] = _make_enemy_state()
 	living_enemy_count = enemies.size()
 
+func _apply_actor_animation_manifest(actor: Node3D, manifest: Dictionary) -> void:
+	if actor == null or not actor.has_method("apply_visual_asset_manifest"):
+		return
+	var resolved_manifest := manifest if not manifest.is_empty() else _make_default_billboard_animation_manifest()
+	actor.call("apply_visual_asset_manifest", resolved_manifest)
+
 func _apply_default_actor_animation_manifest(actor: Node3D) -> void:
 	if actor == null or not actor.has_method("apply_visual_asset_manifest"):
 		return
 	actor.call("apply_visual_asset_manifest", _make_default_billboard_animation_manifest())
+
+func _make_enemy_actor_manifest(enemy_index: int) -> Dictionary:
+	if enemy_index == 0:
+		return BillboardActorManifestLibrary.make_rot_melee_v3()
+	return BillboardActorManifestLibrary.make_shadow_archer_v3()
 
 func _make_default_billboard_animation_manifest() -> Dictionary:
 	return {
@@ -706,6 +718,12 @@ func build_animation_state_snapshot_for_test() -> Dictionary:
 		"player_animation": str(player_animation.get("animation", "")),
 		"player_frame_index": int(player_animation.get("frame_index", -1)),
 		"player_resolved_frame_index": int(player_animation.get("resolved_frame_index", -1)),
+		"player_asset_pipeline": str(player_animation.get("asset_pipeline", "")),
+		"player_sprite_sheet_path": str(player_animation.get("sprite_sheet_path", "")),
+		"player_frame_size": player_animation.get("frame_size", Vector2i.ZERO),
+		"player_direction_mode": str(player_animation.get("direction_mode", "")),
+		"player_actor_sprite_visible": bool(player_animation.get("actor_sprite_visible", false)),
+		"player_actor_sprite_texture_loaded": bool(player_animation.get("actor_sprite_texture_loaded", false)),
 		"player_facing_direction": str(player_animation.get("facing_direction", "")),
 		"player_body_weapon_separated": bool(player_animation.get("body_weapon_separated", false)),
 		"player_animation_locked_until_end": bool(player_animation.get("animation_locked_until_end", false)),

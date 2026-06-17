@@ -220,6 +220,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Synced 2.5D player and enemy gameplay states into `idle`, `run`, `attack`, and `death` animation states.
 - Added regressions: `tests/regression/regression_billboard_actor_3d_animation_player.gd` and `tests/regression/regression_prototype_2_5d_animation_state_sync.gd`.
 
+## 2026-06-17 Update: 2.5D Real Texture Manifest V1
+
+- Added `BillboardActorManifestLibrary` as the shared 2.5D actor art manifest entry point.
+- Wired the 2.5D combat prototype to existing production sheets for player warrior, rot melee, and shadow archer actors.
+- `BillboardActor3D` now reports texture-loaded, sprite-visible, asset-pipeline, texture-filter, and direction-mode state for visual QA.
+- `BillboardActorAnimationProfile` can now export the same visual asset manifest format used by the runtime actor.
+- Added regressions: `tests/regression/regression_billboard_actor_real_texture_manifest.gd` and `tests/regression/regression_prototype_2_5d_real_actor_textures.gd`.
+
 ## License
 
 未定。正式发布或对外协作前需要补充许可说明。

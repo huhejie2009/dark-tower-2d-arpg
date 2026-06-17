@@ -74,6 +74,9 @@ func get_action_state() -> String:
 
 func apply_animation_profile(profile: Resource) -> void:
 	animation_profile = profile
+	if profile != null and profile.has_method("to_visual_asset_manifest"):
+		apply_visual_asset_manifest(profile.call("to_visual_asset_manifest"))
+		return
 	if profile != null and profile.get("sprite_sheet_path") != "":
 		apply_visual_asset_manifest({
 			"enabled": true,
@@ -178,10 +181,16 @@ func get_actor_animation_state() -> Dictionary:
 		"resolved_frame_index": _get_resolved_actor_frame_index(),
 		"frame_size": visual_asset_manifest.get("frame_size", Vector2i.ZERO),
 		"sprite_sheet_path": str(visual_asset_manifest.get("sprite_sheet_path", "")),
+		"asset_pipeline": str(visual_asset_manifest.get("asset_pipeline", "")),
+		"pose_variation_version": str(visual_asset_manifest.get("pose_variation_version", "")),
+		"texture_filter": str(visual_asset_manifest.get("texture_filter", "")),
+		"direction_mode": str(visual_asset_manifest.get("direction_mode", "")),
 		"facing_direction": facing_direction,
 		"action_state": action_state,
 		"animation_locked_until_end": actor_animation_locked_until_end,
 		"body_weapon_separated": has_node("VisualRoot/ActorSprite") and has_node("VisualRoot/WeaponSprite") and actor_sprite != weapon_sprite,
+		"actor_sprite_visible": actor_sprite != null and actor_sprite.visible,
+		"actor_sprite_texture_loaded": actor_sprite != null and actor_sprite.texture != null,
 		"actor_sprite_region_enabled": actor_sprite != null and actor_sprite.region_enabled,
 		"actor_sprite_region_rect": actor_sprite.region_rect if actor_sprite != null else Rect2(),
 	}
