@@ -61,6 +61,8 @@ var exit_marker: Node3D
 var player_attack_arc_marker: MeshInstance3D
 var hit_vfx_root: Node3D
 var hit_impact_marker: MeshInstance3D
+var boss_skill_vfx_root: Node3D
+var boss_slam_warning_marker: MeshInstance3D
 var camera: Camera3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
@@ -92,6 +94,7 @@ var last_player_attack_aim_source := "none"
 var last_player_attack_world_target := Vector3.ZERO
 var hit_vfx_lifetime_remaining := 0.0
 var last_hit_vfx_position := Vector3.ZERO
+var boss_slam_state: Dictionary = {}
 var debug_readability_markers_enabled := false
 var death_settlement_active := false
 var death_trigger_count := 0
@@ -105,6 +108,7 @@ func _ready() -> void:
 	_build_exit_marker()
 	_build_player_attack_arc_marker()
 	_build_hit_vfx()
+	_build_boss_skill_vfx()
 	_build_debug_hud()
 	_create_hud()
 	_create_inventory_window()
@@ -411,6 +415,23 @@ func _build_hit_vfx() -> void:
 	hit_impact_marker.material_override = _make_translucent_material(Color(1.0, 0.76, 0.32, 0.62), Color(0.65, 0.32, 0.08))
 	hit_impact_marker.visible = false
 	hit_vfx_root.add_child(hit_impact_marker)
+
+func _build_boss_skill_vfx() -> void:
+	boss_skill_vfx_root = Node3D.new()
+	boss_skill_vfx_root.name = "PrototypeBossSkillVfxRoot"
+	add_child(boss_skill_vfx_root)
+
+	boss_slam_warning_marker = MeshInstance3D.new()
+	boss_slam_warning_marker.name = "GatekeeperSlamWarning"
+	boss_slam_warning_marker.set_meta("vfx_role", "gatekeeper_slam_warning")
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 1.0
+	mesh.bottom_radius = 1.0
+	mesh.height = 0.07
+	boss_slam_warning_marker.mesh = mesh
+	boss_slam_warning_marker.material_override = _make_translucent_material(Color(0.90, 0.16, 0.12, 0.36), Color(0.65, 0.04, 0.02))
+	boss_slam_warning_marker.visible = false
+	boss_skill_vfx_root.add_child(boss_slam_warning_marker)
 
 func _build_debug_hud() -> void:
 	debug_hud = CanvasLayer.new()
@@ -824,12 +845,27 @@ func _make_enemy_state(enemy_data: Dictionary = {}) -> Dictionary:
 		"attack_damage": int(enemy_data.get("attack_damage", ENEMY_ATTACK_DAMAGE)),
 		"attack_range": _to_2_5d_attack_range(float(enemy_data.get("attack_range", ENEMY_ATTACK_RANGE * 45.0))),
 		"attack_cooldown": maxf(0.35, float(enemy_data.get("attack_cooldown", ENEMY_ATTACK_COOLDOWN))),
+		"uses_projectile": bool(enemy_data.get("uses_projectile", false)),
+		"preferred_distance": _get_preferred_distance(enemy_data),
+		"retreat_distance": _get_retreat_distance(enemy_data),
+		"behavior_intent": "idle",
+		"last_attack_kind": "",
 		"enemy_type": enemy_type,
 		"display_rank": display_rank,
 		"is_elite": bool(enemy_data.get("is_elite", false)),
 		"is_boss": bool(enemy_data.get("is_boss", false)),
 		"enemy_data": enemy_data.duplicate(true),
 	}
+
+func _get_preferred_distance(enemy_data: Dictionary) -> float:
+	if bool(enemy_data.get("uses_projectile", false)):
+		return minf(4.2, _to_2_5d_attack_range(float(enemy_data.get("attack_range", 230.0))) * 0.68)
+	return ENEMY_ATTACK_RANGE
+
+func _get_retreat_distance(enemy_data: Dictionary) -> float:
+	if bool(enemy_data.get("uses_projectile", false)):
+		return 1.45
+	return 0.0
 
 func _update_enemy_loop(delta: float) -> void:
 	if player == null or death_settlement_active:
@@ -847,33 +883,85 @@ func _update_enemy_loop(delta: float) -> void:
 		offset.y = 0.0
 		var distance := offset.length()
 		state["distance_to_player"] = distance
-		var enemy_movement := Vector2.ZERO
-		var enemy_attacking := false
-		var attack_range := float(state.get("attack_range", ENEMY_ATTACK_RANGE))
-		var attack_cooldown := float(state.get("attack_cooldown", ENEMY_ATTACK_COOLDOWN))
-		if distance <= attack_range:
-			state["mode"] = "attack"
-			enemy_attacking = true
-			state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
-			if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
-				state["attack_timer"] = 0.0
-				state["attack_count"] = int(state.get("attack_count", 0)) + 1
-				_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
-			if enemy.has_method("set_move_input"):
-				enemy.call("set_move_input", Vector2.ZERO)
-		elif distance <= ENEMY_CHASE_RANGE:
-			state["mode"] = "chase"
-			state["attack_timer"] = 0.0
-			enemy_movement = Vector2(offset.x, offset.z)
-			if enemy.has_method("set_move_input"):
-				enemy.call("set_move_input", enemy_movement)
-		else:
-			state["mode"] = "idle"
-			state["attack_timer"] = 0.0
-			if enemy.has_method("set_move_input"):
-				enemy.call("set_move_input", Vector2.ZERO)
+		var result := _update_ranged_enemy_behavior(enemy, state, offset, distance, delta) if bool(state.get("uses_projectile", false)) else _update_melee_enemy_behavior(enemy, state, offset, distance, delta)
+		state = Dictionary(result.get("state", state))
+		var enemy_movement: Vector2 = result.get("movement", Vector2.ZERO)
+		var enemy_attacking := bool(result.get("attacking", false))
 		_update_actor_animation(enemy, enemy_movement, enemy_attacking, false)
 		enemy_states[enemy] = state
+
+func _update_melee_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vector3, distance: float, delta: float) -> Dictionary:
+	var enemy_movement := Vector2.ZERO
+	var enemy_attacking := false
+	var attack_range := float(state.get("attack_range", ENEMY_ATTACK_RANGE))
+	var attack_cooldown := float(state.get("attack_cooldown", ENEMY_ATTACK_COOLDOWN))
+	if distance <= attack_range:
+		state["mode"] = "attack"
+		state["behavior_intent"] = "melee_attack"
+		enemy_attacking = true
+		state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
+		if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
+			state["attack_timer"] = 0.0
+			_apply_enemy_attack_to_player(state, "melee")
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", Vector2.ZERO)
+	elif distance <= ENEMY_CHASE_RANGE:
+		state["mode"] = "chase"
+		state["behavior_intent"] = "approach"
+		state["attack_timer"] = 0.0
+		enemy_movement = Vector2(offset.x, offset.z)
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", enemy_movement)
+	else:
+		state["mode"] = "idle"
+		state["behavior_intent"] = "idle"
+		state["attack_timer"] = 0.0
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", Vector2.ZERO)
+	return {"state": state, "movement": enemy_movement, "attacking": enemy_attacking}
+
+func _update_ranged_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vector3, distance: float, delta: float) -> Dictionary:
+	var enemy_movement := Vector2.ZERO
+	var enemy_attacking := false
+	var attack_range := float(state.get("attack_range", 4.8))
+	var attack_cooldown := float(state.get("attack_cooldown", 1.1))
+	var retreat_distance := float(state.get("retreat_distance", 1.45))
+	if distance < retreat_distance:
+		state["mode"] = "retreat"
+		state["behavior_intent"] = "retreat"
+		state["attack_timer"] = 0.0
+		enemy_movement = -Vector2(offset.x, offset.z)
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", enemy_movement)
+	elif distance <= attack_range:
+		state["mode"] = "ranged_attack"
+		state["behavior_intent"] = "ranged_attack"
+		enemy_attacking = true
+		state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
+		if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
+			state["attack_timer"] = 0.0
+			_apply_enemy_attack_to_player(state, "projectile")
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", Vector2.ZERO)
+	elif distance <= ENEMY_CHASE_RANGE:
+		state["mode"] = "chase"
+		state["behavior_intent"] = "approach"
+		state["attack_timer"] = 0.0
+		enemy_movement = Vector2(offset.x, offset.z)
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", enemy_movement)
+	else:
+		state["mode"] = "idle"
+		state["behavior_intent"] = "idle"
+		state["attack_timer"] = 0.0
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", Vector2.ZERO)
+	return {"state": state, "movement": enemy_movement, "attacking": enemy_attacking}
+
+func _apply_enemy_attack_to_player(state: Dictionary, attack_kind: String) -> void:
+	state["attack_count"] = int(state.get("attack_count", 0)) + 1
+	state["last_attack_kind"] = attack_kind
+	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
 
 func _apply_damage_to_player(amount: int) -> void:
 	if death_settlement_active:
@@ -895,9 +983,56 @@ func force_enemy_attack_player_for_test(index: int) -> void:
 		return
 	var state: Dictionary = enemy_states[enemy]
 	state["mode"] = "attack"
-	state["attack_count"] = int(state.get("attack_count", 0)) + 1
+	state["behavior_intent"] = "forced_attack"
+	_apply_enemy_attack_to_player(state, "forced")
 	enemy_states[enemy] = state
-	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
+
+func tick_enemy_behavior_for_test(delta: float) -> void:
+	_update_enemy_loop(maxf(0.0, delta))
+
+func force_boss_slam_for_test(index: int) -> void:
+	if index < 0 or index >= enemies.size():
+		return
+	var enemy := enemies[index]
+	if enemy == null or not enemy_states.has(enemy):
+		return
+	var state: Dictionary = Dictionary(enemy_states.get(enemy, {}))
+	if not bool(state.get("is_boss", false)):
+		return
+	_start_boss_slam(enemy, state)
+
+func resolve_boss_slam_for_test() -> void:
+	_resolve_boss_slam()
+
+func _start_boss_slam(enemy: Node3D, state: Dictionary) -> void:
+	var radius := 1.55
+	var target_position := player.global_position if player != null else enemy.global_position
+	boss_slam_state = {
+		"active": true,
+		"source_enemy_type": str(state.get("enemy_type", "")),
+		"position": target_position,
+		"radius": radius,
+		"damage": int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)) + 6,
+		"warning_role": "gatekeeper_slam_warning",
+	}
+	if is_instance_valid(boss_slam_warning_marker):
+		boss_slam_warning_marker.global_position = target_position + Vector3(0.0, 0.055, 0.0)
+		boss_slam_warning_marker.scale = Vector3(radius, 1.0, radius)
+		boss_slam_warning_marker.visible = true
+	state["mode"] = "boss_slam"
+	state["behavior_intent"] = "boss_slam_warning"
+	enemy_states[enemy] = state
+
+func _resolve_boss_slam() -> void:
+	if boss_slam_state.is_empty() or not bool(boss_slam_state.get("active", false)):
+		return
+	var impact_position: Vector3 = boss_slam_state.get("position", Vector3.ZERO)
+	var radius := float(boss_slam_state.get("radius", 0.0))
+	if player != null and CombatPlane3DService.distance_xz(player.global_position, impact_position) <= radius:
+		_apply_damage_to_player(int(boss_slam_state.get("damage", ENEMY_ATTACK_DAMAGE)))
+	boss_slam_state["active"] = false
+	if is_instance_valid(boss_slam_warning_marker):
+		boss_slam_warning_marker.visible = false
 
 func _defeat_enemy(enemy: Node3D) -> void:
 	if enemy == null or not enemy_states.has(enemy):
@@ -1381,6 +1516,46 @@ func build_floor_wave_snapshot_for_test() -> Dictionary:
 		"enemy_positions": enemy_positions,
 		"has_boss": has_boss,
 		"has_elite": has_elite,
+	}
+
+func build_enemy_behavior_snapshot_for_test() -> Dictionary:
+	var snapshots: Array[Dictionary] = []
+	for enemy in enemies:
+		if enemy == null or not enemy_states.has(enemy):
+			continue
+		var state: Dictionary = Dictionary(enemy_states.get(enemy, {}))
+		var move_input := Vector2.ZERO
+		if enemy != null:
+			move_input = enemy.get("move_input")
+		snapshots.append({
+			"name": enemy.name,
+			"enemy_type": str(state.get("enemy_type", "")),
+			"display_rank": str(state.get("display_rank", "")),
+			"is_elite": bool(state.get("is_elite", false)),
+			"is_boss": bool(state.get("is_boss", false)),
+			"uses_projectile": bool(state.get("uses_projectile", false)),
+			"mode": str(state.get("mode", "")),
+			"behavior_intent": str(state.get("behavior_intent", "")),
+			"last_attack_kind": str(state.get("last_attack_kind", "")),
+			"attack_count": int(state.get("attack_count", 0)),
+			"attack_range": float(state.get("attack_range", 0.0)),
+			"preferred_distance": float(state.get("preferred_distance", 0.0)),
+			"retreat_distance": float(state.get("retreat_distance", 0.0)),
+			"distance_to_player": float(state.get("distance_to_player", 0.0)),
+			"position": enemy.global_position,
+			"move_input": move_input,
+		})
+	return {
+		"current_floor": current_floor,
+		"template_id": str(current_floor_template.get("template_id", "")),
+		"player_health": int(player_data.get("health", player_data.get("max_health", 1))),
+		"player_max_health": int(player_data.get("max_health", 1)),
+		"enemy_states": snapshots,
+		"boss_slam_warning_visible": is_instance_valid(boss_slam_warning_marker) and boss_slam_warning_marker.visible,
+		"boss_slam_warning_role": str(boss_slam_warning_marker.get_meta("vfx_role", "")) if is_instance_valid(boss_slam_warning_marker) else "",
+		"boss_slam_active": bool(boss_slam_state.get("active", false)),
+		"boss_slam_radius": float(boss_slam_state.get("radius", 0.0)),
+		"boss_slam_position": boss_slam_state.get("position", Vector3.ZERO),
 	}
 
 func build_death_settlement_snapshot_for_test() -> Dictionary:

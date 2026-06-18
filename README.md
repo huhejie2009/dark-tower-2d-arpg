@@ -248,6 +248,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - HUD objective text now comes from `RoomObjectiveService`.
 - Added regression: `tests/regression/regression_prototype_2_5d_floor_wave_template_bridge.gd`.
 
+## 2026-06-18 Update: 2.5D Ranged / Boss Behavior Bridge
+
+- Shadow archers now use a first-pass ranged behavior loop: retreat when too close, hold range, and damage the player from distance.
+- Tower gatekeeper now exposes a first-pass slam warning and range resolution loop.
+- Added a replaceable programmatic VFX role for the gatekeeper slam warning so authored VFX can be swapped in later.
+- Added behavior snapshots for enemy intent, projectile flags, attack kind, and Boss warning state.
+- Added regression: `tests/regression/regression_prototype_2_5d_ranged_boss_behavior_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
