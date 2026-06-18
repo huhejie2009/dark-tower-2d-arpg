@@ -231,6 +231,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Boss floors now grant the same guaranteed equipment reward family used by the legacy 2D runtime.
 - Added regression: `tests/regression/regression_prototype_2_5d_loot_xp_reward_bridge.gd`.
 
+## 2026-06-18 Update: 2.5D Death Settlement / Return Loop
+
+- Connected enemy attacks in the accepted 2.5D tower runtime to player health.
+- Reused the existing death settlement service so a death shows floor, kill, loot, and return-state summary sections.
+- Death now pauses combat, blocks inventory/pause toggles, preserves inventory/equipment, and saves the player for town return with half health.
+- Added one-shot protection so repeated enemy attacks cannot trigger multiple death settlements.
+- Added regression: `tests/regression/regression_prototype_2_5d_death_settlement_return_loop.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

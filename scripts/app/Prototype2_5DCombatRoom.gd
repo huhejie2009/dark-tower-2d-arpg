@@ -16,10 +16,12 @@ const LootNotificationServiceScript := preload("res://scripts/data/LootNotificat
 const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.gd")
 const TowerProgressServiceScript := preload("res://scripts/data/TowerProgressService.gd")
 const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
+const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlementService.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
 const ENEMY_ATTACK_COOLDOWN := 0.8
+const ENEMY_ATTACK_DAMAGE := 12
 const ENEMY_MAX_HEALTH := 1
 const PLAYER_ATTACK_RANGE := 1.35
 const PLAYER_ATTACK_HALF_ANGLE := 80.0
@@ -28,9 +30,12 @@ const PLAYER_ATTACK_COOLDOWN := 0.42
 const PLAYER_ATTACK_ACTIVE_TIME := 0.14
 const PLAYER_ATTACK_ARC_SEGMENTS := 12
 const PLAYER_HIT_VFX_LIFETIME := 0.22
+const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
+const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 62
 
 var player: Node3D
 var player_data: Dictionary = {}
+var death_return_player_data: Dictionary = {}
 var current_floor := 1
 var legacy_fallback_scene := GameConstantsScript.GAME_2D_SCENE
 var kill_index := 0
@@ -60,6 +65,13 @@ var ui_layer: CanvasLayer
 var inventory_window: Control
 var pause_overlay: CanvasLayer
 var pause_resume_button: Button
+var death_overlay: CanvasLayer
+var death_floor_section: Label
+var death_kills_section: Label
+var death_loot_section: Label
+var death_boss_reward_section: Label
+var death_summary_label: Label
+var death_return_town_button: Button
 var debug_hud: CanvasLayer
 var camera_follow_offset := Vector3(0.0, 10.0, 10.0)
 var player_move_input_override_enabled := false
@@ -77,6 +89,8 @@ var last_player_attack_world_target := Vector3.ZERO
 var hit_vfx_lifetime_remaining := 0.0
 var last_hit_vfx_position := Vector3.ZERO
 var debug_readability_markers_enabled := false
+var death_settlement_active := false
+var death_trigger_count := 0
 
 func _ready() -> void:
 	_initialize_main_flow_context()
@@ -91,6 +105,7 @@ func _ready() -> void:
 	_create_hud()
 	_create_inventory_window()
 	_create_pause_overlay()
+	_create_death_overlay()
 	_update_hud("Entered floor %d. Left click attacks, I/C opens inventory, Esc pauses." % current_floor)
 
 func _physics_process(_delta: float) -> void:
@@ -109,6 +124,9 @@ func _physics_process(_delta: float) -> void:
 	_tick_hit_vfx(_delta)
 
 func _input(event: InputEvent) -> void:
+	if death_settlement_active:
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if not _is_menu_blocking_combat():
 			_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
@@ -402,6 +420,68 @@ func _create_pause_overlay() -> void:
 	town.pressed.connect(_return_to_town)
 	box.add_child(town)
 
+func _create_death_overlay() -> void:
+	death_overlay = CanvasLayer.new()
+	death_overlay.name = "DeathSettlementOverlay"
+	death_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	death_overlay.visible = false
+	add_child(death_overlay)
+
+	var veil := ColorRect.new()
+	veil.name = "DeathDarkVeil"
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.color = Color(0.0, 0.0, 0.0, 0.62)
+	death_overlay.add_child(veil)
+
+	var panel := PanelContainer.new()
+	panel.position = Vector2(360, 110)
+	panel.size = DEATH_SETTLEMENT_PANEL_SIZE
+	DarkArpgUiThemeScript.style_panel(panel, true)
+	death_overlay.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	panel.add_child(box)
+
+	var title := Label.new()
+	title.text = "Death Settlement"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	DarkArpgUiThemeScript.style_title(title, 26)
+	box.add_child(title)
+
+	death_floor_section = _make_death_section_label("DeathFloorSection")
+	box.add_child(death_floor_section)
+	death_kills_section = _make_death_section_label("DeathKillsSection")
+	box.add_child(death_kills_section)
+	death_loot_section = _make_death_section_label("DeathLootSection")
+	box.add_child(death_loot_section)
+	death_boss_reward_section = _make_death_section_label("DeathBossRewardSection")
+	box.add_child(death_boss_reward_section)
+
+	death_summary_label = Label.new()
+	death_summary_label.name = "DeathSummary"
+	death_summary_label.visible = false
+	death_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	death_summary_label.custom_minimum_size = Vector2(500, 1)
+	DarkArpgUiThemeScript.style_body_label(death_summary_label, 15, true)
+	box.add_child(death_summary_label)
+
+	death_return_town_button = Button.new()
+	death_return_town_button.name = "DeathReturnTownButton"
+	death_return_town_button.text = "Return To Town"
+	death_return_town_button.custom_minimum_size = Vector2(380, 46)
+	DarkArpgUiThemeScript.style_button(death_return_town_button, true)
+	death_return_town_button.pressed.connect(_return_to_town_after_death)
+	box.add_child(death_return_town_button)
+
+func _make_death_section_label(label_name: String) -> Label:
+	var label := Label.new()
+	label.name = label_name
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(520, DEATH_SETTLEMENT_SECTION_MIN_HEIGHT)
+	DarkArpgUiThemeScript.style_body_label(label, 15)
+	return label
+
 func _add_actor_visible_marker(actor: Node3D, color: Color, node_name: String) -> void:
 	var marker := MeshInstance3D.new()
 	marker.name = node_name
@@ -535,6 +615,13 @@ func _normalize_attack_direction(direction: Vector2) -> Vector2:
 	return direction.normalized()
 
 func _perform_player_attack(direction: Vector2) -> Dictionary:
+	if death_settlement_active:
+		return {
+			"accepted": false,
+			"hit_count": 0,
+			"cooldown_remaining": player_attack_cooldown_remaining,
+			"attack_phase": "dead",
+		}
 	var attack_direction := _normalize_attack_direction(direction)
 	if player_attack_cooldown_remaining > 0.0:
 		return {
@@ -630,13 +717,18 @@ func _show_hit_vfx(world_position: Vector3) -> void:
 func _sync_player_action_state() -> void:
 	if player == null or not player.has_method("set_action_state"):
 		return
-	if player_attack_phase == "active" or player_attack_phase == "recovery":
+	if death_settlement_active or _is_player_dead_runtime():
+		player.call("set_action_state", "death")
+	elif player_attack_phase == "active" or player_attack_phase == "recovery":
 		player.call("set_action_state", "attack")
 	elif active_move_input.length_squared() > 0.0001:
 		player.call("set_action_state", "run")
 	else:
 		player.call("set_action_state", "idle")
-	_update_actor_animation(player, active_move_input, player_attack_phase == "active" or player_attack_phase == "recovery", false)
+	_update_actor_animation(player, active_move_input, player_attack_phase == "active" or player_attack_phase == "recovery", death_settlement_active or _is_player_dead_runtime())
+
+func _is_player_dead_runtime() -> bool:
+	return int(player_data.get("health", player_data.get("max_health", 1))) <= 0
 
 func _update_actor_animation(actor: Node3D, movement: Vector2, attacking: bool, dead: bool) -> void:
 	if actor != null and actor.has_method("update_actor_animation_state"):
@@ -657,7 +749,7 @@ func _make_enemy_state(enemy_type: String = "rot_melee") -> Dictionary:
 	}
 
 func _update_enemy_loop(delta: float) -> void:
-	if player == null:
+	if player == null or death_settlement_active:
 		return
 	for enemy in enemies:
 		if enemy == null or not enemy_states.has(enemy):
@@ -681,6 +773,7 @@ func _update_enemy_loop(delta: float) -> void:
 			if float(state.get("attack_timer", 0.0)) >= ENEMY_ATTACK_COOLDOWN:
 				state["attack_timer"] = 0.0
 				state["attack_count"] = int(state.get("attack_count", 0)) + 1
+				_apply_damage_to_player(ENEMY_ATTACK_DAMAGE)
 			if enemy.has_method("set_move_input"):
 				enemy.call("set_move_input", Vector2.ZERO)
 		elif distance <= ENEMY_CHASE_RANGE:
@@ -696,6 +789,30 @@ func _update_enemy_loop(delta: float) -> void:
 				enemy.call("set_move_input", Vector2.ZERO)
 		_update_actor_animation(enemy, enemy_movement, enemy_attacking, false)
 		enemy_states[enemy] = state
+
+func _apply_damage_to_player(amount: int) -> void:
+	if death_settlement_active:
+		return
+	var max_health := maxi(1, int(player_data.get("max_health", 120)))
+	var health := clampi(int(player_data.get("health", max_health)), 0, max_health)
+	health = maxi(0, health - maxi(0, amount))
+	player_data["health"] = health
+	player_data["max_health"] = max_health
+	_update_hud("You took %d damage." % maxi(0, amount))
+	if health <= 0:
+		_on_player_died()
+
+func force_enemy_attack_player_for_test(index: int) -> void:
+	if index < 0 or index >= enemies.size():
+		return
+	var enemy := enemies[index]
+	if enemy == null or not enemy_states.has(enemy):
+		return
+	var state: Dictionary = enemy_states[enemy]
+	state["mode"] = "attack"
+	state["attack_count"] = int(state.get("attack_count", 0)) + 1
+	enemy_states[enemy] = state
+	_apply_damage_to_player(ENEMY_ATTACK_DAMAGE)
 
 func _defeat_enemy(enemy: Node3D) -> void:
 	if enemy == null or not enemy_states.has(enemy):
@@ -833,7 +950,7 @@ func _set_exit_locked_visual() -> void:
 		exit_marker.scale = Vector3.ONE
 
 func _enter_next_floor() -> void:
-	if not exit_unlocked:
+	if not exit_unlocked or death_settlement_active:
 		return
 	current_floor += 1
 	player_data = _build_current_player_snapshot()
@@ -845,6 +962,9 @@ func _enter_next_floor() -> void:
 	_update_hud("Entered floor %d." % current_floor)
 
 func _return_to_town() -> void:
+	if death_settlement_active:
+		_return_to_town_after_death()
+		return
 	player_data = _build_current_player_snapshot()
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
 	get_tree().paused = false
@@ -854,8 +974,79 @@ func _return_to_town_for_test() -> void:
 	player_data = _build_current_player_snapshot()
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
 
+func _on_player_died() -> void:
+	if death_settlement_active:
+		return
+	death_settlement_active = true
+	death_trigger_count += 1
+	active_move_input = Vector2.ZERO
+	player_attack_phase = "dead"
+	player_attack_cooldown_remaining = 0.0
+	_hide_player_attack_arc()
+	if player != null and player.has_method("set_move_input"):
+		player.call("set_move_input", Vector2.ZERO)
+	_sync_player_action_state()
+	death_return_player_data = _build_current_player_snapshot()
+	death_return_player_data["health"] = maxi(1, int(death_return_player_data.get("max_health", 120)) / 2)
+	SaveManagerScript.save_active_player_data(death_return_player_data, current_floor)
+	_update_hud("You fell. Return to town to recover.")
+	_show_death_settlement()
+
+func _show_death_settlement() -> void:
+	if not is_instance_valid(death_overlay):
+		return
+	if is_instance_valid(pause_overlay):
+		pause_overlay.visible = false
+	if is_instance_valid(inventory_window):
+		inventory_window.visible = false
+	_refresh_death_settlement_sections()
+	death_overlay.visible = true
+	get_tree().paused = true
+	_grab_focus_when_ready(death_return_town_button)
+
+func _return_to_town_after_death() -> void:
+	if death_return_player_data.is_empty():
+		death_return_player_data = _build_current_player_snapshot()
+		death_return_player_data["health"] = maxi(1, int(death_return_player_data.get("max_health", 120)) / 2)
+	SaveManagerScript.save_active_player_data(death_return_player_data, current_floor)
+	get_tree().paused = false
+	SceneRouterScript.go_to_town(get_tree())
+
+func _return_to_town_after_death_for_test() -> void:
+	if death_return_player_data.is_empty():
+		death_return_player_data = _build_current_player_snapshot()
+		death_return_player_data["health"] = maxi(1, int(death_return_player_data.get("max_health", 120)) / 2)
+	SaveManagerScript.save_active_player_data(death_return_player_data, current_floor)
+	get_tree().paused = false
+
+func _refresh_death_settlement_sections() -> void:
+	var settlement := _build_death_settlement()
+	if is_instance_valid(death_floor_section):
+		death_floor_section.text = str(settlement.get("floor_text", ""))
+	if is_instance_valid(death_kills_section):
+		death_kills_section.text = str(settlement.get("combat_text", ""))
+	if is_instance_valid(death_loot_section):
+		death_loot_section.text = str(settlement.get("loot_text", ""))
+	if is_instance_valid(death_boss_reward_section):
+		death_boss_reward_section.text = str(settlement.get("boss_reward_text", ""))
+	if is_instance_valid(death_summary_label):
+		death_summary_label.text = str(settlement.get("summary_text", ""))
+
+func _build_death_settlement() -> Dictionary:
+	return DeathSettlementServiceScript.build_death_settlement({
+		"floor": current_floor,
+		"template_id": "prototype_2_5d_combat_room",
+		"kill_count": floor_kill_count,
+		"pickup_names": floor_pickup_names,
+		"last_floor_rewards": last_floor_rewards,
+		"return_health_mode": "half",
+	})
+
+func _build_death_settlement_for_test() -> Dictionary:
+	return _build_death_settlement()
+
 func _toggle_pause() -> void:
-	if not is_instance_valid(pause_overlay):
+	if death_settlement_active or not is_instance_valid(pause_overlay):
 		return
 	pause_overlay.visible = not pause_overlay.visible
 	_sync_menu_pause_state()
@@ -866,6 +1057,8 @@ func _toggle_pause_for_test() -> void:
 	_toggle_pause()
 
 func _handle_cancel() -> void:
+	if death_settlement_active:
+		return
 	if is_instance_valid(inventory_window) and inventory_window.visible:
 		_set_inventory_window_visible(false)
 		if is_instance_valid(pause_overlay) and pause_overlay.visible:
@@ -882,7 +1075,7 @@ func _grab_focus_when_ready(control: Control) -> void:
 	control.call_deferred("grab_focus")
 
 func _toggle_inventory_window() -> void:
-	if not is_instance_valid(inventory_window):
+	if death_settlement_active or not is_instance_valid(inventory_window):
 		return
 	_set_inventory_window_visible(not inventory_window.visible)
 
@@ -900,10 +1093,11 @@ func _set_inventory_window_visible(visible: bool) -> void:
 func _sync_menu_pause_state() -> void:
 	var pause_visible := is_instance_valid(pause_overlay) and pause_overlay.visible
 	var inventory_visible := is_instance_valid(inventory_window) and inventory_window.visible
-	get_tree().paused = pause_visible or inventory_visible
+	var death_visible := is_instance_valid(death_overlay) and death_overlay.visible
+	get_tree().paused = pause_visible or inventory_visible or death_visible
 
 func _is_menu_blocking_combat() -> bool:
-	return (is_instance_valid(pause_overlay) and pause_overlay.visible) or (is_instance_valid(inventory_window) and inventory_window.visible)
+	return death_settlement_active or (is_instance_valid(pause_overlay) and pause_overlay.visible) or (is_instance_valid(inventory_window) and inventory_window.visible)
 
 func _on_player_data_changed(updated: Dictionary) -> void:
 	player_data = updated.duplicate(true)
@@ -1070,6 +1264,27 @@ func build_loot_xp_reward_snapshot_for_test() -> Dictionary:
 		"living_enemy_count": living_enemy_count,
 		"hud_status_text": status_text,
 		"hud_inventory_text": inventory_text,
+	}
+
+func build_death_settlement_snapshot_for_test() -> Dictionary:
+	var settlement := _build_death_settlement()
+	var saved_player := SaveManagerScript.get_active_player_data()
+	return {
+		"death_settlement_active": death_settlement_active,
+		"death_trigger_count": death_trigger_count,
+		"death_overlay_visible": is_instance_valid(death_overlay) and death_overlay.visible,
+		"tree_paused": get_tree().paused,
+		"menu_blocks_combat": _is_menu_blocking_combat(),
+		"player_health": int(player_data.get("health", player_data.get("max_health", 1))),
+		"player_max_health": int(player_data.get("max_health", 1)),
+		"saved_player_health": int(saved_player.get("health", 0)),
+		"saved_player_max_health": int(saved_player.get("max_health", 0)),
+		"current_floor": current_floor,
+		"floor_kill_count": floor_kill_count,
+		"settlement_summary": str(settlement.get("summary_text", "")),
+		"settlement_floor_text": str(settlement.get("floor_text", "")),
+		"settlement_loot_text": str(settlement.get("loot_text", "")),
+		"death_return_button_exists": is_instance_valid(death_return_town_button),
 	}
 
 func _inventory_has_boss_reward_item() -> bool:
