@@ -22,7 +22,8 @@ func _run() -> void:
 	_expect(int(snapshot.get("wall_count", 0)) >= 4, "prototype should have at least four wall blockers")
 	_expect(int(snapshot.get("column_count", 0)) >= 2, "prototype should have at least two columns")
 	_expect(int(snapshot.get("player_count", 0)) == 1, "prototype should have one player actor")
-	_expect(int(snapshot.get("enemy_count", 0)) == 2, "prototype should have two enemies")
+	_expect(int(snapshot.get("enemy_count", 0)) >= 2, "prototype should have template enemies")
+	_expect(str(snapshot.get("template_id", "")) != "", "prototype should report active floor template")
 	_expect(bool(snapshot.get("has_exit_marker", false)), "prototype should have an exit marker")
 
 	scene.queue_free()

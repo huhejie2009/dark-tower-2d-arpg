@@ -25,7 +25,7 @@ func _run() -> void:
 
 	var enemy_loop: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
 	var enemy_states: Array = Array(enemy_loop.get("enemy_states", []))
-	_expect(enemy_states.size() == 2, "prototype should expose two enemies for attack feedback test")
+	_expect(enemy_states.size() >= 2, "prototype should expose template enemies for attack feedback test")
 	if enemy_states.is_empty():
 		scene.queue_free()
 		await process_frame

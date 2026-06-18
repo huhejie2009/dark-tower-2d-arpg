@@ -239,6 +239,15 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added one-shot protection so repeated enemy attacks cannot trigger multiple death settlements.
 - Added regression: `tests/regression/regression_prototype_2_5d_death_settlement_return_loop.gd`.
 
+## 2026-06-18 Update: 2.5D Floor Wave Template Bridge
+
+- Connected the accepted 2.5D tower runtime to existing `FloorRules` templates.
+- Floors now spawn different enemy waves instead of the original fixed two-enemy prototype setup.
+- 2.5D now supports the existing `standard_clear`, `dense_room`, `ranged_pressure`, `guardian_mix`, `elite_preview`, and `boss_gatekeeper` pacing IDs.
+- Enemy states now preserve floor-rule type, rank, elite/Boss flags, attack values, and visual manifest data for future authored asset replacement.
+- HUD objective text now comes from `RoomObjectiveService`.
+- Added regression: `tests/regression/regression_prototype_2_5d_floor_wave_template_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

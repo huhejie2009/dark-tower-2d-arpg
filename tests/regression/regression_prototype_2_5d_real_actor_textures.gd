@@ -14,7 +14,8 @@ func _run() -> void:
 	await physics_frame
 
 	_expect(scene.has_method("build_animation_state_snapshot_for_test"), "prototype should expose animation state snapshot")
-	if not scene.has_method("build_animation_state_snapshot_for_test"):
+	_expect(scene.has_method("_apply_floor_template_for_test"), "prototype should expose floor template test hook")
+	if not scene.has_method("build_animation_state_snapshot_for_test") or not scene.has_method("_apply_floor_template_for_test"):
 		scene.queue_free()
 		await process_frame
 		_finish()
@@ -28,19 +29,28 @@ func _run() -> void:
 	_expect(bool(snapshot.get("player_actor_sprite_texture_loaded", false)), "player texture should load")
 	_expect(str(snapshot.get("player_direction_mode", "")) == "runtime_flip_2dir", "player should use runtime flip direction mode")
 
-	var enemy_animations: Array = Array(snapshot.get("enemy_animations", []))
-	_expect(enemy_animations.size() == 2, "prototype should keep two enemies")
-	if enemy_animations.size() >= 2:
-		_check_enemy(Dictionary(enemy_animations[0]), "enemy_rot_melee_sheet_v3.png", "rot melee")
-		_check_enemy(Dictionary(enemy_animations[1]), "enemy_shadow_archer_sheet_v3.png", "shadow archer")
+	scene.call("_apply_floor_template_for_test", 3)
+	await process_frame
+	var floor_three: Dictionary = scene.call("build_animation_state_snapshot_for_test")
+	var enemy_animations: Array = Array(floor_three.get("enemy_animations", []))
+	_expect(enemy_animations.size() >= 3, "prototype should keep ranged pressure template enemies")
+	_expect(_has_enemy_sheet(enemy_animations, "enemy_rot_melee_sheet_v3.png"), "ranged pressure should include rot melee sheet")
+	_expect(_has_enemy_sheet(enemy_animations, "enemy_shadow_archer_sheet_v3.png"), "ranged pressure should include shadow archer sheet")
+	for enemy_state in enemy_animations:
+		_check_enemy(Dictionary(enemy_state), "template enemy")
 
 	scene.queue_free()
 	await process_frame
 	_finish()
 
-func _check_enemy(enemy_state: Dictionary, expected_file_name: String, label: String) -> void:
+func _has_enemy_sheet(enemy_animations: Array, expected_file_name: String) -> bool:
+	for enemy_state in enemy_animations:
+		if str(Dictionary(enemy_state).get("sprite_sheet_path", "")).ends_with(expected_file_name):
+			return true
+	return false
+
+func _check_enemy(enemy_state: Dictionary, label: String) -> void:
 	_expect(str(enemy_state.get("asset_pipeline", "")) == "image2", "%s should use image2 manifest" % label)
-	_expect(str(enemy_state.get("sprite_sheet_path", "")).ends_with(expected_file_name), "%s should use %s" % [label, expected_file_name])
 	_expect(enemy_state.get("frame_size", Vector2i.ZERO) == Vector2i(128, 128), "%s should use 128x128 frame size" % label)
 	_expect(bool(enemy_state.get("actor_sprite_visible", false)), "%s sprite should be visible" % label)
 	_expect(bool(enemy_state.get("actor_sprite_texture_loaded", false)), "%s texture should load" % label)

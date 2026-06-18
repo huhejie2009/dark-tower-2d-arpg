@@ -23,13 +23,14 @@ func _run() -> void:
 		return
 
 	var initial: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
-	_expect(int(initial.get("total_enemy_count", 0)) == 2, "prototype should start with two enemies")
-	_expect(int(initial.get("living_enemy_count", 0)) == 2, "both enemies should start alive")
+	var initial_count := int(initial.get("total_enemy_count", 0))
+	_expect(initial_count >= 2, "prototype should start with template enemies")
+	_expect(int(initial.get("living_enemy_count", 0)) == initial_count, "all template enemies should start alive")
 	_expect(not bool(initial.get("room_cleared", true)), "room should not start cleared")
 	_expect(not bool(initial.get("exit_unlocked", true)), "exit should start locked")
 
 	var initial_enemy_states: Array = Array(initial.get("enemy_states", []))
-	_expect(initial_enemy_states.size() == 2, "snapshot should include each enemy")
+	_expect(initial_enemy_states.size() == initial_count, "snapshot should include each template enemy")
 	if initial_enemy_states.size() > 0:
 		var first_enemy_position: Vector3 = Dictionary(initial_enemy_states[0]).get("position", Vector3.ZERO)
 		scene.call("set_player_position_for_test", first_enemy_position + Vector3(0.45, 0.0, 0.0))
@@ -47,10 +48,11 @@ func _run() -> void:
 	scene.call("defeat_enemy_for_test", 0)
 	await physics_frame
 	var after_one_defeat: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
-	_expect(int(after_one_defeat.get("living_enemy_count", 0)) == 1, "defeating one enemy should reduce living count")
+	_expect(int(after_one_defeat.get("living_enemy_count", 0)) == initial_count - 1, "defeating one enemy should reduce living count")
 	_expect(not bool(after_one_defeat.get("exit_unlocked", true)), "exit should stay locked while enemies remain")
 
-	scene.call("defeat_enemy_for_test", 1)
+	for index in range(1, initial_count):
+		scene.call("defeat_enemy_for_test", index)
 	await physics_frame
 	var after_all_defeated: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
 	_expect(int(after_all_defeated.get("living_enemy_count", -1)) == 0, "all enemies should be defeated")

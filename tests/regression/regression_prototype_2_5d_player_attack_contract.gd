@@ -25,7 +25,8 @@ func _run() -> void:
 
 	var initial_enemy_loop: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
 	var enemy_states: Array = Array(initial_enemy_loop.get("enemy_states", []))
-	_expect(enemy_states.size() == 2, "prototype should expose two enemies for attack test")
+	var initial_living_count := int(initial_enemy_loop.get("living_enemy_count", 0))
+	_expect(enemy_states.size() >= 2, "prototype should expose template enemies for attack test")
 	if enemy_states.size() == 0:
 		scene.queue_free()
 		await process_frame
@@ -51,8 +52,8 @@ func _run() -> void:
 	_expect(int(after_attack.get("last_hit_count", 0)) == 1, "player attack should hit one enemy in front")
 	_expect(str(after_attack.get("attack_phase", "")) != "ready", "accepted attack should enter a visible attack phase")
 	_expect(not bool(after_attack.get("attack_ready", true)), "attack should start cooldown")
-	_expect(int(after_enemy_loop.get("living_enemy_count", 0)) == 1, "hit enemy should be defeated by prototype attack")
-	_expect(not bool(after_enemy_loop.get("exit_unlocked", true)), "exit should remain locked while one enemy remains")
+	_expect(int(after_enemy_loop.get("living_enemy_count", 0)) == initial_living_count - 1, "hit enemy should be defeated by prototype attack")
+	_expect(not bool(after_enemy_loop.get("exit_unlocked", true)), "exit should remain locked while template enemies remain")
 
 	scene.call("set_player_attack_direction_for_test", Vector2.RIGHT)
 	scene.call("set_player_position_for_test", first_enemy_position + Vector3(-0.75, 0.0, 0.0))

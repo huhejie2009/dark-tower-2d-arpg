@@ -25,7 +25,8 @@ func _run() -> void:
 
 	var enemy_loop: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
 	var enemy_states: Array = Array(enemy_loop.get("enemy_states", []))
-	_expect(enemy_states.size() == 2, "prototype should expose two enemies for mouse attack test")
+	var initial_living_count := int(enemy_loop.get("living_enemy_count", 0))
+	_expect(enemy_states.size() >= 2, "prototype should expose template enemies for mouse attack test")
 	if enemy_states.size() == 0:
 		scene.queue_free()
 		await process_frame
@@ -52,7 +53,7 @@ func _run() -> void:
 	var visual_direction: Vector2 = visual.get("arc_direction", Vector2.ZERO)
 
 	_expect(int(attack.get("last_hit_count", 0)) == 1, "mouse-directed attack should hit the clicked enemy")
-	_expect(int(after_enemy_loop.get("living_enemy_count", 0)) == 1, "mouse-directed hit should defeat one enemy")
+	_expect(int(after_enemy_loop.get("living_enemy_count", 0)) == initial_living_count - 1, "mouse-directed hit should defeat one enemy")
 	_expect(str(attack.get("aim_source", "")) == "mouse", "attack snapshot should record mouse aim source")
 	_expect(last_direction.x > 0.6 and absf(last_direction.y) < 0.45, "mouse click to the right should produce a +X attack direction")
 	_expect(bool(visual.get("has_attack_arc_marker", false)), "attack should have a temporary arc marker")

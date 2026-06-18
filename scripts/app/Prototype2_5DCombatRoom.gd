@@ -17,6 +17,8 @@ const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.g
 const TowerProgressServiceScript := preload("res://scripts/data/TowerProgressService.gd")
 const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
 const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlementService.gd")
+const FloorRulesScript := preload("res://scripts/rules/FloorRules.gd")
+const RoomObjectiveServiceScript := preload("res://scripts/data/RoomObjectiveService.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -37,6 +39,8 @@ var player: Node3D
 var player_data: Dictionary = {}
 var death_return_player_data: Dictionary = {}
 var current_floor := 1
+var current_floor_template: Dictionary = {}
+var room_objective_state: Dictionary = {}
 var legacy_fallback_scene := GameConstantsScript.GAME_2D_SCENE
 var kill_index := 0
 var floor_kill_count := 0
@@ -242,21 +246,75 @@ func _build_actors() -> void:
 	_add_actor_visible_marker(player, Color(0.22, 0.65, 1.0), "PlayerReadableMarker")
 	_update_camera_follow()
 
-	for index in range(2):
-		_create_enemy_actor(index)
+	_spawn_current_floor_wave()
+
+func _spawn_current_floor_wave() -> void:
+	_spawn_floor_template(FloorRulesScript.build_floor_template(current_floor))
+
+func _spawn_floor_template(template: Dictionary) -> void:
+	current_floor_template = template.duplicate(true)
+	room_objective_state = RoomObjectiveServiceScript.build_state(current_floor_template)
+	_clear_enemy_actors()
+	floor_kill_count = 0
+	floor_pickup_names = []
+	last_floor_rewards = {}
+	last_loot_notification = {}
+	last_xp_result = {}
+	actor_visible_markers = _get_surviving_actor_visible_markers()
+	var index := 0
+	for spawn_data in Array(template.get("enemies", [])):
+		_create_enemy_actor(index, Dictionary(spawn_data))
+		index += 1
 	living_enemy_count = enemies.size()
 
-func _create_enemy_actor(index: int) -> Node3D:
+func _clear_enemy_actors() -> void:
+	for enemy in enemies:
+		if is_instance_valid(enemy):
+			enemy.queue_free()
+	enemies.clear()
+	enemy_states.clear()
+
+func _create_enemy_actor(index: int, spawn_data: Dictionary = {}) -> Node3D:
+	var enemy_type := str(spawn_data.get("enemy_type", _get_enemy_type_for_index(index)))
+	var modifiers := Dictionary(spawn_data.get("modifiers", {}))
+	var enemy_data := FloorRulesScript.get_enemy_type_data(enemy_type, current_floor, modifiers)
 	var enemy := BillboardActor3D.new()
 	enemy.name = "EnemyBillboard%d" % (index + 1)
-	enemy.position = Vector3(-2.0 + float(index) * 4.0, 0.0, -2.0)
-	enemy.set_movement_speed(3.2)
+	enemy.position = _spawn_position_to_world(spawn_data.get("position", Vector2.ZERO), index)
+	enemy.set_movement_speed(_to_2_5d_move_speed(float(enemy_data.get("move_speed", 100.0))))
 	add_child(enemy)
-	_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index))
-	_add_actor_visible_marker(enemy, Color(0.95, 0.20, 0.16), "EnemyReadableMarker")
+	_apply_actor_animation_manifest(enemy, _make_enemy_actor_manifest(index, enemy_data))
+	_add_actor_visible_marker(enemy, _get_enemy_marker_color(enemy_data), "EnemyReadableMarker")
 	enemies.append(enemy)
-	enemy_states[enemy] = _make_enemy_state(_get_enemy_type_for_index(index))
+	enemy_states[enemy] = _make_enemy_state(enemy_data)
 	return enemy
+
+func _spawn_position_to_world(value, index: int = 0) -> Vector3:
+	var source: Vector2 = value if value is Vector2 else Vector2(-240.0 + float(index) * 240.0, -120.0)
+	return Vector3(
+		clampf(source.x / 80.0, -7.8, 7.8),
+		0.0,
+		clampf(source.y / 80.0, -4.8, 4.8)
+	)
+
+func _to_2_5d_move_speed(source_speed: float) -> float:
+	return clampf(source_speed / 32.0, 2.1, 4.8)
+
+func _to_2_5d_attack_range(source_range: float) -> float:
+	return clampf(source_range / 45.0, 0.9, 5.2)
+
+func _to_2_5d_health(enemy_data: Dictionary) -> int:
+	if bool(enemy_data.get("is_boss", false)):
+		return 5
+	if bool(enemy_data.get("is_elite", false)):
+		return 3
+	if str(enemy_data.get("enemy_type", "")) == "tower_guardian":
+		return 2
+	return 1
+
+func _get_enemy_marker_color(enemy_data: Dictionary) -> Color:
+	var color_value = enemy_data.get("color", Color(0.95, 0.20, 0.16))
+	return color_value if color_value is Color else Color(0.95, 0.20, 0.16)
 
 func _get_enemy_type_for_index(index: int) -> String:
 	if index == 0:
@@ -274,10 +332,28 @@ func _apply_default_actor_animation_manifest(actor: Node3D) -> void:
 		return
 	actor.call("apply_visual_asset_manifest", _make_default_billboard_animation_manifest())
 
-func _make_enemy_actor_manifest(enemy_index: int) -> Dictionary:
-	if enemy_index == 0:
+func _make_enemy_actor_manifest(enemy_index: int, enemy_data: Dictionary = {}) -> Dictionary:
+	var manifest := Dictionary(enemy_data.get("visual_asset_manifest", {})).duplicate(true)
+	if not manifest.is_empty():
+		manifest["animation_pipeline"] = str(manifest.get("animation_pipeline", "action_separated"))
+		manifest["weapon_layer_mode"] = str(manifest.get("weapon_layer_mode", "external_attach"))
+		manifest["body_sprites_must_exclude_weapon"] = bool(manifest.get("body_sprites_must_exclude_weapon", true))
+		manifest["separate_combat_vfx"] = bool(manifest.get("separate_combat_vfx", true))
+		manifest["combat_vfx_separated"] = bool(manifest.get("combat_vfx_separated", true))
+		var shadow := Dictionary(manifest.get("contact_shadow", {}))
+		shadow["required"] = bool(shadow.get("required", true))
+		shadow["style"] = str(shadow.get("style", "soft_grounded_cold_ambient"))
+		shadow["radius"] = float(shadow.get("radius", 0.46))
+		shadow["depth"] = float(shadow.get("depth", 0.28))
+		shadow["alpha"] = float(shadow.get("alpha", 0.34))
+		manifest["contact_shadow"] = shadow
+		return manifest
+	var enemy_type := str(enemy_data.get("enemy_type", _get_enemy_type_for_index(enemy_index)))
+	if enemy_type == "shadow_archer":
+		return BillboardActorManifestLibrary.make_shadow_archer_v3()
+	if enemy_type == "rot_melee":
 		return BillboardActorManifestLibrary.make_rot_melee_v3()
-	return BillboardActorManifestLibrary.make_shadow_archer_v3()
+	return BillboardActorManifestLibrary.make_rot_melee_v3()
 
 func _make_default_billboard_animation_manifest() -> Dictionary:
 	return {
@@ -734,18 +810,25 @@ func _update_actor_animation(actor: Node3D, movement: Vector2, attacking: bool, 
 	if actor != null and actor.has_method("update_actor_animation_state"):
 		actor.call("update_actor_animation_state", movement, attacking, dead)
 
-func _make_enemy_state(enemy_type: String = "rot_melee") -> Dictionary:
+func _make_enemy_state(enemy_data: Dictionary = {}) -> Dictionary:
+	var enemy_type := str(enemy_data.get("enemy_type", "rot_melee"))
+	var display_rank := str(enemy_data.get("display_rank", "normal"))
 	return {
-		"health": ENEMY_MAX_HEALTH,
+		"health": _to_2_5d_health(enemy_data),
+		"max_health": _to_2_5d_health(enemy_data),
 		"alive": true,
 		"mode": "idle",
 		"distance_to_player": 0.0,
 		"attack_timer": 0.0,
 		"attack_count": 0,
+		"attack_damage": int(enemy_data.get("attack_damage", ENEMY_ATTACK_DAMAGE)),
+		"attack_range": _to_2_5d_attack_range(float(enemy_data.get("attack_range", ENEMY_ATTACK_RANGE * 45.0))),
+		"attack_cooldown": maxf(0.35, float(enemy_data.get("attack_cooldown", ENEMY_ATTACK_COOLDOWN))),
 		"enemy_type": enemy_type,
-		"display_rank": "normal",
-		"is_elite": false,
-		"is_boss": false,
+		"display_rank": display_rank,
+		"is_elite": bool(enemy_data.get("is_elite", false)),
+		"is_boss": bool(enemy_data.get("is_boss", false)),
+		"enemy_data": enemy_data.duplicate(true),
 	}
 
 func _update_enemy_loop(delta: float) -> void:
@@ -766,14 +849,16 @@ func _update_enemy_loop(delta: float) -> void:
 		state["distance_to_player"] = distance
 		var enemy_movement := Vector2.ZERO
 		var enemy_attacking := false
-		if distance <= ENEMY_ATTACK_RANGE:
+		var attack_range := float(state.get("attack_range", ENEMY_ATTACK_RANGE))
+		var attack_cooldown := float(state.get("attack_cooldown", ENEMY_ATTACK_COOLDOWN))
+		if distance <= attack_range:
 			state["mode"] = "attack"
 			enemy_attacking = true
 			state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
-			if float(state.get("attack_timer", 0.0)) >= ENEMY_ATTACK_COOLDOWN:
+			if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
 				state["attack_timer"] = 0.0
 				state["attack_count"] = int(state.get("attack_count", 0)) + 1
-				_apply_damage_to_player(ENEMY_ATTACK_DAMAGE)
+				_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
 			if enemy.has_method("set_move_input"):
 				enemy.call("set_move_input", Vector2.ZERO)
 		elif distance <= ENEMY_CHASE_RANGE:
@@ -812,7 +897,7 @@ func force_enemy_attack_player_for_test(index: int) -> void:
 	state["mode"] = "attack"
 	state["attack_count"] = int(state.get("attack_count", 0)) + 1
 	enemy_states[enemy] = state
-	_apply_damage_to_player(ENEMY_ATTACK_DAMAGE)
+	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
 
 func _defeat_enemy(enemy: Node3D) -> void:
 	if enemy == null or not enemy_states.has(enemy):
@@ -834,6 +919,7 @@ func _defeat_enemy(enemy: Node3D) -> void:
 		collision.disabled = true
 	enemy.visible = false
 	var xp_result := _record_enemy_defeat_rewards(state)
+	room_objective_state = RoomObjectiveServiceScript.record_enemy_defeated(room_objective_state, _build_enemy_experience_source(state))
 	var level_note := " Level up!" if bool(xp_result.get("leveled_up", false)) else ""
 	_update_hud("Enemy defeated. %d enemy/enemies remain. +%d XP%s" % [living_enemy_count, int(xp_result.get("experience_gained", 0)), level_note])
 	if living_enemy_count <= 0:
@@ -1035,7 +1121,7 @@ func _refresh_death_settlement_sections() -> void:
 func _build_death_settlement() -> Dictionary:
 	return DeathSettlementServiceScript.build_death_settlement({
 		"floor": current_floor,
-		"template_id": "prototype_2_5d_combat_room",
+		"template_id": str(current_floor_template.get("template_id", "prototype_2_5d_combat_room")),
 		"kill_count": floor_kill_count,
 		"pickup_names": floor_pickup_names,
 		"last_floor_rewards": last_floor_rewards,
@@ -1110,7 +1196,7 @@ func _update_hud(message: String) -> void:
 	hud.call("set_status", "Floor %d | Enemies %d" % [current_floor, living_enemy_count])
 	hud.call("set_log", message)
 	if hud.has_method("set_objective"):
-		var objective := "Objective: defeat all enemies."
+		var objective := str(room_objective_state.get("hud_text", "Objective: defeat all enemies."))
 		if exit_unlocked:
 			objective = "Objective: enter the blue exit marker."
 		hud.call("set_objective", objective)
@@ -1139,20 +1225,7 @@ func _build_current_player_snapshot() -> Dictionary:
 	return snapshot
 
 func _reset_enemy_wave() -> void:
-	for enemy in enemies:
-		if is_instance_valid(enemy):
-			enemy.queue_free()
-	enemies.clear()
-	enemy_states.clear()
-	floor_kill_count = 0
-	floor_pickup_names = []
-	last_floor_rewards = {}
-	last_loot_notification = {}
-	last_xp_result = {}
-	actor_visible_markers = _get_surviving_actor_visible_markers()
-	for index in range(2):
-		_create_enemy_actor(index)
-	living_enemy_count = enemies.size()
+	_spawn_current_floor_wave()
 
 func _get_surviving_actor_visible_markers() -> Array[MeshInstance3D]:
 	var surviving: Array[MeshInstance3D] = []
@@ -1171,6 +1244,16 @@ func defeat_enemy_for_test(index: int) -> void:
 		return
 	_defeat_enemy(enemies[index])
 
+func _apply_floor_template_for_test(floor: int) -> void:
+	current_floor = maxi(1, floor)
+	death_settlement_active = false
+	death_return_player_data = {}
+	if is_instance_valid(death_overlay):
+		death_overlay.visible = false
+	_set_exit_locked_visual()
+	_spawn_current_floor_wave()
+	_update_hud("Floor %d: %s" % [current_floor, str(current_floor_template.get("template_id", "clear"))])
+
 func build_prototype_snapshot_for_test() -> Dictionary:
 	return {
 		"prototype_id": "2_5d_billboard_combat_room",
@@ -1182,6 +1265,7 @@ func build_prototype_snapshot_for_test() -> Dictionary:
 		"player_count": 1 if player != null else 0,
 		"enemy_count": enemies.size(),
 		"has_exit_marker": exit_marker != null,
+		"template_id": str(current_floor_template.get("template_id", "")),
 	}
 
 func build_main_flow_migration_snapshot_for_test() -> Dictionary:
@@ -1264,6 +1348,39 @@ func build_loot_xp_reward_snapshot_for_test() -> Dictionary:
 		"living_enemy_count": living_enemy_count,
 		"hud_status_text": status_text,
 		"hud_inventory_text": inventory_text,
+	}
+
+func build_floor_wave_snapshot_for_test() -> Dictionary:
+	var enemy_types: Array[String] = []
+	var enemy_ranks: Array[String] = []
+	var enemy_positions: Array[Vector3] = []
+	var has_boss := false
+	var has_elite := false
+	for enemy in enemies:
+		if enemy == null or not enemy_states.has(enemy):
+			continue
+		var state: Dictionary = Dictionary(enemy_states.get(enemy, {}))
+		enemy_types.append(str(state.get("enemy_type", "")))
+		enemy_ranks.append(str(state.get("display_rank", "")))
+		enemy_positions.append(enemy.global_position)
+		has_boss = has_boss or bool(state.get("is_boss", false))
+		has_elite = has_elite or bool(state.get("is_elite", false))
+	return {
+		"current_floor": current_floor,
+		"template_id": str(current_floor_template.get("template_id", "")),
+		"objective_id": str(room_objective_state.get("objective_id", "")),
+		"objective_text": str(room_objective_state.get("hud_text", "")),
+		"objective_current": int(room_objective_state.get("current_count", 0)),
+		"objective_target": int(room_objective_state.get("target_count", 0)),
+		"has_room_objective_state": not room_objective_state.is_empty(),
+		"template_enemy_count": Array(current_floor_template.get("enemies", [])).size(),
+		"total_enemy_count": enemies.size(),
+		"living_enemy_count": living_enemy_count,
+		"enemy_types": enemy_types,
+		"enemy_ranks": enemy_ranks,
+		"enemy_positions": enemy_positions,
+		"has_boss": has_boss,
+		"has_elite": has_elite,
 	}
 
 func build_death_settlement_snapshot_for_test() -> Dictionary:

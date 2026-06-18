@@ -25,7 +25,7 @@ func _run() -> void:
 
 	var initial: Dictionary = scene.call("build_animation_state_snapshot_for_test")
 	_expect(str(initial.get("player_animation", "")) == "idle", "player should begin in idle animation")
-	_expect(Array(initial.get("enemy_animations", [])).size() == 2, "snapshot should include both enemy animation states")
+	_expect(Array(initial.get("enemy_animations", [])).size() >= 2, "snapshot should include template enemy animation states")
 	_expect(bool(initial.get("player_body_weapon_separated", false)), "player body and weapon animation layers should remain separated")
 
 	scene.call("set_player_move_input_for_test", Vector2.RIGHT)
@@ -36,7 +36,7 @@ func _run() -> void:
 
 	var enemy_loop: Dictionary = scene.call("build_enemy_loop_snapshot_for_test")
 	var enemy_states: Array = Array(enemy_loop.get("enemy_states", []))
-	_expect(enemy_states.size() == 2, "enemy loop should expose two enemies")
+	_expect(enemy_states.size() >= 2, "enemy loop should expose template enemies")
 	if enemy_states.is_empty():
 		scene.queue_free()
 		await process_frame
@@ -65,7 +65,7 @@ func _run() -> void:
 	await physics_frame
 	var death: Dictionary = scene.call("build_animation_state_snapshot_for_test")
 	var enemy_animations: Array = Array(death.get("enemy_animations", []))
-	_expect(enemy_animations.size() >= 2, "death snapshot should still include both enemies")
+	_expect(enemy_animations.size() >= 2, "death snapshot should still include template enemies")
 	if enemy_animations.size() >= 2:
 		var defeated_enemy: Dictionary = Dictionary(enemy_animations[1])
 		_expect(str(defeated_enemy.get("animation", "")) == "death", "defeated enemy should sync billboard animation to death")

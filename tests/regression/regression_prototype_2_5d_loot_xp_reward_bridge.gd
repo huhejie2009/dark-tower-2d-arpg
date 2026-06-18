@@ -40,6 +40,8 @@ func _run() -> void:
 	_expect(int(initial.get("current_floor", 0)) == 5, "reward bridge should run on requested floor 5")
 	_expect(int(initial.get("floor_kill_count", -1)) == 0, "new floor should start with zero floor kills")
 	_expect(int(initial.get("inventory_used_slots", 0)) >= 1, "starter inventory should exist before rewards")
+	var initial_living_count := int(initial.get("living_enemy_count", 0))
+	_expect(initial_living_count >= 2, "boss floor should spawn a template wave")
 
 	scene.call("defeat_enemy_for_test", 0)
 	await process_frame
@@ -53,7 +55,8 @@ func _run() -> void:
 	_expect(str(after_first.get("hud_status_text", "")).contains("Enemies"), "HUD status should remain synced after reward")
 	_expect(str(after_first.get("hud_inventory_text", "")).contains("Bag"), "HUD inventory text should remain synced after reward")
 
-	scene.call("defeat_enemy_for_test", 1)
+	for index in range(1, initial_living_count):
+		scene.call("defeat_enemy_for_test", index)
 	await process_frame
 	var after_clear: Dictionary = scene.call("build_loot_xp_reward_snapshot_for_test")
 	var rewards: Dictionary = Dictionary(after_clear.get("last_floor_rewards", {}))
