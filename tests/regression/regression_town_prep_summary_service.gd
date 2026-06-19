@@ -27,6 +27,8 @@ func _run() -> void:
 	_expect(str(summary.get("progress_text", "")).contains("Best Floor 12"), "summary should include best floor")
 	_expect(str(summary.get("start_text", "")).contains("Floor 1"), "summary should show fresh run start")
 	_expect(str(summary.get("start_text", "")).contains("12"), "summary should show best floor challenge")
+	_expect(str(summary.get("start_text", "")).contains("highest_floor"), "summary should explain saved highest_floor")
+	_expect(str(summary.get("start_explanation_text", "")).contains("saved progress"), "summary should expose readable start explanation")
 	_expect(str(summary.get("resource_text", "")).contains("Gold 88"), "summary should include inventory gold")
 	_expect(str(summary.get("growth_text", "")).contains("SP 3"), "summary should include skill points")
 	_expect(int(summary.get("gear_score", 0)) > 0, "summary should expose gear score")

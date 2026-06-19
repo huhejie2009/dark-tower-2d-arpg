@@ -17,6 +17,9 @@ func _run() -> void:
 	_expect(int(options.get("best_floor", 0)) == 42, "best run should expose saved best floor")
 	_expect(str(options.get("fresh_label", "")).contains("Floor 1"), "fresh label should be readable")
 	_expect(str(options.get("best_label", "")).contains("42"), "best label should include best floor")
+	_expect(str(options.get("fresh_description", "")).contains("new climb"), "fresh option should explain it starts a new climb")
+	_expect(str(options.get("best_description", "")).contains("saved progress"), "best option should explain saved progress")
+	_expect(str(options.get("highest_floor_explanation", "")).contains("highest_floor"), "start options should explain highest_floor")
 
 	TowerRunStartServiceScript.request_start_floor(42)
 	_expect(int(TowerRunStartServiceScript.consume_start_floor(player)) == 42, "requested best floor should be consumed once")

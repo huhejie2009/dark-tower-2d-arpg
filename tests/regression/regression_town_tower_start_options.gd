@@ -27,6 +27,12 @@ func _run() -> void:
 			_expect(str(fresh_button.text).contains("Floor 1"), "main enter tower button should start a fresh floor 1 run")
 		if best_button != null:
 			_expect(str(best_button.text).contains("37"), "best floor button should show saved best floor")
+		_expect(town.has_method("get_tower_start_snapshot_for_test"), "town should expose tower start snapshot")
+		if town.has_method("get_tower_start_snapshot_for_test"):
+			var snapshot: Dictionary = Dictionary(town.call("get_tower_start_snapshot_for_test"))
+			_expect(str(snapshot.get("fresh_description", "")).contains("new climb"), "town snapshot should explain fresh run")
+			_expect(str(snapshot.get("best_description", "")).contains("saved progress"), "town snapshot should explain best floor")
+			_expect(str(snapshot.get("highest_floor_explanation", "")).contains("highest_floor"), "town snapshot should explain high-floor starts")
 		town.queue_free()
 		await process_frame
 

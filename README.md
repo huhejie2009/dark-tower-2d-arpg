@@ -289,6 +289,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Repaired garbled P2 acceptance text in the service and QA document while preserving thresholds and report shape.
 - Added regression: `tests/regression/regression_prototype_2_5d_p2_loot_loop_qa_bridge.gd`.
 
+## 2026-06-19 Update: Town Tower Start Clarity
+
+- Town start options now explain the difference between a fresh Floor 1 run and challenging the saved best floor.
+- `highest_floor` is now described as saved progression, not the active room floor.
+- Town prep summary includes the start explanation, and the town scene exposes `get_tower_start_snapshot_for_test()` for regression and Godot AI inspection.
+- Updated tower start and town prep regressions to keep this explanation from disappearing.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

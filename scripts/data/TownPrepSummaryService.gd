@@ -37,9 +37,11 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		int(player_data.get("max_health", stats.get("max_health", 0))),
 		int(player_data.get("max_mana", stats.get("max_mana", 0))),
 	]
-	var start_text := "%s\n%s" % [
+	var start_explanation := str(start_options.get("explanation_text", "Floor 1 starts fresh; Best Floor uses saved progress."))
+	var start_text := "%s\n%s\n%s" % [
 		str(start_options.get("fresh_label", "Enter Tower: Floor 1")),
 		str(start_options.get("best_label", "Challenge Best Floor")),
+		start_explanation,
 	]
 	return {
 		"character_text": character_text,
@@ -47,6 +49,7 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		"resource_text": resource_text,
 		"growth_text": growth_text,
 		"start_text": start_text,
+		"start_explanation_text": start_explanation,
 		"gear_score": gear_score,
 		"gold": gold,
 		"crystal": crystal,

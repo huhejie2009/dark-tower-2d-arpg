@@ -50,6 +50,7 @@ func _run() -> void:
 			_expect(str(growth.text).contains("SP 2"), "growth summary should include skill points")
 		if start != null:
 			_expect(str(start.text).contains("Floor 1") and str(start.text).contains("9"), "start summary should explain both start options")
+			_expect(str(start.text).contains("highest_floor"), "start summary should explain saved highest_floor")
 		if recommendations != null:
 			_expect(str(recommendations.text).contains("SP 2"), "recommendations should mention unspent skill points")
 		town.queue_free()

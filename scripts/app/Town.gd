@@ -270,7 +270,7 @@ func _create_prep_panel() -> void:
 	growth_summary = _make_prep_label("TownGrowthSummary")
 	box.add_child(growth_summary)
 	start_summary = _make_prep_label("TownStartSummary")
-	start_summary.custom_minimum_size = Vector2(320, 54)
+	start_summary.custom_minimum_size = Vector2(320, 78)
 	box.add_child(start_summary)
 	prep_recommendations = _make_prep_label("TownPrepRecommendations")
 	prep_recommendations.custom_minimum_size = Vector2(320, 64)
@@ -479,6 +479,19 @@ func get_open_town_facility_id_for_test() -> String:
 	if not is_instance_valid(facility_window) or not facility_window.has_method("get_open_facility_id"):
 		return ""
 	return str(facility_window.call("get_open_facility_id"))
+
+func get_tower_start_snapshot_for_test() -> Dictionary:
+	var start_options := TowerRunStartServiceScript.build_start_options(player_data)
+	return {
+		"fresh_floor": int(start_options.get("fresh_floor", 1)),
+		"best_floor": int(start_options.get("best_floor", 1)),
+		"fresh_label": str(start_options.get("fresh_label", "")),
+		"best_label": str(start_options.get("best_label", "")),
+		"fresh_description": str(start_options.get("fresh_description", "")),
+		"best_description": str(start_options.get("best_description", "")),
+		"highest_floor_explanation": str(start_options.get("highest_floor_explanation", "")),
+		"start_summary_text": start_summary.text if is_instance_valid(start_summary) else "",
+	}
 
 func trigger_town_facility_action_for_test(facility_id: String, action_id: String) -> void:
 	_open_town_facility(facility_id)
