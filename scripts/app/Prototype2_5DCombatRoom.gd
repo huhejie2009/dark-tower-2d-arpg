@@ -20,6 +20,7 @@ const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlemen
 const FloorRulesScript := preload("res://scripts/rules/FloorRules.gd")
 const RoomObjectiveServiceScript := preload("res://scripts/data/RoomObjectiveService.gd")
 const DamageFeedbackServiceScript := preload("res://scripts/data/DamageFeedbackService.gd")
+const P2LootLoopMetricsRecorderScript := preload("res://scripts/data/P2LootLoopMetricsRecorder.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -120,8 +121,13 @@ var boss_slam_state: Dictionary = {}
 var debug_readability_markers_enabled := false
 var death_settlement_active := false
 var death_trigger_count := 0
+var p2_loot_loop_metrics: Dictionary = P2LootLoopMetricsRecorderScript.create_metrics()
+var start_floor := 1
+var requested_start_floor := -1
+var start_floor_source := "default_floor_1"
 
 func _ready() -> void:
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.create_metrics()
 	_initialize_main_flow_context()
 	_build_visibility_baseline()
 	_build_room()
@@ -140,6 +146,7 @@ func _ready() -> void:
 	_update_hud(_build_floor_enter_message())
 
 func _physics_process(_delta: float) -> void:
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.add_elapsed_seconds(p2_loot_loop_metrics, _delta)
 	if _is_menu_blocking_combat():
 		active_move_input = Vector2.ZERO
 		if player != null and player.has_method("set_move_input"):
@@ -180,7 +187,20 @@ func _input(event: InputEvent) -> void:
 
 func _initialize_main_flow_context() -> void:
 	player_data = SaveManagerScript.get_active_player_data()
+	requested_start_floor = int(TowerRunStartServiceScript.pending_start_floor)
 	current_floor = TowerRunStartServiceScript.consume_start_floor(player_data)
+	start_floor = current_floor
+	start_floor_source = _build_start_floor_source()
+
+func _build_start_floor_source() -> String:
+	if requested_start_floor < 0:
+		return "default_floor_1"
+	if requested_start_floor == 1:
+		return "fresh_run_request"
+	var best_floor := maxi(1, int(player_data.get("highest_floor", 1)))
+	if requested_start_floor >= best_floor:
+		return "best_floor_request"
+	return "requested_floor_%d" % requested_start_floor
 
 func _build_visibility_baseline() -> void:
 	world_environment = WorldEnvironment.new()
@@ -1244,11 +1264,15 @@ func _build_enemy_experience_source(enemy_state: Dictionary) -> Dictionary:
 
 func _award_enemy_experience(enemy_data: Dictionary) -> Dictionary:
 	var before_level := int(player_data.get("player_level", 1))
+	var before_skill_points := int(player_data.get("skill_points", 0))
 	var experience := _get_enemy_experience_reward(enemy_data)
 	player_data = PlayerDataServiceScript.add_experience(player_data, experience)
+	var leveled_up := int(player_data.get("player_level", 1)) > before_level
+	if leveled_up or int(player_data.get("skill_points", 0)) > before_skill_points:
+		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_skill_upgrade(p2_loot_loop_metrics)
 	last_xp_result = {
 		"experience_gained": experience,
-		"leveled_up": int(player_data.get("player_level", 1)) > before_level,
+		"leveled_up": leveled_up,
 		"player_level": int(player_data.get("player_level", 1)),
 	}
 	return last_xp_result.duplicate(true)
@@ -1277,6 +1301,7 @@ func _add_payload_to_player_inventory(payload: Dictionary, source: String) -> vo
 	var notification := _build_loot_notification(payload, source)
 	player_data["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player_data.get("inventory", {})), payload)
 	floor_pickup_names.append(str(payload.get("name", "Item")))
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_pickup(p2_loot_loop_metrics, payload, notification)
 	_show_loot_notification(notification)
 
 func _build_loot_notification(payload: Dictionary, source: String = "drop") -> Dictionary:
@@ -1292,6 +1317,7 @@ func _on_floor_cleared() -> void:
 		return
 	var rewards := _build_floor_clear_rewards(current_floor, str(player_data.get("base_class", "warrior")))
 	player_data = _apply_floor_clear_rewards_to_player(player_data, rewards)
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_floor_cleared(p2_loot_loop_metrics)
 	var next_floor := TowerProgressServiceScript.next_floor_after_clear(current_floor)
 	player_data["highest_floor"] = maxi(next_floor, int(player_data.get("highest_floor", 1)))
 	last_floor_rewards = rewards.duplicate(true)
@@ -1314,6 +1340,7 @@ func _apply_floor_clear_rewards_to_player(data: Dictionary, rewards: Dictionary)
 		var notification := _build_loot_notification(payload, "boss_reward")
 		inventory = InventoryDataServiceScript.add_item(inventory, payload)
 		floor_pickup_names.append(str(payload.get("name", "Item")))
+		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_pickup(p2_loot_loop_metrics, payload, notification)
 		_show_loot_notification(notification)
 	result["inventory"] = inventory
 	return result
@@ -1368,6 +1395,7 @@ func _on_player_died() -> void:
 		return
 	death_settlement_active = true
 	death_trigger_count += 1
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_death(p2_loot_loop_metrics)
 	active_move_input = Vector2.ZERO
 	player_attack_phase = "dead"
 	player_attack_cooldown_remaining = 0.0
@@ -1489,9 +1517,20 @@ func _is_menu_blocking_combat() -> bool:
 	return death_settlement_active or (is_instance_valid(pause_overlay) and pause_overlay.visible) or (is_instance_valid(inventory_window) and inventory_window.visible)
 
 func _on_player_data_changed(updated: Dictionary) -> void:
+	var previous_equipped := Dictionary(player_data.get("equipped_items", {})).duplicate(true)
+	var previous_skills := Dictionary(player_data.get("unlocked_skill_nodes", {})).duplicate(true)
 	player_data = updated.duplicate(true)
+	var next_equipped := Dictionary(player_data.get("equipped_items", {})).duplicate(true)
+	var next_skills := Dictionary(player_data.get("unlocked_skill_nodes", {})).duplicate(true)
+	if _dictionary_state_changed(previous_equipped, next_equipped):
+		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_equipment_change(p2_loot_loop_metrics)
+	if _dictionary_state_changed(previous_skills, next_skills):
+		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_skill_upgrade(p2_loot_loop_metrics)
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
 	_update_hud("Equipment updated.")
+
+func _dictionary_state_changed(before: Dictionary, after: Dictionary) -> bool:
+	return JSON.stringify(before) != JSON.stringify(after)
 
 func _update_hud(message: String) -> void:
 	if not is_instance_valid(hud):
@@ -1722,6 +1761,38 @@ func build_floor_wave_snapshot_for_test() -> Dictionary:
 
 func build_floor_pacing_snapshot_for_test() -> Dictionary:
 	return build_floor_wave_snapshot_for_test()
+
+func set_p2_loot_loop_elapsed_seconds_for_test(seconds: float) -> void:
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_elapsed_seconds(p2_loot_loop_metrics, seconds)
+
+func set_p2_loot_loop_verification_gates_for_test(regression_passed: bool, headless_exit_zero: bool) -> void:
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.set_verification_gates(p2_loot_loop_metrics, regression_passed, headless_exit_zero)
+
+func record_equipment_change_for_test() -> void:
+	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_equipment_change(p2_loot_loop_metrics)
+
+func build_p2_loot_loop_qa_snapshot_for_test() -> Dictionary:
+	var metrics := P2LootLoopMetricsRecorderScript.normalize_metrics(p2_loot_loop_metrics)
+	var report := P2LootLoopMetricsRecorderScript.build_acceptance_report(metrics)
+	return {
+		"runtime_id": "prototype_2_5d_combat_room",
+		"start_floor": start_floor,
+		"requested_start_floor": requested_start_floor,
+		"start_floor_source": start_floor_source,
+		"current_floor": current_floor,
+		"player_highest_floor": int(player_data.get("highest_floor", 1)),
+		"highest_floor_explanation": _build_highest_floor_explanation(),
+		"objective_text": _get_current_objective_text(),
+		"last_loot_notification": last_loot_notification.duplicate(true),
+		"last_xp_result": last_xp_result.duplicate(true),
+		"floor_pickup_names": floor_pickup_names.duplicate(true),
+		"last_floor_rewards": last_floor_rewards.duplicate(true),
+		"metrics": metrics,
+		"acceptance_report": report,
+	}
+
+func _build_highest_floor_explanation() -> String:
+	return "current_floor is the active tower room; highest_floor is saved progression and may be higher after clears or when starting from best floor."
 
 func _get_current_objective_text() -> String:
 	if exit_unlocked:

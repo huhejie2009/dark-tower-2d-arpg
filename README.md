@@ -280,6 +280,15 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added a deterministic 1-to-5 climb regression that clears each floor, enters the next floor, and verifies the boss floor endpoint.
 - Added regression: `tests/regression/regression_prototype_2_5d_floor_1_to_5_playable_pacing.gd`.
 
+## 2026-06-19 Update: P2 10 Minute 2.5D Loot Loop QA
+
+- Connected the active 2.5D tower runtime to the existing P2 10-minute loot-loop acceptance model.
+- `Prototype2_5DCombatRoom` now records elapsed time, cleared floors, pickups, equipment drops, upgrade candidates, equipment changes, skill-growth opportunities, deaths, and verification gates.
+- Added `build_p2_loot_loop_qa_snapshot_for_test()` for regression and Godot AI inspection.
+- The QA snapshot explains the difference between `current_floor` and saved `highest_floor`, helping diagnose high-floor start confusion without clearing player saves.
+- Repaired garbled P2 acceptance text in the service and QA document while preserving thresholds and report shape.
+- Added regression: `tests/regression/regression_prototype_2_5d_p2_loot_loop_qa_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

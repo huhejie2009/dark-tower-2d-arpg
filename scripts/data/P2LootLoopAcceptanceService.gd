@@ -6,21 +6,21 @@ const TARGET_MINUTES := 10
 static func build_acceptance() -> Dictionary:
 	return {
 		"phase_id": "P2",
-		"phase_name": "战斗手感与刷宝驱动",
+		"phase_name": "Combat Feel And Loot Motivation",
 		"target_minutes": TARGET_MINUTES,
-		"pass_rule": "10 minute loot loop passes when floor progress, loot volume, upgrade visibility, equipment change, skill growth and stability gates are met.",
+		"pass_rule": "10 minute loot loop passes when floor progress, loot volume, upgrade visibility, equipment change, skill growth, and stability gates are met.",
 		"items": [
-			_make_item("P2-LOOP-FLOOR", "floors_cleared", 3, "10 分钟内至少清 3 层，节奏不能卡在单层。", "楼层节奏过慢，优先检查敌人数量、移动距离、传送门流程。"),
-			_make_item("P2-LOOP-LOOT", "items_picked", 8, "10 分钟内至少拾取 8 个物品，形成持续掉落反馈。", "掉落密度不足，优先检查 LootRules、拾取距离、HUD 提示。"),
-			_make_item("P2-LOOP-EQUIPMENT", "equipment_picked", 1, "至少拾取 1 件装备，让背包比较有对象。", "装备掉落不足，优先检查装备掉落概率和 Boss/精英来源。"),
-			_make_item("P2-LOOP-UPGRADE", "upgrade_candidates_seen", 1, "至少看到 1 次升级候选或明确推荐。", "刷宝目标不清，优先检查推荐阈值、装备评分和提示可读性。"),
-			_make_item("P2-LOOP-EQUIP", "equipment_changes", 1, "至少实际换装 1 次，形成掉落到成长的闭环。", "换装动机不足，优先检查装备差异、背包详情和操作路径。"),
-			_make_item("P2-LOOP-SKILL", "skill_upgrades", 1, "至少完成 1 次技能升级或获得可升级目标。", "成长反馈不足，优先检查经验、技能点、升级预览。"),
-			_make_item("P2-LOOP-STABILITY", "p0_defects", 0, "P0 阻塞缺陷必须为 0。", "先修阻塞缺陷，再继续扩内容。", "max"),
+			_make_item("P2-LOOP-FLOOR", "floors_cleared", 3, "Clear at least 3 floors in 10 minutes so the climb does not stall on one room.", "Floor pacing is too slow. Check enemy count, movement distance, exits, and objective clarity."),
+			_make_item("P2-LOOP-LOOT", "items_picked", 8, "Pick up at least 8 items so the player receives steady loot feedback.", "Loot density is too low. Check LootRules, pickup distance, and HUD notifications."),
+			_make_item("P2-LOOP-EQUIPMENT", "equipment_picked", 1, "Pick up at least 1 equipment item so inventory comparison has a target.", "Equipment drops are too rare. Check equipment probability, elite drops, and boss rewards."),
+			_make_item("P2-LOOP-UPGRADE", "upgrade_candidates_seen", 1, "See at least 1 upgrade candidate or explicit recommendation.", "Upgrade motivation is unclear. Check recommendation thresholds, gear score, and readable loot prompts."),
+			_make_item("P2-LOOP-EQUIP", "equipment_changes", 1, "Change equipment at least once so loot connects to character growth.", "Equipment-change motivation or operation path is weak. Check item comparison and inventory actions."),
+			_make_item("P2-LOOP-SKILL", "skill_upgrades", 1, "Gain or spend at least 1 skill-growth opportunity.", "Growth feedback is weak. Check XP, level-up, skill points, and upgrade preview."),
+			_make_item("P2-LOOP-STABILITY", "p0_defects", 0, "P0 blocking defects must stay at 0.", "Fix blocking defects before adding more content.", "max"),
 		],
 		"gates": [
-			{"id": "P2-GATE-REGRESSION", "metric_key": "regression_passed", "acceptance": "完整回归通过。"},
-			{"id": "P2-GATE-HEADLESS", "metric_key": "headless_exit_zero", "acceptance": "主项目 headless 启动退出码为 0。"},
+			{"id": "P2-GATE-REGRESSION", "metric_key": "regression_passed", "acceptance": "Full regression must pass."},
+			{"id": "P2-GATE-HEADLESS", "metric_key": "headless_exit_zero", "acceptance": "Main project headless boot must exit with code 0."},
 		],
 	}
 
@@ -98,9 +98,9 @@ static func _build_next_focus(failed_items: Array) -> String:
 static func _build_next_actions(failed_items: Array, gates_passed: bool, enough_minutes: bool) -> Array[String]:
 	var actions: Array[String] = []
 	if not enough_minutes:
-		actions.append("补足 10 分钟试玩样本，再判断刷宝节奏。")
+		actions.append("Run or simulate a full 10-minute playtest sample before judging loot pacing.")
 	if not gates_passed:
-		actions.append("先修完整回归或 headless 启动门禁。")
+		actions.append("Fix full regression or headless boot gates before accepting P2.")
 	for item in failed_items:
 		var hint := str(Dictionary(item).get("failure_hint", ""))
 		if hint != "" and not actions.has(hint):
@@ -108,5 +108,5 @@ static func _build_next_actions(failed_items: Array, gates_passed: bool, enough_
 		if actions.size() >= 4:
 			break
 	if actions.is_empty():
-		actions.append("记录人工试玩反馈，继续微调刷宝节奏。")
+		actions.append("Record manual playtest feedback and continue pacing polish.")
 	return actions

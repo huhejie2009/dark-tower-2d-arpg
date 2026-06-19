@@ -7,11 +7,11 @@
 
 ## 通过规则
 
-- 至少试玩 10 分钟。
+- 至少有效试玩 10 分钟。
 - P0 阻塞缺陷必须为 0。
 - 完整回归必须通过，并输出 `ALL_NEW_PROJECT_REGRESSION_OK`。
 - 主项目 headless 启动退出码必须为 0。
-- 10 分钟内应形成「清层 -> 掉落 -> 比较 -> 换装/升级 -> 继续下一层」的闭环。
+- 10 分钟内应形成“清层 -> 掉落 -> 比较 -> 换装/升级 -> 继续下一层”的闭环。
 
 ## 建议记录字段
 
@@ -23,7 +23,7 @@
 | `equipment_picked` | 1 | 至少拾取 1 件装备。 |
 | `upgrade_candidates_seen` | 1 | 至少看到 1 次升级候选或明确推荐。 |
 | `equipment_changes` | 1 | 至少实际换装 1 次。 |
-| `skill_upgrades` | 1 | 至少完成 1 次技能升级或形成明确可升级目标。 |
+| `skill_upgrades` | 1 | 至少完成 1 次技能升级，或获得明确可升级机会。 |
 | `p0_defects` | 0 | 阻塞缺陷为 0。 |
 | `p1_defects` | <= 2 | 严重体验问题不超过 2 个。 |
 | `regression_passed` | true | 完整回归通过。 |
@@ -51,4 +51,8 @@
 - `next_focus`
 - `next_actions`
 
-这份 payload 后续可以接入 QA 面板、调试 HUD、试玩报告生成器或可视化图表。
+这份 payload 可以接入 QA 面板、调试 HUD、Godot AI 检查、试玩报告生成器或可视化图表。
+
+## 2.5D 运行时补充
+
+`Prototype2_5DCombatRoom.build_p2_loot_loop_qa_snapshot_for_test()` 会把 2.5D 实际运行时的楼层、掉落、经验、换装、死亡、回归门禁和 P2 报告统一输出。它也会解释 `current_floor` 与 `highest_floor` 的区别，避免试玩时误以为“每次打开游戏楼层异常变高”。
