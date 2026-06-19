@@ -256,6 +256,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added behavior snapshots for enemy intent, projectile flags, attack kind, and Boss warning state.
 - Added regression: `tests/regression/regression_prototype_2_5d_ranged_boss_behavior_bridge.gd`.
 
+## 2026-06-19 Update: 2.5D Enemy Readability VFX Contract
+
+- Shadow archer attacks now emit an independent enemy projectile feedback marker with owner, path, hit-confirm, and replaceable `enemy_projectile` role metadata.
+- Tower gatekeeper slam now has a readable charge phase before damage resolves.
+- Added a unified combat readability snapshot for projectile and boss telegraph QA.
+- No new generated art was added; these are temporary geometry hooks for later authored VFX/assets.
+- Added regression: `tests/regression/regression_prototype_2_5d_enemy_readability_vfx_contract.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

@@ -32,6 +32,8 @@ const PLAYER_ATTACK_COOLDOWN := 0.42
 const PLAYER_ATTACK_ACTIVE_TIME := 0.14
 const PLAYER_ATTACK_ARC_SEGMENTS := 12
 const PLAYER_HIT_VFX_LIFETIME := 0.22
+const ENEMY_PROJECTILE_VFX_LIFETIME := 0.30
+const BOSS_SLAM_CHARGE_TIME := 0.65
 const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
 const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 62
 
@@ -61,6 +63,8 @@ var exit_marker: Node3D
 var player_attack_arc_marker: MeshInstance3D
 var hit_vfx_root: Node3D
 var hit_impact_marker: MeshInstance3D
+var ranged_projectile_vfx_root: Node3D
+var ranged_projectile_marker: MeshInstance3D
 var boss_skill_vfx_root: Node3D
 var boss_slam_warning_marker: MeshInstance3D
 var camera: Camera3D
@@ -94,6 +98,12 @@ var last_player_attack_aim_source := "none"
 var last_player_attack_world_target := Vector3.ZERO
 var hit_vfx_lifetime_remaining := 0.0
 var last_hit_vfx_position := Vector3.ZERO
+var ranged_projectile_vfx_lifetime_remaining := 0.0
+var ranged_projectile_count := 0
+var last_ranged_projectile_from := Vector3.ZERO
+var last_ranged_projectile_to := Vector3.ZERO
+var last_ranged_projectile_owner_type := ""
+var last_ranged_projectile_hit_confirmed := false
 var boss_slam_state: Dictionary = {}
 var debug_readability_markers_enabled := false
 var death_settlement_active := false
@@ -108,6 +118,7 @@ func _ready() -> void:
 	_build_exit_marker()
 	_build_player_attack_arc_marker()
 	_build_hit_vfx()
+	_build_ranged_projectile_vfx()
 	_build_boss_skill_vfx()
 	_build_debug_hud()
 	_create_hud()
@@ -128,8 +139,10 @@ func _physics_process(_delta: float) -> void:
 		player.call("set_move_input", active_move_input)
 	_update_camera_follow()
 	_update_enemy_loop(_delta)
+	_tick_boss_skill(_delta)
 	_tick_player_attack(_delta)
 	_tick_hit_vfx(_delta)
+	_tick_ranged_projectile_vfx(_delta)
 
 func _input(event: InputEvent) -> void:
 	if death_settlement_active:
@@ -416,6 +429,21 @@ func _build_hit_vfx() -> void:
 	hit_impact_marker.visible = false
 	hit_vfx_root.add_child(hit_impact_marker)
 
+func _build_ranged_projectile_vfx() -> void:
+	ranged_projectile_vfx_root = Node3D.new()
+	ranged_projectile_vfx_root.name = "PrototypeRangedProjectileVfxRoot"
+	add_child(ranged_projectile_vfx_root)
+
+	ranged_projectile_marker = MeshInstance3D.new()
+	ranged_projectile_marker.name = "EnemyProjectileMarker"
+	ranged_projectile_marker.set_meta("vfx_role", "enemy_projectile")
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.16, 0.08, 1.0)
+	ranged_projectile_marker.mesh = mesh
+	ranged_projectile_marker.material_override = _make_translucent_material(Color(0.48, 0.78, 1.0, 0.72), Color(0.10, 0.34, 0.72))
+	ranged_projectile_marker.visible = false
+	ranged_projectile_vfx_root.add_child(ranged_projectile_marker)
+
 func _build_boss_skill_vfx() -> void:
 	boss_skill_vfx_root = Node3D.new()
 	boss_skill_vfx_root.name = "PrototypeBossSkillVfxRoot"
@@ -670,6 +698,17 @@ func _tick_hit_vfx(delta: float) -> void:
 	var progress := hit_vfx_lifetime_remaining / PLAYER_HIT_VFX_LIFETIME
 	hit_impact_marker.scale = Vector3.ONE * lerpf(0.7, 1.35, progress)
 
+func _tick_ranged_projectile_vfx(delta: float) -> void:
+	if ranged_projectile_marker == null or ranged_projectile_vfx_lifetime_remaining <= 0.0:
+		return
+	ranged_projectile_vfx_lifetime_remaining = maxf(0.0, ranged_projectile_vfx_lifetime_remaining - delta)
+	if ranged_projectile_vfx_lifetime_remaining <= 0.0:
+		ranged_projectile_marker.visible = false
+		return
+	var progress := ranged_projectile_vfx_lifetime_remaining / ENEMY_PROJECTILE_VFX_LIFETIME
+	var path_length := maxf(0.1, last_ranged_projectile_from.distance_to(last_ranged_projectile_to))
+	ranged_projectile_marker.scale = Vector3(lerpf(0.75, 1.0, progress), 1.0, path_length)
+
 func _read_player_attack_direction_from_mouse_event(event: InputEventMouseButton) -> Vector2:
 	if player_attack_direction_override_enabled:
 		last_player_attack_aim_source = "override"
@@ -811,6 +850,24 @@ func _show_hit_vfx(world_position: Vector3) -> void:
 	hit_impact_marker.visible = true
 	hit_vfx_lifetime_remaining = PLAYER_HIT_VFX_LIFETIME
 
+func _show_ranged_projectile_vfx(source_position: Vector3, target_position: Vector3, owner_type: String, hit_confirmed: bool) -> void:
+	if ranged_projectile_marker == null:
+		return
+	last_ranged_projectile_from = source_position + Vector3(0.0, 0.55, 0.0)
+	last_ranged_projectile_to = target_position + Vector3(0.0, 0.45, 0.0)
+	last_ranged_projectile_owner_type = owner_type
+	last_ranged_projectile_hit_confirmed = hit_confirmed
+	ranged_projectile_count += 1
+	var midpoint := last_ranged_projectile_from.lerp(last_ranged_projectile_to, 0.5)
+	var direction := last_ranged_projectile_to - last_ranged_projectile_from
+	var path_length := maxf(0.1, direction.length())
+	ranged_projectile_marker.global_position = midpoint
+	ranged_projectile_marker.rotation = Vector3(0.0, atan2(direction.x, direction.z), 0.0)
+	ranged_projectile_marker.scale = Vector3.ONE
+	ranged_projectile_marker.scale.z = path_length
+	ranged_projectile_marker.visible = true
+	ranged_projectile_vfx_lifetime_remaining = ENEMY_PROJECTILE_VFX_LIFETIME
+
 func _sync_player_action_state() -> void:
 	if player == null or not player.has_method("set_action_state"):
 		return
@@ -940,7 +997,7 @@ func _update_ranged_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vec
 		state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
 		if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
 			state["attack_timer"] = 0.0
-			_apply_enemy_attack_to_player(state, "projectile")
+			_apply_enemy_attack_to_player(state, "projectile", enemy.global_position)
 		if enemy.has_method("set_move_input"):
 			enemy.call("set_move_input", Vector2.ZERO)
 	elif distance <= ENEMY_CHASE_RANGE:
@@ -958,9 +1015,11 @@ func _update_ranged_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vec
 			enemy.call("set_move_input", Vector2.ZERO)
 	return {"state": state, "movement": enemy_movement, "attacking": enemy_attacking}
 
-func _apply_enemy_attack_to_player(state: Dictionary, attack_kind: String) -> void:
+func _apply_enemy_attack_to_player(state: Dictionary, attack_kind: String, source_position: Vector3 = Vector3.ZERO) -> void:
 	state["attack_count"] = int(state.get("attack_count", 0)) + 1
 	state["last_attack_kind"] = attack_kind
+	if attack_kind == "projectile" and player != null:
+		_show_ranged_projectile_vfx(source_position, player.global_position, str(state.get("enemy_type", "")), true)
 	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
 
 func _apply_damage_to_player(amount: int) -> void:
@@ -990,6 +1049,9 @@ func force_enemy_attack_player_for_test(index: int) -> void:
 func tick_enemy_behavior_for_test(delta: float) -> void:
 	_update_enemy_loop(maxf(0.0, delta))
 
+func tick_boss_skill_for_test(delta: float) -> void:
+	_tick_boss_skill(maxf(0.0, delta))
+
 func force_boss_slam_for_test(index: int) -> void:
 	if index < 0 or index >= enemies.size():
 		return
@@ -1007,13 +1069,19 @@ func resolve_boss_slam_for_test() -> void:
 func _start_boss_slam(enemy: Node3D, state: Dictionary) -> void:
 	var radius := 1.55
 	var target_position := player.global_position if player != null else enemy.global_position
+	var previous_resolve_count := int(boss_slam_state.get("resolve_count", 0))
 	boss_slam_state = {
 		"active": true,
+		"phase": "charging",
 		"source_enemy_type": str(state.get("enemy_type", "")),
 		"position": target_position,
 		"radius": radius,
 		"damage": int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)) + 6,
 		"warning_role": "gatekeeper_slam_warning",
+		"charge_duration": BOSS_SLAM_CHARGE_TIME,
+		"charge_remaining": BOSS_SLAM_CHARGE_TIME,
+		"resolve_count": previous_resolve_count,
+		"hit_confirmed": false,
 	}
 	if is_instance_valid(boss_slam_warning_marker):
 		boss_slam_warning_marker.global_position = target_position + Vector3(0.0, 0.055, 0.0)
@@ -1023,14 +1091,35 @@ func _start_boss_slam(enemy: Node3D, state: Dictionary) -> void:
 	state["behavior_intent"] = "boss_slam_warning"
 	enemy_states[enemy] = state
 
+func _tick_boss_skill(delta: float) -> void:
+	if boss_slam_state.is_empty() or not bool(boss_slam_state.get("active", false)):
+		return
+	if str(boss_slam_state.get("phase", "")) != "charging":
+		return
+	var remaining := maxf(0.0, float(boss_slam_state.get("charge_remaining", 0.0)) - delta)
+	boss_slam_state["charge_remaining"] = remaining
+	if is_instance_valid(boss_slam_warning_marker):
+		var duration := maxf(0.001, float(boss_slam_state.get("charge_duration", BOSS_SLAM_CHARGE_TIME)))
+		var progress := 1.0 - clampf(remaining / duration, 0.0, 1.0)
+		var radius := float(boss_slam_state.get("radius", 1.55))
+		var pulse_scale := radius * lerpf(0.92, 1.08, progress)
+		boss_slam_warning_marker.scale = Vector3(pulse_scale, 1.0, pulse_scale)
+	if remaining <= 0.0:
+		_resolve_boss_slam()
+
 func _resolve_boss_slam() -> void:
 	if boss_slam_state.is_empty() or not bool(boss_slam_state.get("active", false)):
 		return
 	var impact_position: Vector3 = boss_slam_state.get("position", Vector3.ZERO)
 	var radius := float(boss_slam_state.get("radius", 0.0))
-	if player != null and CombatPlane3DService.distance_xz(player.global_position, impact_position) <= radius:
+	var hit_confirmed := player != null and CombatPlane3DService.distance_xz(player.global_position, impact_position) <= radius
+	if hit_confirmed:
 		_apply_damage_to_player(int(boss_slam_state.get("damage", ENEMY_ATTACK_DAMAGE)))
 	boss_slam_state["active"] = false
+	boss_slam_state["phase"] = "resolved"
+	boss_slam_state["charge_remaining"] = 0.0
+	boss_slam_state["resolve_count"] = int(boss_slam_state.get("resolve_count", 0)) + 1
+	boss_slam_state["hit_confirmed"] = hit_confirmed
 	if is_instance_valid(boss_slam_warning_marker):
 		boss_slam_warning_marker.visible = false
 
@@ -1385,9 +1474,22 @@ func _apply_floor_template_for_test(floor: int) -> void:
 	death_return_player_data = {}
 	if is_instance_valid(death_overlay):
 		death_overlay.visible = false
+	_reset_combat_readability_feedback()
 	_set_exit_locked_visual()
 	_spawn_current_floor_wave()
 	_update_hud("Floor %d: %s" % [current_floor, str(current_floor_template.get("template_id", "clear"))])
+
+func _reset_combat_readability_feedback() -> void:
+	ranged_projectile_vfx_lifetime_remaining = 0.0
+	last_ranged_projectile_hit_confirmed = false
+	last_ranged_projectile_owner_type = ""
+	last_ranged_projectile_from = Vector3.ZERO
+	last_ranged_projectile_to = Vector3.ZERO
+	if is_instance_valid(ranged_projectile_marker):
+		ranged_projectile_marker.visible = false
+	boss_slam_state = {}
+	if is_instance_valid(boss_slam_warning_marker):
+		boss_slam_warning_marker.visible = false
 
 func build_prototype_snapshot_for_test() -> Dictionary:
 	return {
@@ -1554,8 +1656,42 @@ func build_enemy_behavior_snapshot_for_test() -> Dictionary:
 		"boss_slam_warning_visible": is_instance_valid(boss_slam_warning_marker) and boss_slam_warning_marker.visible,
 		"boss_slam_warning_role": str(boss_slam_warning_marker.get_meta("vfx_role", "")) if is_instance_valid(boss_slam_warning_marker) else "",
 		"boss_slam_active": bool(boss_slam_state.get("active", false)),
+		"boss_slam_phase": str(boss_slam_state.get("phase", "")),
+		"boss_slam_charge_remaining": float(boss_slam_state.get("charge_remaining", 0.0)),
+		"boss_slam_resolve_count": int(boss_slam_state.get("resolve_count", 0)),
 		"boss_slam_radius": float(boss_slam_state.get("radius", 0.0)),
 		"boss_slam_position": boss_slam_state.get("position", Vector3.ZERO),
+	}
+
+func build_combat_readability_snapshot_for_test() -> Dictionary:
+	var projectile_parent_path := ""
+	if ranged_projectile_marker != null and ranged_projectile_marker.get_parent() != null:
+		projectile_parent_path = str(ranged_projectile_marker.get_parent().get_path())
+	var projectile_path_length := last_ranged_projectile_from.distance_to(last_ranged_projectile_to)
+	return {
+		"ranged_projectile_root_exists": ranged_projectile_vfx_root != null,
+		"ranged_projectile_marker_exists": ranged_projectile_marker != null,
+		"ranged_projectile_visible": ranged_projectile_marker != null and ranged_projectile_marker.visible,
+		"ranged_projectile_role": str(ranged_projectile_marker.get_meta("vfx_role", "")) if ranged_projectile_marker != null else "",
+		"ranged_projectile_parent_path": projectile_parent_path,
+		"ranged_projectile_independent_from_actor": ranged_projectile_marker != null and not projectile_parent_path.contains("PlayerBillboard") and not projectile_parent_path.contains("EnemyBillboard") and not projectile_parent_path.contains("WeaponSprite"),
+		"ranged_projectile_count": ranged_projectile_count,
+		"ranged_projectile_owner_type": last_ranged_projectile_owner_type,
+		"ranged_projectile_from": last_ranged_projectile_from,
+		"ranged_projectile_to": last_ranged_projectile_to,
+		"ranged_projectile_path_length": projectile_path_length,
+		"ranged_projectile_lifetime_remaining": ranged_projectile_vfx_lifetime_remaining,
+		"ranged_projectile_hit_confirmed": last_ranged_projectile_hit_confirmed,
+		"boss_slam_warning_visible": is_instance_valid(boss_slam_warning_marker) and boss_slam_warning_marker.visible,
+		"boss_slam_warning_role": str(boss_slam_warning_marker.get_meta("vfx_role", "")) if is_instance_valid(boss_slam_warning_marker) else "",
+		"boss_slam_active": bool(boss_slam_state.get("active", false)),
+		"boss_slam_phase": str(boss_slam_state.get("phase", "")),
+		"boss_slam_charge_duration": float(boss_slam_state.get("charge_duration", 0.0)),
+		"boss_slam_charge_remaining": float(boss_slam_state.get("charge_remaining", 0.0)),
+		"boss_slam_radius": float(boss_slam_state.get("radius", 0.0)),
+		"boss_slam_position": boss_slam_state.get("position", Vector3.ZERO),
+		"boss_slam_resolve_count": int(boss_slam_state.get("resolve_count", 0)),
+		"boss_slam_hit_confirmed": bool(boss_slam_state.get("hit_confirmed", false)),
 	}
 
 func build_death_settlement_snapshot_for_test() -> Dictionary:
