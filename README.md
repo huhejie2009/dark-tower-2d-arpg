@@ -272,6 +272,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Added player damage feedback snapshots for Godot AI / regression inspection.
 - Added regression: `tests/regression/regression_prototype_2_5d_combat_rhythm_player_feedback.gd`.
 
+## 2026-06-19 Update: 2.5D Floor 1-5 Playable Pacing V1
+
+- Added a fixed first-playable floor pacing table for floors 1-5: melee intro, melee density, ranged pressure, mixed pressure, and gatekeeper boss check.
+- Floor templates now expose `pacing_role`, `floor_goal_hint`, `floor_start_message`, `difficulty_step`, and expected duration metadata.
+- HUD objective text now includes the floor goal hint until the exit unlocks.
+- Added a deterministic 1-to-5 climb regression that clears each floor, enters the next floor, and verifies the boss floor endpoint.
+- Added regression: `tests/regression/regression_prototype_2_5d_floor_1_to_5_playable_pacing.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

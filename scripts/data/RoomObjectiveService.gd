@@ -9,6 +9,9 @@ static func build_state(template: Dictionary) -> Dictionary:
 		"objective_id": objective_id,
 		"template_id": str(template.get("template_id", "standard_clear")),
 		"floor": int(template.get("floor", 1)),
+		"pacing_role": str(template.get("pacing_role", "")),
+		"floor_goal_hint": str(template.get("floor_goal_hint", "")),
+		"floor_start_message": str(template.get("floor_start_message", "")),
 		"target_count": maxi(1, target_count),
 		"current_count": 0,
 		"completed": false,
@@ -37,13 +40,15 @@ static func build_hud_text(state: Dictionary) -> String:
 	var objective_id := str(state.get("objective_id", "clear_all"))
 	var current := int(state.get("current_count", 0))
 	var target := maxi(1, int(state.get("target_count", 1)))
+	var hint := str(state.get("floor_goal_hint", "")).strip_edges()
+	var suffix := "" if hint.is_empty() else " - %s" % hint
 	match objective_id:
 		"defeat_elite":
-			return "Objective: Defeat elite %d/%d" % [current, target]
+			return "Objective: Defeat elite %d/%d%s" % [current, target, suffix]
 		"defeat_boss":
-			return "Objective: Break the gatekeeper %d/%d" % [current, target]
+			return "Objective: Break the gatekeeper %d/%d%s" % [current, target, suffix]
 		_:
-			return "Objective: Clear enemies %d/%d" % [current, target]
+			return "Objective: Clear enemies %d/%d%s" % [current, target, suffix]
 
 static func _count_targets(objective_id: String, enemies: Array) -> int:
 	if objective_id == "defeat_elite":

@@ -10,9 +10,9 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	await _check_floor(1, "standard_clear", ["rot_melee"], false)
+	await _check_floor(1, "melee_intro", ["rot_melee"], false)
 	await _check_floor(3, "ranged_pressure", ["shadow_archer", "rot_melee"], false)
-	await _check_floor(4, "guardian_mix", ["tower_guardian", "shadow_archer", "rot_melee"], false)
+	await _check_floor(4, "mixed_pressure", ["tower_guardian", "shadow_archer", "rot_melee"], false)
 	await _check_floor(5, "boss_gatekeeper", ["tower_gatekeeper", "rot_melee"], true)
 	_finish()
 

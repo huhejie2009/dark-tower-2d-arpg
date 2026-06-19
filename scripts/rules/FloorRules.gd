@@ -47,6 +47,75 @@ const ENEMY_TYPES := {
 
 const TEMPLATE_SEQUENCE := ["standard_clear", "dense_room", "ranged_pressure", "guardian_mix", "elite_preview"]
 
+const FIRST_PLAYABLE_PACING := {
+	1: {
+		"template_id": "melee_intro",
+		"pacing_role": "movement_attack_intro",
+		"floor_goal_hint": "Learn movement and basic attacks",
+		"floor_start_message": "Floor 1: learn movement and basic attacks.",
+		"expected_duration_seconds": 55,
+		"objective": "clear_all",
+		"enemies": [
+			{"enemy_type": "rot_melee", "position": Vector2(220, -80), "modifiers": {"pacing_tier": 1}},
+			{"enemy_type": "rot_melee", "position": Vector2(-240, 110), "modifiers": {"pacing_tier": 1}},
+		],
+	},
+	2: {
+		"template_id": "melee_density",
+		"pacing_role": "positioning_pressure",
+		"floor_goal_hint": "Use movement to separate melee enemies",
+		"floor_start_message": "Floor 2: keep moving and split the pack.",
+		"expected_duration_seconds": 70,
+		"objective": "clear_all",
+		"enemies": [
+			{"enemy_type": "rot_melee", "position": Vector2(150, -70), "modifiers": {"pacing_tier": 2}},
+			{"enemy_type": "rot_melee", "position": Vector2(190, 70), "modifiers": {"pacing_tier": 2}},
+			{"enemy_type": "rot_melee", "position": Vector2(-160, 70), "modifiers": {"pacing_tier": 2}},
+			{"enemy_type": "rot_melee", "position": Vector2(-190, -80), "modifiers": {"pacing_tier": 2}},
+		],
+	},
+	3: {
+		"template_id": "ranged_pressure",
+		"pacing_role": "ranged_dodge_intro",
+		"floor_goal_hint": "Close distance while dodging archer shots",
+		"floor_start_message": "Floor 3: dodge the archers and close the gap.",
+		"expected_duration_seconds": 80,
+		"objective": "clear_all",
+		"enemies": [
+			{"enemy_type": "shadow_archer", "position": Vector2(360, -150), "modifiers": {"pacing_tier": 3}},
+			{"enemy_type": "shadow_archer", "position": Vector2(-360, 150), "modifiers": {"pacing_tier": 3}},
+			{"enemy_type": "rot_melee", "position": Vector2(120, 80), "modifiers": {"pacing_tier": 3}},
+		],
+	},
+	4: {
+		"template_id": "mixed_pressure",
+		"pacing_role": "mixed_threat_pressure",
+		"floor_goal_hint": "Handle melee pressure while watching ranged fire",
+		"floor_start_message": "Floor 4: mixed threats test your positioning.",
+		"expected_duration_seconds": 95,
+		"objective": "clear_all",
+		"enemies": [
+			{"enemy_type": "tower_guardian", "position": Vector2(260, 0), "modifiers": {"pacing_tier": 4}},
+			{"enemy_type": "rot_melee", "position": Vector2(-260, -110), "modifiers": {"pacing_tier": 4}},
+			{"enemy_type": "rot_melee", "position": Vector2(40, 150), "modifiers": {"pacing_tier": 4}},
+			{"enemy_type": "shadow_archer", "position": Vector2(-320, 150), "modifiers": {"pacing_tier": 4}},
+		],
+	},
+	5: {
+		"template_id": "boss_gatekeeper",
+		"pacing_role": "gatekeeper_boss_check",
+		"floor_goal_hint": "Read the warning zone and defeat the gatekeeper",
+		"floor_start_message": "Floor 5: defeat the gatekeeper. Watch the warning zone.",
+		"expected_duration_seconds": 120,
+		"objective": "defeat_boss",
+		"enemies": [
+			{"enemy_type": "tower_gatekeeper", "position": Vector2(0, -80), "modifiers": {"boss": true, "pacing_tier": 5}},
+			{"enemy_type": "rot_melee", "position": Vector2(260, 130), "modifiers": {"pacing_tier": 5}},
+			{"enemy_type": "rot_melee", "position": Vector2(-260, 130), "modifiers": {"pacing_tier": 5}},
+		],
+	},
+}
+
 const ROT_MELEE_IMAGE2_MANIFEST := {
 	"asset_pipeline": "image2",
 	"pose_variation_version": "production_dark_armor_v3",
@@ -131,6 +200,8 @@ const TOWER_GATEKEEPER_IMAGE2_MANIFEST := {
 
 static func build_floor_template(floor: int) -> Dictionary:
 	var safe_floor := maxi(1, floor)
+	if FIRST_PLAYABLE_PACING.has(safe_floor):
+		return _build_first_playable_template(safe_floor)
 	if safe_floor % 5 == 0:
 		return {
 			"floor": safe_floor,
@@ -180,15 +251,43 @@ static func build_floor_template(floor: int) -> Dictionary:
 	return {
 		"floor": safe_floor,
 		"template_id": template_id,
+		"pacing_role": template_id,
+		"difficulty_step": safe_floor,
+		"floor_goal_hint": _default_goal_hint(template_id),
+		"floor_start_message": "Floor %d: %s" % [safe_floor, _default_goal_hint(template_id)],
+		"expected_duration_seconds": 75 + safe_floor * 4,
 		"objective": "clear_all",
 		"enemies": enemies,
 	}
+
+static func _build_first_playable_template(floor: int) -> Dictionary:
+	var template: Dictionary = Dictionary(FIRST_PLAYABLE_PACING[floor]).duplicate(true)
+	template["floor"] = floor
+	template["difficulty_step"] = floor
+	template["enemies"] = Array(template.get("enemies", [])).duplicate(true)
+	return template
+
+static func _default_goal_hint(template_id: String) -> String:
+	match template_id:
+		"dense_room":
+			return "Clear the room while managing enemy density"
+		"ranged_pressure":
+			return "Dodge projectiles and clear enemies"
+		"guardian_mix":
+			return "Break the guardian group"
+		"elite_preview":
+			return "Defeat the elite threat"
+		"boss_gatekeeper":
+			return "Defeat the gatekeeper"
+		_:
+			return "Clear all enemies"
 
 static func get_enemy_type_data(enemy_type: String, floor: int = 1, modifiers: Dictionary = {}) -> Dictionary:
 	var safe_type := enemy_type if ENEMY_TYPES.has(enemy_type) else "rot_melee"
 	var safe_floor := maxi(1, floor)
 	var data: Dictionary = Dictionary(ENEMY_TYPES[safe_type]).duplicate(true)
 	data["enemy_type"] = safe_type
+	var pacing_tier := maxi(1, int(modifiers.get("pacing_tier", safe_floor)))
 	match safe_type:
 		"rot_melee":
 			data["visual_asset_manifest"] = ROT_MELEE_IMAGE2_MANIFEST.duplicate(true)
@@ -198,8 +297,8 @@ static func get_enemy_type_data(enemy_type: String, floor: int = 1, modifiers: D
 			data["visual_asset_manifest"] = TOWER_GUARDIAN_IMAGE2_MANIFEST.duplicate(true)
 		"tower_gatekeeper":
 			data["visual_asset_manifest"] = TOWER_GATEKEEPER_IMAGE2_MANIFEST.duplicate(true)
-	data["max_health"] = int(data.get("max_health", 50)) + safe_floor * 7
-	data["attack_damage"] = int(data.get("attack_damage", 8)) + int(safe_floor / 2)
+	data["max_health"] = int(data.get("max_health", 50)) + pacing_tier * 7
+	data["attack_damage"] = int(data.get("attack_damage", 8)) + int(pacing_tier / 2)
 	var affixes: Array = Array(modifiers.get("elite_affixes", [])) if modifiers.get("elite_affixes", []) is Array else []
 	if bool(modifiers.get("elite", false)) and affixes.is_empty():
 		affixes = ["tough"]

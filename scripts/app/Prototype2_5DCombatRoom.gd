@@ -137,7 +137,7 @@ func _ready() -> void:
 	_create_inventory_window()
 	_create_pause_overlay()
 	_create_death_overlay()
-	_update_hud("Entered floor %d. Left click attacks, I/C opens inventory, Esc pauses." % current_floor)
+	_update_hud(_build_floor_enter_message())
 
 func _physics_process(_delta: float) -> void:
 	if _is_menu_blocking_combat():
@@ -1345,7 +1345,10 @@ func _enter_next_floor() -> void:
 	_set_exit_locked_visual()
 	_reset_enemy_wave()
 	_update_camera_follow()
-	_update_hud("Entered floor %d." % current_floor)
+	_update_hud(_build_floor_enter_message())
+
+func enter_next_floor_for_test() -> void:
+	_enter_next_floor()
 
 func _return_to_town() -> void:
 	if death_settlement_active:
@@ -1496,10 +1499,7 @@ func _update_hud(message: String) -> void:
 	hud.call("set_status", "Floor %d | Enemies %d" % [current_floor, living_enemy_count])
 	hud.call("set_log", message)
 	if hud.has_method("set_objective"):
-		var objective := str(room_objective_state.get("hud_text", "Objective: defeat all enemies."))
-		if exit_unlocked:
-			objective = "Objective: enter the blue exit marker."
-		hud.call("set_objective", objective)
+		hud.call("set_objective", _get_current_objective_text())
 	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
 	hud.call("set_inventory", str(capacity.get("summary_text", "Bag 0/40")))
 	if hud.has_method("set_player_vitals"):
@@ -1518,6 +1518,12 @@ func _update_hud(message: String) -> void:
 			int(player_data.get("exp_to_next_level", 100)),
 			int(player_data.get("skill_points", 0))
 		)
+
+func _build_floor_enter_message() -> String:
+	var message := str(current_floor_template.get("floor_start_message", "")).strip_edges()
+	if message.is_empty():
+		message = "Floor %d: clear the room." % current_floor
+	return "%s Left click attacks, I/C opens inventory, Esc pauses." % message
 
 func _build_current_player_snapshot() -> Dictionary:
 	var snapshot := player_data.duplicate(true)
@@ -1553,7 +1559,7 @@ func _apply_floor_template_for_test(floor: int) -> void:
 	_reset_combat_readability_feedback()
 	_set_exit_locked_visual()
 	_spawn_current_floor_wave()
-	_update_hud("Floor %d: %s" % [current_floor, str(current_floor_template.get("template_id", "clear"))])
+	_update_hud(_build_floor_enter_message())
 
 func _reset_combat_readability_feedback() -> void:
 	ranged_projectile_vfx_lifetime_remaining = 0.0
@@ -1674,6 +1680,7 @@ func build_floor_wave_snapshot_for_test() -> Dictionary:
 	var enemy_types: Array[String] = []
 	var enemy_ranks: Array[String] = []
 	var enemy_positions: Array[Vector3] = []
+	var total_enemy_attack_damage := 0
 	var has_boss := false
 	var has_elite := false
 	for enemy in enemies:
@@ -1683,13 +1690,19 @@ func build_floor_wave_snapshot_for_test() -> Dictionary:
 		enemy_types.append(str(state.get("enemy_type", "")))
 		enemy_ranks.append(str(state.get("display_rank", "")))
 		enemy_positions.append(enemy.global_position)
+		total_enemy_attack_damage += int(state.get("attack_damage", 0))
 		has_boss = has_boss or bool(state.get("is_boss", false))
 		has_elite = has_elite or bool(state.get("is_elite", false))
 	return {
 		"current_floor": current_floor,
 		"template_id": str(current_floor_template.get("template_id", "")),
+		"pacing_role": str(current_floor_template.get("pacing_role", "")),
+		"difficulty_step": int(current_floor_template.get("difficulty_step", current_floor)),
+		"floor_goal_hint": str(current_floor_template.get("floor_goal_hint", "")),
+		"floor_start_message": str(current_floor_template.get("floor_start_message", "")),
+		"expected_duration_seconds": int(current_floor_template.get("expected_duration_seconds", 0)),
 		"objective_id": str(room_objective_state.get("objective_id", "")),
-		"objective_text": str(room_objective_state.get("hud_text", "")),
+		"objective_text": _get_current_objective_text(),
 		"objective_current": int(room_objective_state.get("current_count", 0)),
 		"objective_target": int(room_objective_state.get("target_count", 0)),
 		"has_room_objective_state": not room_objective_state.is_empty(),
@@ -1699,9 +1712,21 @@ func build_floor_wave_snapshot_for_test() -> Dictionary:
 		"enemy_types": enemy_types,
 		"enemy_ranks": enemy_ranks,
 		"enemy_positions": enemy_positions,
+		"total_enemy_attack_damage": total_enemy_attack_damage,
+		"player_max_health": int(player_data.get("max_health", 1)),
+		"exit_unlocked": exit_unlocked,
+		"room_cleared": room_cleared,
 		"has_boss": has_boss,
 		"has_elite": has_elite,
 	}
+
+func build_floor_pacing_snapshot_for_test() -> Dictionary:
+	return build_floor_wave_snapshot_for_test()
+
+func _get_current_objective_text() -> String:
+	if exit_unlocked:
+		return "Objective: enter the blue exit marker."
+	return str(room_objective_state.get("hud_text", "Objective: defeat all enemies."))
 
 func build_enemy_behavior_snapshot_for_test() -> Dictionary:
 	var snapshots: Array[Dictionary] = []
