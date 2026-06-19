@@ -296,6 +296,13 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - Town prep summary includes the start explanation, and the town scene exposes `get_tower_start_snapshot_for_test()` for regression and Godot AI inspection.
 - Updated tower start and town prep regressions to keep this explanation from disappearing.
 
+## 2026-06-19 Update: 2.5D Floor Clear Reward Readability
+
+- 2.5D floor clears now write a compact reward summary into the HUD log.
+- The summary includes cleared floor, gold, crystal when present, boss guaranteed reward count, and the next action.
+- `build_loot_xp_reward_snapshot_for_test()` now exposes `floor_clear_summary_text` and `hud_log_text` for regression and Godot AI inspection.
+- Updated regression: `tests/regression/regression_prototype_2_5d_loot_xp_reward_bridge.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.

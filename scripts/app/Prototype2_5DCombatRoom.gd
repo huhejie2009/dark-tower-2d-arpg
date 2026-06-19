@@ -52,6 +52,7 @@ var kill_index := 0
 var floor_kill_count := 0
 var floor_pickup_names: Array[String] = []
 var last_floor_rewards: Dictionary = {}
+var last_floor_clear_summary_text := ""
 var last_loot_notification: Dictionary = {}
 var last_xp_result: Dictionary = {}
 var enemies: Array[Node3D] = []
@@ -308,6 +309,7 @@ func _spawn_floor_template(template: Dictionary) -> void:
 	floor_kill_count = 0
 	floor_pickup_names = []
 	last_floor_rewards = {}
+	last_floor_clear_summary_text = ""
 	last_loot_notification = {}
 	last_xp_result = {}
 	actor_visible_markers = _get_surviving_actor_visible_markers()
@@ -1321,6 +1323,7 @@ func _on_floor_cleared() -> void:
 	var next_floor := TowerProgressServiceScript.next_floor_after_clear(current_floor)
 	player_data["highest_floor"] = maxi(next_floor, int(player_data.get("highest_floor", 1)))
 	last_floor_rewards = rewards.duplicate(true)
+	last_floor_clear_summary_text = _build_floor_clear_summary_text(rewards)
 	SaveManagerScript.apply_floor_clear(current_floor, rewards, _build_current_player_snapshot())
 	_unlock_exit()
 
@@ -1353,7 +1356,22 @@ func _unlock_exit() -> void:
 	if exit_marker != null:
 		exit_marker.material_override = _make_material(Color(0.18, 0.65, 1.0), Color(0.08, 0.35, 0.8))
 		exit_marker.scale = Vector3(1.18, 1.0, 1.18)
-	_update_hud("Floor clear. Press E at the exit marker to climb.")
+	var summary := last_floor_clear_summary_text
+	if summary.is_empty():
+		summary = "Floor clear. Next: enter the blue exit marker."
+	_update_hud(summary)
+
+func _build_floor_clear_summary_text(rewards: Dictionary) -> String:
+	var parts: Array[String] = ["Floor %d clear" % int(rewards.get("floor", current_floor))]
+	parts.append("Gold %d" % int(rewards.get("gold", 0)))
+	var crystal := int(rewards.get("crystal", 0))
+	if crystal > 0:
+		parts.append("Crystal %d" % crystal)
+	var guaranteed_items := Array(rewards.get("guaranteed_items", []))
+	if not guaranteed_items.is_empty():
+		parts.append("Boss reward x%d" % guaranteed_items.size())
+	parts.append("Next: enter the blue exit marker")
+	return ". ".join(parts) + "."
 
 func _set_exit_locked_visual() -> void:
 	exit_unlocked = false
@@ -1687,19 +1705,24 @@ func build_loot_xp_reward_snapshot_for_test() -> Dictionary:
 	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
 	var status_text := ""
 	var inventory_text := ""
+	var log_text := ""
 	if is_instance_valid(hud):
 		var status_label := hud.get("status_label") as Label
 		var inventory_label := hud.get("inventory_label") as Label
+		var log_label := hud.get("log_label") as Label
 		if is_instance_valid(status_label):
 			status_text = status_label.text
 		if is_instance_valid(inventory_label):
 			inventory_text = inventory_label.text
+		if is_instance_valid(log_label):
+			log_text = log_label.text
 	return {
 		"current_floor": current_floor,
 		"kill_index": kill_index,
 		"floor_kill_count": floor_kill_count,
 		"floor_pickup_names": floor_pickup_names.duplicate(),
 		"last_floor_rewards": last_floor_rewards.duplicate(true),
+		"floor_clear_summary_text": last_floor_clear_summary_text,
 		"last_loot_notification": last_loot_notification.duplicate(true),
 		"last_xp_gained": int(last_xp_result.get("experience_gained", 0)),
 		"last_xp_leveled_up": bool(last_xp_result.get("leveled_up", false)),
@@ -1713,6 +1736,7 @@ func build_loot_xp_reward_snapshot_for_test() -> Dictionary:
 		"living_enemy_count": living_enemy_count,
 		"hud_status_text": status_text,
 		"hud_inventory_text": inventory_text,
+		"hud_log_text": log_text,
 	}
 
 func build_floor_wave_snapshot_for_test() -> Dictionary:

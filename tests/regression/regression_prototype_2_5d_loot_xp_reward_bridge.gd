@@ -67,6 +67,10 @@ func _run() -> void:
 	_expect(Array(rewards.get("guaranteed_items", [])).size() == 1, "boss floor should grant guaranteed equipment")
 	_expect(bool(after_clear.get("has_boss_reward_item", false)), "guaranteed boss item should enter inventory")
 	_expect(str(Dictionary(after_clear.get("last_loot_notification", {})).get("headline", "")).contains("Boss"), "boss reward should become the last loot notification")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Gold"), "clear summary should mention gold reward")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Crystal"), "boss clear summary should mention crystal reward")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Next: enter the blue exit marker"), "clear summary should tell the next action")
+	_expect(str(after_clear.get("hud_log_text", "")).contains(str(after_clear.get("floor_clear_summary_text", ""))), "HUD log should show the floor clear summary")
 
 	var saved_player := SaveManagerScript.get_active_player_data()
 	_expect(int(saved_player.get("highest_floor", 0)) >= 6, "floor clear should save next-floor progress")
