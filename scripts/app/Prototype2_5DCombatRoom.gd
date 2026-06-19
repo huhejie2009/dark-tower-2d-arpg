@@ -19,6 +19,7 @@ const LootRulesScript := preload("res://scripts/rules/LootRules.gd")
 const DeathSettlementServiceScript := preload("res://scripts/data/DeathSettlementService.gd")
 const FloorRulesScript := preload("res://scripts/rules/FloorRules.gd")
 const RoomObjectiveServiceScript := preload("res://scripts/data/RoomObjectiveService.gd")
+const DamageFeedbackServiceScript := preload("res://scripts/data/DamageFeedbackService.gd")
 
 const ENEMY_CHASE_RANGE := 20.0
 const ENEMY_ATTACK_RANGE := 1.05
@@ -34,6 +35,8 @@ const PLAYER_ATTACK_ARC_SEGMENTS := 12
 const PLAYER_HIT_VFX_LIFETIME := 0.22
 const ENEMY_PROJECTILE_VFX_LIFETIME := 0.30
 const BOSS_SLAM_CHARGE_TIME := 0.65
+const PLAYER_DAMAGE_INVULNERABILITY_TIME := 0.45
+const BOSS_SLAM_DEFAULT_COOLDOWN := 4.6
 const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
 const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 62
 
@@ -104,6 +107,15 @@ var last_ranged_projectile_from := Vector3.ZERO
 var last_ranged_projectile_to := Vector3.ZERO
 var last_ranged_projectile_owner_type := ""
 var last_ranged_projectile_hit_confirmed := false
+var player_invulnerability_remaining := 0.0
+var player_hurt_remaining := 0.0
+var hit_flash_remaining := 0.0
+var player_damage_event_count := 0
+var blocked_damage_event_count := 0
+var last_player_damage_feedback: Dictionary = {}
+var last_player_damage_amount := 0
+var last_damage_source_kind := ""
+var last_knockback_vector := Vector2.ZERO
 var boss_slam_state: Dictionary = {}
 var debug_readability_markers_enabled := false
 var death_settlement_active := false
@@ -140,6 +152,7 @@ func _physics_process(_delta: float) -> void:
 	_update_camera_follow()
 	_update_enemy_loop(_delta)
 	_tick_boss_skill(_delta)
+	_tick_player_damage_feedback(_delta)
 	_tick_player_attack(_delta)
 	_tick_hit_vfx(_delta)
 	_tick_ranged_projectile_vfx(_delta)
@@ -911,8 +924,15 @@ func _make_enemy_state(enemy_data: Dictionary = {}) -> Dictionary:
 		"display_rank": display_rank,
 		"is_elite": bool(enemy_data.get("is_elite", false)),
 		"is_boss": bool(enemy_data.get("is_boss", false)),
+		"boss_slam_cooldown": _get_boss_slam_cooldown(enemy_data),
+		"boss_slam_cooldown_remaining": 0.0,
 		"enemy_data": enemy_data.duplicate(true),
 	}
+
+func _get_boss_slam_cooldown(enemy_data: Dictionary) -> float:
+	if bool(enemy_data.get("is_boss", false)):
+		return maxf(1.4, float(enemy_data.get("boss_charge_cooldown", BOSS_SLAM_DEFAULT_COOLDOWN)))
+	return 0.0
 
 func _get_preferred_distance(enemy_data: Dictionary) -> float:
 	if bool(enemy_data.get("uses_projectile", false)):
@@ -940,12 +960,34 @@ func _update_enemy_loop(delta: float) -> void:
 		offset.y = 0.0
 		var distance := offset.length()
 		state["distance_to_player"] = distance
+		if _update_boss_auto_skill(enemy, state, distance, delta):
+			_update_actor_animation(enemy, Vector2.ZERO, true, false)
+			continue
 		var result := _update_ranged_enemy_behavior(enemy, state, offset, distance, delta) if bool(state.get("uses_projectile", false)) else _update_melee_enemy_behavior(enemy, state, offset, distance, delta)
 		state = Dictionary(result.get("state", state))
 		var enemy_movement: Vector2 = result.get("movement", Vector2.ZERO)
 		var enemy_attacking := bool(result.get("attacking", false))
 		_update_actor_animation(enemy, enemy_movement, enemy_attacking, false)
 		enemy_states[enemy] = state
+
+func _update_boss_auto_skill(enemy: Node3D, state: Dictionary, distance: float, delta: float) -> bool:
+	if not bool(state.get("is_boss", false)):
+		return false
+	var remaining := maxf(0.0, float(state.get("boss_slam_cooldown_remaining", 0.0)) - delta)
+	state["boss_slam_cooldown_remaining"] = remaining
+	if bool(boss_slam_state.get("active", false)) and str(boss_slam_state.get("source_enemy_type", "")) == str(state.get("enemy_type", "")):
+		state["mode"] = "boss_slam"
+		state["behavior_intent"] = "boss_slam_warning"
+		enemy_states[enemy] = state
+		if enemy.has_method("set_move_input"):
+			enemy.call("set_move_input", Vector2.ZERO)
+		return true
+	var skill_range := maxf(float(state.get("attack_range", ENEMY_ATTACK_RANGE)) + 0.65, 1.75)
+	if remaining <= 0.0 and distance <= skill_range:
+		_start_boss_slam(enemy, state)
+		return true
+	enemy_states[enemy] = state
+	return false
 
 func _update_melee_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vector3, distance: float, delta: float) -> Dictionary:
 	var enemy_movement := Vector2.ZERO
@@ -959,7 +1001,7 @@ func _update_melee_enemy_behavior(enemy: Node3D, state: Dictionary, offset: Vect
 		state["attack_timer"] = float(state.get("attack_timer", 0.0)) + delta
 		if float(state.get("attack_timer", 0.0)) >= attack_cooldown:
 			state["attack_timer"] = 0.0
-			_apply_enemy_attack_to_player(state, "melee")
+			_apply_enemy_attack_to_player(state, "melee", enemy.global_position)
 		if enemy.has_method("set_move_input"):
 			enemy.call("set_move_input", Vector2.ZERO)
 	elif distance <= ENEMY_CHASE_RANGE:
@@ -1020,19 +1062,47 @@ func _apply_enemy_attack_to_player(state: Dictionary, attack_kind: String, sourc
 	state["last_attack_kind"] = attack_kind
 	if attack_kind == "projectile" and player != null:
 		_show_ranged_projectile_vfx(source_position, player.global_position, str(state.get("enemy_type", "")), true)
-	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)))
+	_apply_damage_to_player(int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)), source_position, attack_kind)
 
-func _apply_damage_to_player(amount: int) -> void:
+func _apply_damage_to_player(amount: int, source_position: Vector3 = Vector3.ZERO, source_kind: String = "enemy_attack") -> void:
 	if death_settlement_active:
+		return
+	if player_invulnerability_remaining > 0.0 and amount > 0:
+		blocked_damage_event_count += 1
 		return
 	var max_health := maxi(1, int(player_data.get("max_health", 120)))
 	var health := clampi(int(player_data.get("health", max_health)), 0, max_health)
 	health = maxi(0, health - maxi(0, amount))
 	player_data["health"] = health
 	player_data["max_health"] = max_health
+	_apply_player_damage_feedback(maxi(0, amount), max_health, source_position, source_kind)
 	_update_hud("You took %d damage." % maxi(0, amount))
 	if health <= 0:
 		_on_player_died()
+
+func _apply_player_damage_feedback(amount: int, max_health: int, source_position: Vector3, source_kind: String) -> void:
+	var source_direction := Vector2.ZERO
+	if player != null:
+		source_direction = Vector2(player.global_position.x - source_position.x, player.global_position.z - source_position.z)
+	var feedback := DamageFeedbackServiceScript.build_damage_feedback("player", amount, max_health, source_direction)
+	last_player_damage_feedback = feedback
+	last_player_damage_amount = amount
+	last_damage_source_kind = source_kind
+	player_damage_event_count += 1
+	player_invulnerability_remaining = PLAYER_DAMAGE_INVULNERABILITY_TIME
+	player_hurt_remaining = maxf(PLAYER_DAMAGE_INVULNERABILITY_TIME * 0.5, float(feedback.get("stagger_duration", 0.0)))
+	hit_flash_remaining = float(feedback.get("hit_flash_duration", 0.0))
+	var direction: Vector2 = feedback.get("source_direction", Vector2.ZERO)
+	var knockback_distance := float(feedback.get("knockback_distance", 0.0)) / 45.0
+	last_knockback_vector = direction * knockback_distance
+	if player != null and last_knockback_vector.length_squared() > 0.0001:
+		player.global_position += Vector3(last_knockback_vector.x, 0.0, last_knockback_vector.y)
+		_update_camera_follow()
+
+func _tick_player_damage_feedback(delta: float) -> void:
+	player_invulnerability_remaining = maxf(0.0, player_invulnerability_remaining - delta)
+	player_hurt_remaining = maxf(0.0, player_hurt_remaining - delta)
+	hit_flash_remaining = maxf(0.0, hit_flash_remaining - delta)
 
 func force_enemy_attack_player_for_test(index: int) -> void:
 	if index < 0 or index >= enemies.size():
@@ -1043,7 +1113,7 @@ func force_enemy_attack_player_for_test(index: int) -> void:
 	var state: Dictionary = enemy_states[enemy]
 	state["mode"] = "attack"
 	state["behavior_intent"] = "forced_attack"
-	_apply_enemy_attack_to_player(state, "forced")
+	_apply_enemy_attack_to_player(state, "forced", enemy.global_position)
 	enemy_states[enemy] = state
 
 func tick_enemy_behavior_for_test(delta: float) -> void:
@@ -1051,6 +1121,9 @@ func tick_enemy_behavior_for_test(delta: float) -> void:
 
 func tick_boss_skill_for_test(delta: float) -> void:
 	_tick_boss_skill(maxf(0.0, delta))
+
+func tick_player_feedback_for_test(delta: float) -> void:
+	_tick_player_damage_feedback(maxf(0.0, delta))
 
 func force_boss_slam_for_test(index: int) -> void:
 	if index < 0 or index >= enemies.size():
@@ -1074,6 +1147,7 @@ func _start_boss_slam(enemy: Node3D, state: Dictionary) -> void:
 		"active": true,
 		"phase": "charging",
 		"source_enemy_type": str(state.get("enemy_type", "")),
+		"source_position": enemy.global_position,
 		"position": target_position,
 		"radius": radius,
 		"damage": int(state.get("attack_damage", ENEMY_ATTACK_DAMAGE)) + 6,
@@ -1089,6 +1163,7 @@ func _start_boss_slam(enemy: Node3D, state: Dictionary) -> void:
 		boss_slam_warning_marker.visible = true
 	state["mode"] = "boss_slam"
 	state["behavior_intent"] = "boss_slam_warning"
+	state["boss_slam_cooldown_remaining"] = float(state.get("boss_slam_cooldown", BOSS_SLAM_DEFAULT_COOLDOWN))
 	enemy_states[enemy] = state
 
 func _tick_boss_skill(delta: float) -> void:
@@ -1111,10 +1186,11 @@ func _resolve_boss_slam() -> void:
 	if boss_slam_state.is_empty() or not bool(boss_slam_state.get("active", false)):
 		return
 	var impact_position: Vector3 = boss_slam_state.get("position", Vector3.ZERO)
+	var source_position: Vector3 = boss_slam_state.get("source_position", impact_position)
 	var radius := float(boss_slam_state.get("radius", 0.0))
 	var hit_confirmed := player != null and CombatPlane3DService.distance_xz(player.global_position, impact_position) <= radius
 	if hit_confirmed:
-		_apply_damage_to_player(int(boss_slam_state.get("damage", ENEMY_ATTACK_DAMAGE)))
+		_apply_damage_to_player(int(boss_slam_state.get("damage", ENEMY_ATTACK_DAMAGE)), source_position, "boss_slam")
 	boss_slam_state["active"] = false
 	boss_slam_state["phase"] = "resolved"
 	boss_slam_state["charge_remaining"] = 0.0
@@ -1490,6 +1566,13 @@ func _reset_combat_readability_feedback() -> void:
 	boss_slam_state = {}
 	if is_instance_valid(boss_slam_warning_marker):
 		boss_slam_warning_marker.visible = false
+	player_invulnerability_remaining = 0.0
+	player_hurt_remaining = 0.0
+	hit_flash_remaining = 0.0
+	last_player_damage_feedback = {}
+	last_player_damage_amount = 0
+	last_damage_source_kind = ""
+	last_knockback_vector = Vector2.ZERO
 
 func build_prototype_snapshot_for_test() -> Dictionary:
 	return {
@@ -1641,6 +1724,7 @@ func build_enemy_behavior_snapshot_for_test() -> Dictionary:
 			"last_attack_kind": str(state.get("last_attack_kind", "")),
 			"attack_count": int(state.get("attack_count", 0)),
 			"attack_range": float(state.get("attack_range", 0.0)),
+			"boss_slam_cooldown_remaining": float(state.get("boss_slam_cooldown_remaining", 0.0)),
 			"preferred_distance": float(state.get("preferred_distance", 0.0)),
 			"retreat_distance": float(state.get("retreat_distance", 0.0)),
 			"distance_to_player": float(state.get("distance_to_player", 0.0)),
@@ -1692,6 +1776,26 @@ func build_combat_readability_snapshot_for_test() -> Dictionary:
 		"boss_slam_position": boss_slam_state.get("position", Vector3.ZERO),
 		"boss_slam_resolve_count": int(boss_slam_state.get("resolve_count", 0)),
 		"boss_slam_hit_confirmed": bool(boss_slam_state.get("hit_confirmed", false)),
+	}
+
+func build_player_damage_feedback_snapshot_for_test() -> Dictionary:
+	return {
+		"player_position": player.global_position if player != null else Vector3.ZERO,
+		"player_health": int(player_data.get("health", player_data.get("max_health", 1))),
+		"player_max_health": int(player_data.get("max_health", 1)),
+		"player_hurt_active": player_hurt_remaining > 0.0,
+		"player_invulnerable": player_invulnerability_remaining > 0.0,
+		"player_invulnerability_remaining": player_invulnerability_remaining,
+		"player_hurt_remaining": player_hurt_remaining,
+		"hit_flash_remaining": hit_flash_remaining,
+		"player_damage_event_count": player_damage_event_count,
+		"blocked_damage_event_count": blocked_damage_event_count,
+		"last_player_damage_amount": last_player_damage_amount,
+		"last_damage_source_kind": last_damage_source_kind,
+		"last_knockback_vector": last_knockback_vector,
+		"last_feedback_impact_level": str(last_player_damage_feedback.get("impact_level", "")),
+		"last_feedback_vfx_event": str(last_player_damage_feedback.get("vfx_event", "")),
+		"last_feedback_audio_event": str(last_player_damage_feedback.get("audio_event", "")),
 	}
 
 func build_death_settlement_snapshot_for_test() -> Dictionary:

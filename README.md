@@ -264,6 +264,14 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 - No new generated art was added; these are temporary geometry hooks for later authored VFX/assets.
 - Added regression: `tests/regression/regression_prototype_2_5d_enemy_readability_vfx_contract.gd`.
 
+## 2026-06-19 Update: 2.5D Combat Rhythm / Player Feedback
+
+- Tower gatekeeper now auto-starts its slam telegraph during normal combat when the player is in skill range.
+- Player damage now routes through `DamageFeedbackService` for hit flash timing, knockback, impact metadata, and a short invulnerability window.
+- Immediate follow-up damage during invulnerability is blocked and counted for QA.
+- Added player damage feedback snapshots for Godot AI / regression inspection.
+- Added regression: `tests/regression/regression_prototype_2_5d_combat_rhythm_player_feedback.gd`.
+
 ## 2026-06-17 Update: 2.5D Billboard Animation Player
 
 - Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
