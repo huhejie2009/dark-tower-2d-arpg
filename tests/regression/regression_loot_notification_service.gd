@@ -25,7 +25,7 @@ func _run() -> void:
 			"affixes": {"attack_damage": 28},
 		},
 	}
-	var material_payload := {"id": "crystal_shard", "name": "Crystal Shard", "type": "material", "amount": 2}
+	var material_payload := {"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 2}
 	var boss_payload := better_payload.duplicate(true)
 
 	var equipment_note: Dictionary = LootNotificationServiceScript.build_pickup_notification(player, better_payload)
@@ -44,7 +44,7 @@ func _run() -> void:
 
 	var boss_note: Dictionary = LootNotificationServiceScript.build_pickup_notification(player, boss_payload, "boss_reward")
 	_expect(bool(boss_note.get("boss_reward", false)), "boss reward source should be marked")
-	_expect(str(boss_note.get("headline", "")).contains("Boss"), "boss reward headline should be distinct")
+	_expect(str(boss_note.get("headline", "")).contains("首领"), "boss reward headline should be distinct")
 
 	_finish()
 

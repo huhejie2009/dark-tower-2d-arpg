@@ -17,7 +17,7 @@ func _run() -> void:
 	_expect(hud.has_method("get_last_loot_notification_for_test"), "HUD should expose last loot notification for tests")
 	if hud.has_method("show_loot_notification"):
 		hud.call("show_loot_notification", {
-			"headline": "Upgrade found",
+			"headline": "发现升级装备",
 			"item_name": "Better Sword",
 			"rarity": "magic",
 			"score": 43,
@@ -28,7 +28,7 @@ func _run() -> void:
 		_expect(label != null and label.visible, "loot notification label should become visible")
 		if label != null:
 			_expect(str(label.text).contains("Better Sword"), "loot notification should show item name")
-			_expect(str(label.text).contains("Score 43"), "loot notification should show score")
+			_expect(str(label.text).contains("评分 43"), "loot notification should show score")
 		if hud.has_method("get_last_loot_notification_for_test"):
 			var last: Dictionary = Dictionary(hud.call("get_last_loot_notification_for_test"))
 			_expect(bool(last.get("upgrade", false)), "HUD should store notification payload")

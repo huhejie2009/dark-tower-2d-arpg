@@ -52,8 +52,8 @@ func _run() -> void:
 	_expect(int(after_first.get("player_level", 0)) >= 2, "near-level player should level from enemy XP")
 	_expect(int(after_first.get("inventory_used_slots", 0)) > int(initial.get("inventory_used_slots", 0)), "enemy drop should enter inventory")
 	_expect(str(Dictionary(after_first.get("last_loot_notification", {})).get("item_name", "")) != "", "enemy drop should create loot notification")
-	_expect(str(after_first.get("hud_status_text", "")).contains("Enemies"), "HUD status should remain synced after reward")
-	_expect(str(after_first.get("hud_inventory_text", "")).contains("Bag"), "HUD inventory text should remain synced after reward")
+	_expect(str(after_first.get("hud_status_text", "")).contains("敌人"), "HUD status should remain synced after reward")
+	_expect(str(after_first.get("hud_inventory_text", "")).contains("背包"), "HUD inventory text should remain synced after reward")
 
 	for index in range(1, initial_living_count):
 		scene.call("defeat_enemy_for_test", index)
@@ -66,10 +66,10 @@ func _run() -> void:
 	_expect(bool(rewards.get("is_boss_floor", false)), "floor 5 should use boss-floor reward rules")
 	_expect(Array(rewards.get("guaranteed_items", [])).size() == 1, "boss floor should grant guaranteed equipment")
 	_expect(bool(after_clear.get("has_boss_reward_item", false)), "guaranteed boss item should enter inventory")
-	_expect(str(Dictionary(after_clear.get("last_loot_notification", {})).get("headline", "")).contains("Boss"), "boss reward should become the last loot notification")
-	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Gold"), "clear summary should mention gold reward")
-	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Crystal"), "boss clear summary should mention crystal reward")
-	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("Next: enter the blue exit marker"), "clear summary should tell the next action")
+	_expect(str(Dictionary(after_clear.get("last_loot_notification", {})).get("headline", "")).contains("首领"), "boss reward should become the last loot notification")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("金币"), "clear summary should mention gold reward")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("水晶"), "boss clear summary should mention crystal reward")
+	_expect(str(after_clear.get("floor_clear_summary_text", "")).contains("下一步：进入蓝色出口标记"), "clear summary should tell the next action")
 	_expect(str(after_clear.get("hud_log_text", "")).contains(str(after_clear.get("floor_clear_summary_text", ""))), "HUD log should show the floor clear summary")
 
 	var saved_player := SaveManagerScript.get_active_player_data()

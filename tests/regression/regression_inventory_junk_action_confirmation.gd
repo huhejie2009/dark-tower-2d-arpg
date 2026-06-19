@@ -33,8 +33,8 @@ func _run() -> void:
 		_expect(str(pending_preview.get("mode", "")) == "sell", "pending preview should remember sell mode")
 		_expect(int(pending_preview.get("processed_count", 0)) == 1, "pending preview should include process count")
 		_expect(int(pending_preview.get("protected_count", 0)) == 1, "pending preview should include protected count")
-		_expect(str(pending_preview.get("confirm_text", "")).contains("Protected 1"), "confirm text should show protected item count")
-		_expect(str(pending_preview.get("confirm_text", "")).contains("Gold"), "sell confirm text should show gold reward")
+		_expect(str(pending_preview.get("confirm_text", "")).contains("保护 1"), "confirm text should show protected item count")
+		_expect(str(pending_preview.get("confirm_text", "")).contains("金币"), "sell confirm text should show gold reward")
 
 	if window.has_method("confirm_pending_junk_action_for_test"):
 		window.call("confirm_pending_junk_action_for_test")

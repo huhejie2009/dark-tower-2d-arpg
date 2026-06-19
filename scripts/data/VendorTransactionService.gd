@@ -22,7 +22,7 @@ static func sell_item(player_data: Dictionary, buyback: Array, item_id: String) 
 	if sell_value > 0:
 		inventory = InventoryDataServiceScript.add_item(inventory, {
 			"id": GOLD_ID,
-			"name": "Gold",
+			"name": "金币",
 			"type": "currency",
 			"amount": sell_value,
 		})
@@ -131,7 +131,7 @@ static func _spend_gold(inventory: Dictionary, amount: int) -> Dictionary:
 	var result := InventoryDataServiceScript.normalize_inventory(inventory)
 	var gold_entry: Dictionary = Dictionary(result.get(GOLD_ID, {
 		"id": GOLD_ID,
-		"name": "Gold",
+		"name": "金币",
 		"type": "currency",
 		"amount": 0,
 	}))

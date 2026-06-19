@@ -43,7 +43,7 @@ func _check_floor(floor: int, expected_template: String, expected_types: Array[S
 	_expect(int(snapshot.get("current_floor", 0)) == floor, "2.5D wave bridge should run on requested floor %d" % floor)
 	_expect(str(snapshot.get("template_id", "")) == expected_template, "floor %d should use template %s" % [floor, expected_template])
 	_expect(int(snapshot.get("template_enemy_count", 0)) == int(snapshot.get("total_enemy_count", -1)), "floor %d should spawn every template enemy" % floor)
-	_expect(str(snapshot.get("objective_text", "")).begins_with("Objective:"), "floor %d should expose objective HUD text" % floor)
+	_expect(str(snapshot.get("objective_text", "")).begins_with("目标："), "floor %d should expose objective HUD text" % floor)
 	_expect(bool(snapshot.get("has_room_objective_state", false)), "floor %d should build objective state" % floor)
 	_expect(bool(snapshot.get("has_boss", false)) == expects_boss, "floor %d boss presence should match template" % floor)
 

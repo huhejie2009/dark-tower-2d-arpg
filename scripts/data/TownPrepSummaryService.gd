@@ -22,25 +22,25 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 		ClassRulesScript.get_class_name(str(player_data.get("base_class", "warrior"))),
 		int(player_data.get("player_level", 1)),
 	]
-	var progress_text := "Best Floor %d | Gear Score %d" % [
+	var progress_text := "最高层 %d | 装备评分 %d" % [
 		int(player_data.get("highest_floor", 1)),
 		gear_score,
 	]
-	var resource_text := "Gold %d | Crystal %d | %s" % [
+	var resource_text := "金币 %d | 水晶 %d | %s" % [
 		gold,
 		crystal,
 		str(inventory_capacity.get("summary_text", "Bag 0/40")),
 	]
-	var growth_text := "SP %d | Damage %d | HP %d | MP %d" % [
+	var growth_text := "技能点 %d | 伤害 %d | 生命 %d | 法力 %d" % [
 		int(player_data.get("skill_points", 0)),
 		int(stats.get("attack_damage", 0)),
 		int(player_data.get("max_health", stats.get("max_health", 0))),
 		int(player_data.get("max_mana", stats.get("max_mana", 0))),
 	]
-	var start_explanation := str(start_options.get("explanation_text", "Floor 1 starts fresh; Best Floor uses saved progress."))
+	var start_explanation := str(start_options.get("explanation_text", "第 1 层用于重新开爬；最高层会读取已保存进度。"))
 	var start_text := "%s\n%s\n%s" % [
-		str(start_options.get("fresh_label", "Enter Tower: Floor 1")),
-		str(start_options.get("best_label", "Challenge Best Floor")),
+		str(start_options.get("fresh_label", "进入通天塔：第 1 层")),
+		str(start_options.get("best_label", "挑战最高层")),
 		start_explanation,
 	]
 	return {

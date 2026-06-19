@@ -28,8 +28,8 @@ static func build_pickup_notification(player_data: Dictionary, payload: Dictiona
 		"equipped_score": 0,
 		"recommendation_rank": "none",
 		"recommendation_text": "",
-		"headline": "Loot acquired",
-		"log_text": "Picked up: %s" % item_name,
+		"headline": "获得战利品",
+		"log_text": "拾取：%s" % item_name,
 		"accent_color": "#9ca3af",
 	}
 	if item_type == "equipment":
@@ -53,29 +53,29 @@ static func build_pickup_notification(player_data: Dictionary, payload: Dictiona
 		notification["score_delta"] = int(recommendation.get("score_delta", 0))
 		notification["recommendation_rank"] = str(recommendation.get("recommendation_rank", "none"))
 		notification["recommendation_text"] = str(recommendation.get("recommendation_text", ""))
-		notification["source_label"] = str(recommendation.get("source_label", notification.get("source_label", "Drop"))) if source != "boss_reward" else "Boss reward"
-		notification["headline"] = "Boss reward" if source == "boss_reward" else ("Upgrade found" if upgrade else "Equipment found")
+		notification["source_label"] = str(recommendation.get("source_label", notification.get("source_label", "掉落"))) if source != "boss_reward" else "首领奖励"
+		notification["headline"] = "首领奖励" if source == "boss_reward" else ("发现升级装备" if upgrade else "获得装备")
 		notification["short_tag"] = _build_short_tag(notification)
-		notification["log_text"] = "%s: %s | %s | Score %d%s" % [
+		notification["log_text"] = "%s：%s | %s | 评分 %d%s" % [
 			str(notification["headline"]),
 			item_name,
-			str(notification["rarity"]).capitalize(),
+			_rarity_label(str(notification["rarity"])),
 			score,
-			" | Upgrade" if upgrade else "",
+			" | 可升级" if upgrade else "",
 		]
 	else:
-		notification["headline"] = "Currency gained" if item_type == "currency" else "Material gained"
-		notification["short_tag"] = str(notification.get("source_label", "Drop"))
-		notification["log_text"] = "%s: %s %s" % [str(notification["headline"]), item_name, str(notification["quantity_text"])]
+		notification["headline"] = "获得金币" if item_type == "currency" else "获得材料"
+		notification["short_tag"] = str(notification.get("source_label", "掉落"))
+		notification["log_text"] = "%s：%s %s" % [str(notification["headline"]), item_name, str(notification["quantity_text"])]
 	notification["accent_color"] = _rarity_color_hex(str(notification.get("rarity", "common")))
 	return notification
 
 static func _source_label(notification_source: String, loot_source: String) -> String:
 	if notification_source == "boss_reward" or loot_source == "boss":
-		return "Boss reward"
+		return "首领奖励"
 	if loot_source == "elite":
-		return "Elite drop"
-	return "Drop"
+		return "精英掉落"
+	return "掉落"
 
 static func _build_short_tag(notification: Dictionary) -> String:
 	var tags: Array[String] = []
@@ -86,6 +86,21 @@ static func _build_short_tag(notification: Dictionary) -> String:
 	if recommendation != "":
 		tags.append(recommendation)
 	return " | ".join(tags)
+
+static func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"magic":
+			return "魔法"
+		"rare":
+			return "稀有"
+		"legendary":
+			return "传奇"
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		_:
+			return "普通"
 
 static func _get_payload_rarity(payload: Dictionary) -> String:
 	if str(payload.get("type", "")) == "equipment":

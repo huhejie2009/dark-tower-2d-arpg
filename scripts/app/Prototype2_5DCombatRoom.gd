@@ -172,7 +172,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if not _is_menu_blocking_combat():
 			_perform_player_attack(_read_player_attack_direction_from_mouse_event(event))
-			_update_hud("Basic attack hit %d target(s)." % last_player_attack_hit_count)
+			_update_hud("基础攻击命中 %d 个目标。" % last_player_attack_hit_count)
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
 		if exit_unlocked and not _is_menu_blocking_combat():
@@ -503,7 +503,7 @@ func _build_debug_hud() -> void:
 
 	var label := Label.new()
 	label.name = "PrototypeModeLabel"
-	label.text = "2.5D PROTOTYPE - greybox visibility pass"
+	label.text = "2.5D 原型 - 可视化灰盒验证"
 	label.position = Vector2(24.0, 20.0)
 	label.add_theme_color_override("font_color", Color(0.72, 0.86, 1.0))
 	label.add_theme_font_size_override("font_size", 20)
@@ -551,14 +551,14 @@ func _create_pause_overlay() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Paused"
+	title.text = "暂停"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 24)
 	box.add_child(title)
 
 	pause_resume_button = Button.new()
 	pause_resume_button.name = "ResumeButton"
-	pause_resume_button.text = "Resume"
+	pause_resume_button.text = "继续"
 	pause_resume_button.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(pause_resume_button, true)
 	pause_resume_button.pressed.connect(_toggle_pause)
@@ -566,7 +566,7 @@ func _create_pause_overlay() -> void:
 
 	var inventory := Button.new()
 	inventory.name = "PauseInventoryButton"
-	inventory.text = "Inventory / Equipment"
+	inventory.text = "背包 / 装备"
 	inventory.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(inventory)
 	inventory.pressed.connect(_toggle_inventory_window)
@@ -574,7 +574,7 @@ func _create_pause_overlay() -> void:
 
 	var town := Button.new()
 	town.name = "ReturnTownButton"
-	town.text = "Return To Town"
+	town.text = "返回主城"
 	town.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(town)
 	town.pressed.connect(_return_to_town)
@@ -604,7 +604,7 @@ func _create_death_overlay() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Death Settlement"
+	title.text = "阵亡结算"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 26)
 	box.add_child(title)
@@ -628,7 +628,7 @@ func _create_death_overlay() -> void:
 
 	death_return_town_button = Button.new()
 	death_return_town_button.name = "DeathReturnTownButton"
-	death_return_town_button.text = "Return To Town"
+	death_return_town_button.text = "返回主城"
 	death_return_town_button.custom_minimum_size = Vector2(380, 46)
 	DarkArpgUiThemeScript.style_button(death_return_town_button, true)
 	death_return_town_button.pressed.connect(_return_to_town_after_death)
@@ -1242,7 +1242,7 @@ func _defeat_enemy(enemy: Node3D) -> void:
 	enemy.visible = false
 	var xp_result := _record_enemy_defeat_rewards(state)
 	room_objective_state = RoomObjectiveServiceScript.record_enemy_defeated(room_objective_state, _build_enemy_experience_source(state))
-	var level_note := " Level up!" if bool(xp_result.get("leveled_up", false)) else ""
+	var level_note := " 升级！" if bool(xp_result.get("leveled_up", false)) else ""
 	_update_hud("Enemy defeated. %d enemy/enemies remain. +%d XP%s" % [living_enemy_count, int(xp_result.get("experience_gained", 0)), level_note])
 	if living_enemy_count <= 0:
 		_on_floor_cleared()
@@ -1358,19 +1358,19 @@ func _unlock_exit() -> void:
 		exit_marker.scale = Vector3(1.18, 1.0, 1.18)
 	var summary := last_floor_clear_summary_text
 	if summary.is_empty():
-		summary = "Floor clear. Next: enter the blue exit marker."
+		summary = "楼层已清理。下一步：进入蓝色出口标记。"
 	_update_hud(summary)
 
 func _build_floor_clear_summary_text(rewards: Dictionary) -> String:
-	var parts: Array[String] = ["Floor %d clear" % int(rewards.get("floor", current_floor))]
-	parts.append("Gold %d" % int(rewards.get("gold", 0)))
+	var parts: Array[String] = ["第 %d 层清理完成" % int(rewards.get("floor", current_floor))]
+	parts.append("金币 %d" % int(rewards.get("gold", 0)))
 	var crystal := int(rewards.get("crystal", 0))
 	if crystal > 0:
-		parts.append("Crystal %d" % crystal)
+		parts.append("水晶 %d" % crystal)
 	var guaranteed_items := Array(rewards.get("guaranteed_items", []))
 	if not guaranteed_items.is_empty():
-		parts.append("Boss reward x%d" % guaranteed_items.size())
-	parts.append("Next: enter the blue exit marker")
+		parts.append("首领奖励 x%d" % guaranteed_items.size())
+	parts.append("下一步：进入蓝色出口标记")
 	return ". ".join(parts) + "."
 
 func _set_exit_locked_visual() -> void:
@@ -1545,7 +1545,7 @@ func _on_player_data_changed(updated: Dictionary) -> void:
 	if _dictionary_state_changed(previous_skills, next_skills):
 		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_skill_upgrade(p2_loot_loop_metrics)
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
-	_update_hud("Equipment updated.")
+	_update_hud("装备已更新。")
 
 func _dictionary_state_changed(before: Dictionary, after: Dictionary) -> bool:
 	return JSON.stringify(before) != JSON.stringify(after)
@@ -1553,7 +1553,7 @@ func _dictionary_state_changed(before: Dictionary, after: Dictionary) -> bool:
 func _update_hud(message: String) -> void:
 	if not is_instance_valid(hud):
 		return
-	hud.call("set_status", "Floor %d | Enemies %d" % [current_floor, living_enemy_count])
+	hud.call("set_status", "第 %d 层 | 敌人 %d" % [current_floor, living_enemy_count])
 	hud.call("set_log", message)
 	if hud.has_method("set_objective"):
 		hud.call("set_objective", _get_current_objective_text())
@@ -1579,7 +1579,7 @@ func _update_hud(message: String) -> void:
 func _build_floor_enter_message() -> String:
 	var message := str(current_floor_template.get("floor_start_message", "")).strip_edges()
 	if message.is_empty():
-		message = "Floor %d: clear the room." % current_floor
+		message = "第 %d 层：清理房间。" % current_floor
 	return "%s Left click attacks, I/C opens inventory, Esc pauses." % message
 
 func _build_current_player_snapshot() -> Dictionary:
@@ -1820,8 +1820,8 @@ func _build_highest_floor_explanation() -> String:
 
 func _get_current_objective_text() -> String:
 	if exit_unlocked:
-		return "Objective: enter the blue exit marker."
-	return str(room_objective_state.get("hud_text", "Objective: defeat all enemies."))
+		return "目标：进入蓝色出口标记。"
+	return str(room_objective_state.get("hud_text", "目标：击败所有敌人。"))
 
 func build_enemy_behavior_snapshot_for_test() -> Dictionary:
 	var snapshots: Array[Dictionary] = []

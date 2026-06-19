@@ -62,7 +62,7 @@ func _build_ui() -> void:
 
 	var title := Label.new()
 	title.name = "TownTitle"
-	title.text = "Tower Approach"
+	title.text = "通天塔前哨"
 	title.position = Vector2(226, 18)
 	title.size = Vector2(448, 42)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -82,7 +82,7 @@ func _build_ui() -> void:
 	var enter := Button.new()
 	enter.name = "EnterTowerButton"
 	var start_options := TowerRunStartServiceScript.build_start_options(player_data)
-	enter.text = str(start_options.get("fresh_label", "Enter Tower: Floor 1"))
+	enter.text = str(start_options.get("fresh_label", "进入通天塔：第 1 层"))
 	enter.position = Vector2(TOWN_BUTTON_X, 530)
 	enter.size = Vector2(TOWN_BUTTON_W, 46)
 	DarkArpgUiThemeScript.style_button(enter, true)
@@ -91,7 +91,7 @@ func _build_ui() -> void:
 
 	var best_floor := Button.new()
 	best_floor.name = "EnterBestFloorButton"
-	best_floor.text = str(start_options.get("best_label", "Challenge Best Floor"))
+	best_floor.text = str(start_options.get("best_label", "挑战最高层"))
 	best_floor.position = Vector2(TOWN_BUTTON_X, 584)
 	best_floor.size = Vector2(TOWN_BUTTON_W, 38)
 	DarkArpgUiThemeScript.style_button(best_floor)
@@ -100,7 +100,7 @@ func _build_ui() -> void:
 
 	var inventory := Button.new()
 	inventory.name = "OpenInventoryButton"
-	inventory.text = "Inventory / Equipment"
+	inventory.text = "背包 / 装备"
 	inventory.position = Vector2(TOWN_BUTTON_X, 630)
 	inventory.size = Vector2(TOWN_BUTTON_W, 38)
 	DarkArpgUiThemeScript.style_button(inventory)
@@ -109,7 +109,7 @@ func _build_ui() -> void:
 
 	var menu := Button.new()
 	menu.name = "ReturnMainMenuButton"
-	menu.text = "Main Menu"
+	menu.text = "主菜单"
 	menu.position = Vector2(TOWN_BUTTON_X, 676)
 	menu.size = Vector2(TOWN_BUTTON_W, 34)
 	DarkArpgUiThemeScript.style_button(menu)
@@ -153,11 +153,11 @@ func _create_town_world_space() -> void:
 	_add_world_rect("TownStashCrate", Vector2(220, 610), Vector2(110, 78), Color(0.09, 0.08, 0.07, 1.0), Color(0.28, 0.22, 0.16, 1.0))
 	_add_world_rect("TownTrainingCircle", Vector2(720, 610), Vector2(128, 78), Color(0.07, 0.08, 0.08, 1.0), Color(0.18, 0.26, 0.28, 1.0))
 
-	_add_town_interaction_point("tower_gate", "TownTowerGateInteraction", "Tower Gate", Vector2(450, 340), "enter_tower")
-	_add_town_interaction_point("merchant", "TownMerchantInteraction", "Merchant", Vector2(160, 486), "open_facility")
-	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "Blacksmith", Vector2(730, 486), "open_facility")
-	_add_town_interaction_point("stash", "TownStashInteraction", "Stash", Vector2(220, 675), "open_facility")
-	_add_town_interaction_point("training", "TownTrainingInteraction", "Training", Vector2(720, 675), "open_facility")
+	_add_town_interaction_point("tower_gate", "TownTowerGateInteraction", "塔门", Vector2(450, 340), "enter_tower")
+	_add_town_interaction_point("merchant", "TownMerchantInteraction", "商人", Vector2(160, 486), "open_facility")
+	_add_town_interaction_point("blacksmith", "TownBlacksmithInteraction", "铁匠", Vector2(730, 486), "open_facility")
+	_add_town_interaction_point("stash", "TownStashInteraction", "仓库", Vector2(220, 675), "open_facility")
+	_add_town_interaction_point("training", "TownTrainingInteraction", "训练场", Vector2(720, 675), "open_facility")
 
 	town_player = CharacterBody2D.new()
 	town_player.name = "TownPlayer"
@@ -257,7 +257,7 @@ func _create_prep_panel() -> void:
 	panel.add_child(box)
 
 	var panel_title := Label.new()
-	panel_title.text = "Preparation"
+	panel_title.text = "整备"
 	DarkArpgUiThemeScript.style_title(panel_title, 20)
 	box.add_child(panel_title)
 
@@ -277,7 +277,7 @@ func _create_prep_panel() -> void:
 	box.add_child(prep_recommendations)
 	prep_action_button = Button.new()
 	prep_action_button.name = "TownPrepActionButton"
-	prep_action_button.text = "Open Prep"
+	prep_action_button.text = "打开整备"
 	prep_action_button.custom_minimum_size = Vector2(220, 34)
 	DarkArpgUiThemeScript.style_button(prep_action_button, true)
 	prep_action_button.pressed.connect(_on_prep_action_pressed)
@@ -374,9 +374,9 @@ func _update_town_interaction_hint() -> void:
 		return
 	var nearest := _get_nearest_town_interaction()
 	if nearest.is_empty():
-		town_interaction_hint.text = "WASD Move"
+		town_interaction_hint.text = "WASD 移动"
 		return
-	town_interaction_hint.text = "E  %s" % str(nearest.get("display_name", "Interact"))
+	town_interaction_hint.text = "E  %s" % str(nearest.get("display_name", "互动"))
 
 func _get_nearest_town_interaction() -> Dictionary:
 	if not is_instance_valid(town_player):
@@ -523,7 +523,7 @@ func _on_stash_changed(updated: Dictionary) -> void:
 func _update_summary() -> void:
 	var prep := TownPrepSummaryServiceScript.build_summary(player_data)
 	if is_instance_valid(summary):
-		summary.text = "%s | Best Floor %d" % [
+		summary.text = "%s | 最高层 %d" % [
 		str(player_data.get("character_name", "Hero")),
 		int(player_data.get("highest_floor", 1)),
 	]
@@ -543,4 +543,4 @@ func _update_summary() -> void:
 		var recommendations := Dictionary(prep.get("recommendations", {}))
 		var has_action := bool(recommendations.get("has_action", false))
 		prep_action_button.disabled = not has_action
-		prep_action_button.text = str(recommendations.get("primary_button_text", "Ready"))
+		prep_action_button.text = str(recommendations.get("primary_button_text", "准备就绪"))

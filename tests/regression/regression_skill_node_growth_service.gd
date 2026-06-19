@@ -36,7 +36,7 @@ func _run() -> void:
 	_expect(bool(vitality_preview.get("can_upgrade", false)), "vitality preview should be upgradeable")
 	_expect(str(vitality_preview.get("stat_id", "")) == "max_health", "vitality should affect max health")
 	_expect(int(vitality_preview.get("stat_gain", 0)) == 12, "vitality should expose health gain")
-	_expect(str(vitality_preview.get("summary_text", "")).contains("Health +12"), "vitality summary should describe gain")
+	_expect(str(vitality_preview.get("summary_text", "")).contains("生命 +12"), "vitality summary should describe gain")
 
 	var vitality_result: Dictionary = SkillNodeGrowthServiceScript.upgrade_node(player, "vitality_training")
 	_expect(bool(vitality_result.get("ok", false)), "vitality upgrade should succeed")

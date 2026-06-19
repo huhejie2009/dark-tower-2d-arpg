@@ -21,9 +21,9 @@ static func generate_enemy_drop_with_source(floor: int, base_class: String, kill
 				"equipment": equipment,
 			}, quality)
 		"material":
-			return _wrap_drop_payload({"id": "crystal_shard", "name": "Crystal Shard", "type": "material", "amount": 1 + int(maxi(1, floor) / 6)}, quality)
+			return _wrap_drop_payload({"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 1 + int(maxi(1, floor) / 6)}, quality)
 		_:
-			return _wrap_drop_payload({"id": "gold", "name": "Gold", "type": "currency", "amount": 8 + maxi(1, floor) * 2 + int(quality.get("item_level", floor))}, quality)
+			return _wrap_drop_payload({"id": "gold", "name": "金币", "type": "currency", "amount": 8 + maxi(1, floor) * 2 + int(quality.get("item_level", floor))}, quality)
 
 static func generate_boss_clear_reward(floor: int, base_class: String) -> Dictionary:
 	var quality := LootQualityServiceScript.build_quality_profile(floor, "boss", 1)

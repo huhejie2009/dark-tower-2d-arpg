@@ -16,7 +16,7 @@ func _run() -> void:
 	})
 	_expect(str(clear_state.get("objective_id", "")) == "clear_all", "clear_all objective id should be preserved")
 	_expect(int(clear_state.get("target_count", 0)) == 4, "clear_all target should equal enemy count")
-	_expect(str(clear_state.get("hud_text", "")).contains("Clear enemies"), "clear_all HUD text should be readable")
+	_expect(str(clear_state.get("hud_text", "")).contains("清理敌人"), "clear_all HUD text should be readable")
 	clear_state = RoomObjectiveServiceScript.record_enemy_defeated(clear_state, {"is_elite": false, "is_boss": false})
 	_expect(int(clear_state.get("current_count", 0)) == 1, "enemy defeat should advance clear objective")
 	_expect(not bool(clear_state.get("completed", true)), "objective should not complete early")

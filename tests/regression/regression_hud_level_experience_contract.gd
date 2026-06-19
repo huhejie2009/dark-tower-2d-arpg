@@ -36,7 +36,7 @@ func _run() -> void:
 			_expect(int(exp_bar.max_value) == 120, "HUD experience bar max should match exp_to_next_level")
 			_expect(int(exp_bar.value) == 45, "HUD experience bar value should match current_exp")
 		if skill_label != null:
-			_expect(str(skill_label.text).contains("SP 2"), "HUD skill point label should include skill points")
+			_expect(str(skill_label.text).contains("技能点 2"), "HUD skill point label should include skill points")
 
 	scene.queue_free()
 	await process_frame

@@ -4,27 +4,27 @@ class_name SkillNodeGrowthService
 const NODES := {
 	"basic_attack_training": {
 		"node_id": "basic_attack_training",
-		"title": "Basic Attack Training",
+		"title": "基础攻击训练",
 		"stat_id": "attack_damage",
-		"stat_label": "Damage",
+		"stat_label": "伤害",
 		"stat_gain": 3,
 		"max_level": 5,
 		"skill_point_cost": 1,
 	},
 	"vitality_training": {
 		"node_id": "vitality_training",
-		"title": "Vitality Training",
+		"title": "生命训练",
 		"stat_id": "max_health",
-		"stat_label": "Health",
+		"stat_label": "生命",
 		"stat_gain": 12,
 		"max_level": 5,
 		"skill_point_cost": 1,
 	},
 	"precision_training": {
 		"node_id": "precision_training",
-		"title": "Precision Training",
+		"title": "精准训练",
 		"stat_id": "critical_chance",
-		"stat_label": "Crit",
+		"stat_label": "暴击",
 		"stat_gain": 2,
 		"max_level": 5,
 		"skill_point_cost": 1,
@@ -128,8 +128,8 @@ static func _build_summary_text(node: Dictionary, current_level: int, next_level
 	var stat_label := str(node.get("stat_label", node.get("stat_id", "")))
 	var stat_gain := int(node.get("stat_gain", 0))
 	if current_level >= max_level:
-		return "%s Lv.%d/%d\nMax Level\n%s +%d" % [title, current_level, max_level, stat_label, stat_gain]
-	return "%s Lv.%d/%d\nNext +%d %s (%s +%d, Lv.%d)\nCost %d SP" % [
+		return "%s Lv.%d/%d\n已满级\n%s +%d" % [title, current_level, max_level, stat_label, stat_gain]
+	return "%s Lv.%d/%d\n下一级 +%d %s（%s +%d，Lv.%d）\n消耗 %d 技能点" % [
 		title,
 		current_level,
 		max_level,
@@ -143,15 +143,15 @@ static func _build_summary_text(node: Dictionary, current_level: int, next_level
 
 static func _build_status_text(can_upgrade: bool, reason: String, cost: int) -> String:
 	if can_upgrade:
-		return "Ready to upgrade"
+		return "可以升级"
 	if reason == "max_level":
-		return "Max level reached"
-	return "Need %d SP" % cost
+		return "已达到满级"
+	return "需要 %d 技能点" % cost
 
 static func _build_tooltip_text(node: Dictionary, current_level: int, next_level: int, max_level: int, cost: int) -> String:
 	var title := str(node.get("title", "Skill"))
 	var stat_label := str(node.get("stat_label", node.get("stat_id", "")))
 	var stat_gain := int(node.get("stat_gain", 0))
 	if current_level >= max_level:
-		return "%s\nLv.%d/%d\nMax Level" % [title, current_level, max_level]
-	return "%s\nLv.%d -> Lv.%d\n%s +%d\nCost %d SP" % [title, current_level, next_level, stat_label, stat_gain, cost]
+		return "%s\nLv.%d/%d\n已满级" % [title, current_level, max_level]
+	return "%s\nLv.%d -> Lv.%d\n%s +%d\n消耗 %d 技能点" % [title, current_level, next_level, stat_label, stat_gain, cost]

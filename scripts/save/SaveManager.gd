@@ -6,6 +6,7 @@ const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.g
 const TowerProgressServiceScript := preload("res://scripts/data/TowerProgressService.gd")
 
 const SAVE_PATH := "user://dark_tower_2d_save.json"
+const DEFAULT_CHARACTER_NAME := "新角色"
 
 static var transient_save_data: Dictionary = {}
 
@@ -63,7 +64,7 @@ static func create_character(slot_id: String, character_name: String, base_class
 	var player := PlayerDataServiceScript.build_starter_player(slot_id, character_name, base_class)
 	var slot: Dictionary = data["slots"][slot_id]
 	slot["exists"] = true
-	slot["character_name"] = str(player.get("character_name", "新角色"))
+	slot["character_name"] = str(player.get("character_name", DEFAULT_CHARACTER_NAME))
 	slot["base_class"] = str(player.get("base_class", "warrior"))
 	slot["player_level"] = int(player.get("player_level", 1))
 	slot["highest_floor"] = 1
@@ -81,7 +82,7 @@ static func get_active_player_data() -> Dictionary:
 	var data := load_save()
 	var slot := get_active_slot(data)
 	if not bool(slot.get("exists", false)):
-		return create_character(str(data.get("active_slot_id", "slot_1")), "新角色", "warrior")
+		return create_character(str(data.get("active_slot_id", "slot_1")), DEFAULT_CHARACTER_NAME, "warrior")
 	return PlayerDataServiceScript.normalize_player_data(slot.get("player", {}))
 
 static func save_active_player_data(player_data: Dictionary, highest_floor: int = 1) -> void:
@@ -91,7 +92,7 @@ static func save_active_player_data(player_data: Dictionary, highest_floor: int 
 	var player := PlayerDataServiceScript.normalize_player_data(player_data)
 	slot["exists"] = true
 	slot["player"] = player
-	slot["character_name"] = str(player.get("character_name", "新角色"))
+	slot["character_name"] = str(player.get("character_name", DEFAULT_CHARACTER_NAME))
 	slot["base_class"] = str(player.get("base_class", "warrior"))
 	slot["player_level"] = int(player.get("player_level", 1))
 	slot["highest_floor"] = maxi(int(slot.get("highest_floor", 1)), highest_floor)

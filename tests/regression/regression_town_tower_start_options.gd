@@ -24,15 +24,15 @@ func _run() -> void:
 		_expect(fresh_button != null, "town should keep the main enter tower button")
 		_expect(best_button != null, "town should expose best floor challenge button")
 		if fresh_button != null:
-			_expect(str(fresh_button.text).contains("Floor 1"), "main enter tower button should start a fresh floor 1 run")
+			_expect(str(fresh_button.text).contains("第 1 层"), "main enter tower button should start a fresh floor 1 run")
 		if best_button != null:
 			_expect(str(best_button.text).contains("37"), "best floor button should show saved best floor")
 		_expect(town.has_method("get_tower_start_snapshot_for_test"), "town should expose tower start snapshot")
 		if town.has_method("get_tower_start_snapshot_for_test"):
 			var snapshot: Dictionary = Dictionary(town.call("get_tower_start_snapshot_for_test"))
-			_expect(str(snapshot.get("fresh_description", "")).contains("new climb"), "town snapshot should explain fresh run")
-			_expect(str(snapshot.get("best_description", "")).contains("saved progress"), "town snapshot should explain best floor")
-			_expect(str(snapshot.get("highest_floor_explanation", "")).contains("highest_floor"), "town snapshot should explain high-floor starts")
+			_expect(str(snapshot.get("fresh_description", "")).contains("新的爬塔"), "town snapshot should explain fresh run")
+			_expect(str(snapshot.get("best_description", "")).contains("已保存进度"), "town snapshot should explain best floor")
+			_expect(str(snapshot.get("highest_floor_explanation", "")).contains("最高层"), "town snapshot should explain high-floor starts")
 		town.queue_free()
 		await process_frame
 

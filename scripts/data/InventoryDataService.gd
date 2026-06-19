@@ -74,5 +74,5 @@ static func build_capacity_summary(inventory: Dictionary, capacity: int = DEFAUL
 		"pressure_ratio": ratio,
 		"pressure": ratio >= PRESSURE_RATIO,
 		"full": ratio >= FULL_RATIO,
-		"summary_text": "Bag %d/%d" % [used_slots, safe_capacity],
+		"summary_text": "背包 %d/%d" % [used_slots, safe_capacity],
 	}

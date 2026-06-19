@@ -1,34 +1,20 @@
 # Dark Tower 2D ARPG
 
-Godot 4.6.2 纯 2D 暗黑刷宝 / 爬塔 ARPG 新项目。
+Godot 4.6.2 纯 2D / 2.5D 暗黑刷宝爬塔 ARPG 新项目。
 
-项目目标是先做出稳定可试玩的 2D 刷宝闭环，再逐步补齐正式美术、动作素材、楼层内容、装备成长、技能成长和长期可维护的制作管线。
+当前目标是先把游戏做到稳定可试玩：主城准备、进塔战斗、掉落拾取、背包装备、经验成长、死亡结算和返回主城形成闭环；美术资产继续保留正式素材接入接口，避免继续依赖代码生成素材。
 
 ## 当前状态
 
-当前版本已经具备第一版可试玩闭环：
-
-- 主菜单
-- 职业选择
-- 主城与塔前准备面板
-- 存档槽与基础玩家数据
-- 2D 战斗场景
-- WASD / 方向键移动
-- 左键基础攻击
-- 敌人追击、攻击、死亡
-- 掉落拾取进入背包
-- 背包、装备、装备评分、装备推荐、装备对比摘要与对比原因
-- 交付级物品实例契约：`instance_id`、`item_power`、`binding_flags`、`icon_id`、`source_tags`
-- 背包查询服务：装备、材料、升级、锁定、收藏、废品筛选与排序接口
-- 背包窗口高级筛选：升级、锁定、收藏、废品
-- 物品锁定、收藏、废品标记写入 `binding_flags`
-- 技能点与基础技能成长
-- 战斗内暂停、背包暂停、死亡结算
-- 清怪开门 / 传送门进入下一层
-- 从第 1 层开始或挑战历史最高层
-- HUD 显示生命、魔力、经验、技能点、掉落提示
-- Godot AI 与 godot-devtool MCP 插件接入
-- 回归测试与场景启动烟测
+- 主菜单、职业选择、存档槽和主城流程已接入。
+- 2.5D 塔内战斗原型已作为当前主线模式推进。
+- WASD / 方向键移动，鼠标攻击，敌人追击、攻击、死亡和掉落已接入。
+- 背包、装备、装备评分、装备推荐、物品对比、废品出售/分解、技能点成长、仓库和商人数据底座已接入。
+- 打开背包 / 装备窗口时会暂停战斗，避免玩家整理装备时被怪物击杀。
+- HUD 显示生命、法力、经验、技能点、装备评分和掉落提示。
+- 死亡结算、半血回城、清层奖励、下一层入口和主城返回闭环已接入。
+- 核心可见 UI 已完成中文化，包含主菜单、职业选择、主城、背包装备、HUD、掉落提示、死亡结算、楼层提示和设施窗口。
+- Godot AI / godot-devtool MCP 已接入，用于项目检查、运行验证和后续编辑器辅助。
 
 ## 项目路径
 
@@ -51,33 +37,32 @@ Godot 4.6.2 stable
 当前机器常用 Godot console：
 
 ```text
-C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe
+C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe
 ```
 
 ## 目录说明
 
 - `scenes/`：Godot 场景入口。
-- `scripts/`：游戏逻辑、数据服务、规则、UI、战斗脚本。
+- `scripts/`：游戏逻辑、数据服务、规则、UI 和战斗脚本。
 - `tests/regression/`：回归测试脚本。
 - `assets/`：当前接入的临时 / IMAGE2 / 预览素材。
-- `addons/`：Godot 插件，包括 Godot AI 与 godot-devtool。
-- `docs/design/`：世界观、美术、视角、系统设计文档。
+- `addons/`：Godot 插件，包括 Godot AI 和 godot-devtool。
+- `docs/design/`：世界观、美术、视角和系统设计文档。
+- `docs/content/`：素材生产、动画规格和内容制作说明。
 - `docs/progress/`：每轮开发进度记录。
-- `docs/planning/`：ROADMAP 表格与可视化路线图。
-- `docs/qa/`：试玩与验收标准。
+- `docs/planning/`：ROADMAP、阶段验收和路线图。
+- `docs/qa/`：试玩、截图和验收记录。
 - `docs/NEW_THREAD_HANDOFF.md`：新线程接手时优先阅读的总入口。
 
 ## 重要约束
 
 - 不要清除玩家存档，除非用户明确要求。
-- 本项目是 2D 主线，不回到旧 3D / POLYGON 项目。
+- 本项目是新 2D / 2.5D 主线，不回到旧 3D / POLYGON 项目。
 - 后续素材管线优先使用正式美术、IMAGE2 或人工资产，不继续堆代码生成素材。
-- 打击特效与角色 / 敌人动作动画分离。
-- 游戏内视角已经转向俯视 2D 制作标准，方便素材制作和碰撞体积控制。
+- 打击特效与角色 / 敌人动作动画分离，方便未来替换武器和动作资源。
+- 当前视觉方向是高可读性的 2D / 2.5D 暗黑刷宝体验，场景保持冷峻通天塔世界观，人物和敌人素材可继续尝试像素化或手绘化方案。
 
 ## 推荐阅读顺序
-
-新线程或新开发者接手时，先读：
 
 1. `docs/NEW_THREAD_HANDOFF.md`
 2. `docs/design/2026-06-04-design-compendium.md`
@@ -90,7 +75,7 @@ C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe
 PowerShell 示例：
 
 ```powershell
-$godot = 'C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe'
+$godot = 'C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe'
 $project = 'H:\GODOT_PROJECT\dark-tower-2d-arpg'
 $tests = Get-ChildItem -Path "$project\tests\regression" -File -Filter '*.gd' | Sort-Object Name | ForEach-Object { 'res://tests/regression/' + $_.Name }
 foreach ($test in $tests) {
@@ -104,232 +89,15 @@ foreach ($test in $tests) {
 Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 ```
 
-最近验证标记：
-
-- `ALL_NEW_PROJECT_REGRESSION_OK COUNT 122`
-- `HEADLESS_BOOT_EXIT 0`
-- `NO_RESIDUAL_HEADLESS_TEST_GODOT_PROCESS`
-
 Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in use` 警告；目前只要退出码为 0 且完整回归通过，就按非阻断清理项处理。
 
 ## 下一步方向
 
-短期优先级：
-
-1. 基于 `binding_flags` 完成废品批量出售/分解前置数据服务。
-2. 为仓库、商人、铁匠窗口复用 `InventoryQueryService` 做接口准备。
-3. 继续完善 HUD、背包、装备、技能与死亡结算体验。
-4. 准备正式 2D 人物、敌人、动作和环境素材替换。
-5. 扩展 3 到 5 个楼层节奏变化，并增加更稳定的连续楼层测试。
-
-## 2026-06-10 更新：废品批量处理前置
-
-- 新增 `InventoryItemActionService`，集中处理背包物品操作规则。
-- 新增废品批量出售/分解预览与执行接口，后续商人和铁匠窗口可直接复用。
-- 锁定、收藏、已装备、不可出售物品会被自动保护，不会被批量处理。
-- 背包窗口新增 `SellJunkButton` 与 `SalvageJunkButton`，先以文字按钮保留正式图标素材接口。
-- 新增回归：`regression_inventory_junk_batch_actions.gd`。
-
-## 2026-06-10 更新：废品处理确认弹窗
-
-- 背包窗口新增 `JunkActionConfirmDialog`。
-- `Sell Junk` / `Salvage` 会先显示处理数量、保护数量和预计收益，确认后才执行。
-- 新增待确认预览接口，后续商人和铁匠可以复用同一套确认流程。
-- 新增回归：`regression_inventory_junk_action_confirmation.gd`。
-
-## 2026-06-11 更新：主城可走动空间 V1
-
-- 主城新增 `TownWorldRoot` 世界层和 `TownPlayer` 可移动玩家。
-- 新增通天塔入口、商人、铁匠、仓库、训练五个交互点占位。
-- 主城支持 WASD / 方向键移动，靠近交互点可按 `E` 触发。
-- 商人、铁匠、仓库当前先复用已有背包窗口，后续可替换为独立窗口。
-- 新增回归：`regression_town_playable_space_contract.gd`。
-
-## 2026-06-11 更新：主城截图 QA 与布局修复
-
-- 通过 `tools/qa_capture_town_screenshot.gd` 导出 1280x720 主城截图，确认 V1 主城整备面板遮挡可玩空间的问题。
-- 主城调整为左侧可行走世界、右侧整备栏，玩家、通天塔入口、商人、铁匠、仓库、训练点均保持在可见可玩区域内。
-- 右侧按钮组重新排版，`Main Menu` 在 720p 下不再出屏。
-- 互动提示移动到屏幕内，保留后续商人、铁匠、仓库独立窗口的接口位置。
-- 新增回归：`regression_town_playable_space_visual_layout.gd`。
-- 截图验收文件：`docs/qa/screenshots/town_playable_space_1280x720.png`。
-
-## 2026-06-11 更新：主城设施窗口 V1
-
-- 新增 `TownFacilityService`，集中维护商人、铁匠、仓库、训练设施配置。
-- 新增 `TownFacilityWindow`，主城设施交互先打开独立设施窗口，再桥接背包、装备、卖废品、分解废品或技能页。
-- 商人、铁匠、仓库、训练不再直接强行打开背包窗口，为后续正式商店、仓库、铁匠系统预留接口。
-- 新增截图验收：`docs/qa/screenshots/town_merchant_facility_1280x720.png`。
-- 新增回归：`regression_town_facility_service_contract.gd`、`regression_town_facility_window_contract.gd`。
-
-## 2026-06-11 更新：仓库数据服务 V1
-
-- 新增 `StashStorageService`，支持背包与仓库之间整件/整栈存取。
-- 仓库默认 80 格，容量摘要复用背包容量规则。
-- 已装备物品不能直接存入仓库，背包满时不能从仓库取出，失败操作不改变数据。
-- `SaveSchema` 规范化 `stash` 字段，为旧存档和后续仓库窗口做兼容保护。
-- 新增回归：`regression_stash_storage_rules.gd`。
-
-## 2026-06-11 更新：仓库窗口 V1
-
-- 新增 `StashWindow`，主城仓库设施可以打开独立仓库窗口。
-- 仓库窗口支持背包与仓库之间整件/整栈存取，并保存玩家背包和当前存档槽仓库数据。
-- 打开仓库时会关闭设施面板，避免窗口互相遮挡。
-- 新增截图验收：`docs/qa/screenshots/town_stash_window_1280x720.png`。
-- 新增回归：`regression_stash_window_contract.gd`。
-
-## 2026-06-11 更新：商人交易数据服务 V1
-
-- 新增 `VendorTransactionService`，先做商人系统数据底座，不继续打磨占位 UI。
-- 支持单件卖出、买回池、买回恢复。
-- 锁定、收藏、不可出售、已装备物品会被保护，不能误卖。
-- V1 买回价等于卖出价，优先保证误卖恢复；后续经济系统再统一调数值。
-- 新增回归：`regression_vendor_transaction_rules.gd`。
-
-## 2026-06-11 更新：商人买回池存档桥接
-
-- `SaveSchema` 新增 `vendor_buyback` 字段，旧存档缺失时自动规范化为空数组。
-- `SaveManager` 新增 `get_active_vendor_buyback()` 与 `save_active_vendor_buyback()`。
-- 卖出后的买回池可保存到当前存档槽，重新读取后仍可买回原物品。
-- 新增回归：`regression_vendor_buyback_save_bridge.gd`。
-
-## 2026-06-11 Update: Pixel Actor Art Trial
-
-- Added a narrow art-only trial for dark high-resolution pixel actors paired with painterly brutalist tower environments.
-- Player, rot melee, and shadow archer manifests now declare `art_family`, `environment_pairing`, `texture_filter`, `directional_target`, separated combat VFX, and contact shadow requirements.
-- `Player2D` and `Enemy2D` can apply nearest texture filtering from the visual manifest, preparing the project for crisp pixel actor sheets.
-- Added documentation: `docs/content/2026-06-11-pixel-actor-art-trial-pipeline.md`.
-- Added regression: `tests/regression/regression_pixel_actor_art_trial_contract.gd`.
-
-## 2026-06-11 Update: Pixel Actor Production Pack
-
-- Added a first-pass production pack for player warrior, rot melee, and shadow archer 4-direction pixel actor sheets.
-- Added a concept preview image at `docs/concepts/pixel_actor_trial/pixel_actor_lineup_preview_v1.png`.
-- Production pack defines target file names, frame order, animation segments, IMAGE2 prompts, and import acceptance gates.
-- Added regression: `tests/regression/regression_pixel_actor_production_pack.gd`.
-
-## 2026-06-17 Update: 2.5D Attack Action/VFX Split
-
-- Added a prototype actor `action_state` contract for `idle`, `run`, and attack-driven state switching.
-- Added independent hit-impact VFX feedback under a scene-level VFX root, separate from actor and weapon sprites.
-- Added regression: `tests/regression/regression_prototype_2_5d_attack_animation_vfx_contract.gd`.
-
-## 2026-06-18 Update: 2.5D HUD / Inventory / Pause Bridge
-
-- Connected the accepted 2.5D tower runtime to the shared `HudController`.
-- Connected the shared `InventoryEquipmentWindow` to the 2.5D runtime without creating a second inventory UI stack.
-- Opening inventory with `I` or `C` now pauses combat, so players can inspect equipment safely.
-- `Esc` closes inventory first, then toggles the pause overlay.
-- Added pause overlay actions for Resume, Inventory / Equipment, and Return To Town.
-- Added regression: `tests/regression/regression_prototype_2_5d_hud_inventory_pause_bridge.gd`.
-
-## 2026-06-18 Update: 2.5D Loot / XP / Reward Bridge
-
-- Connected the accepted 2.5D tower runtime to existing XP, loot, inventory, notification, and floor reward services.
-- Defeating enemies now grants XP, can level up the player, creates a deterministic drop, and adds that drop to the bag.
-- Clearing a floor now saves tower progress and pending floor rewards through the existing save bridge.
-- Boss floors now grant the same guaranteed equipment reward family used by the legacy 2D runtime.
-- Added regression: `tests/regression/regression_prototype_2_5d_loot_xp_reward_bridge.gd`.
-
-## 2026-06-18 Update: 2.5D Death Settlement / Return Loop
-
-- Connected enemy attacks in the accepted 2.5D tower runtime to player health.
-- Reused the existing death settlement service so a death shows floor, kill, loot, and return-state summary sections.
-- Death now pauses combat, blocks inventory/pause toggles, preserves inventory/equipment, and saves the player for town return with half health.
-- Added one-shot protection so repeated enemy attacks cannot trigger multiple death settlements.
-- Added regression: `tests/regression/regression_prototype_2_5d_death_settlement_return_loop.gd`.
-
-## 2026-06-18 Update: 2.5D Floor Wave Template Bridge
-
-- Connected the accepted 2.5D tower runtime to existing `FloorRules` templates.
-- Floors now spawn different enemy waves instead of the original fixed two-enemy prototype setup.
-- 2.5D now supports the existing `standard_clear`, `dense_room`, `ranged_pressure`, `guardian_mix`, `elite_preview`, and `boss_gatekeeper` pacing IDs.
-- Enemy states now preserve floor-rule type, rank, elite/Boss flags, attack values, and visual manifest data for future authored asset replacement.
-- HUD objective text now comes from `RoomObjectiveService`.
-- Added regression: `tests/regression/regression_prototype_2_5d_floor_wave_template_bridge.gd`.
-
-## 2026-06-18 Update: 2.5D Ranged / Boss Behavior Bridge
-
-- Shadow archers now use a first-pass ranged behavior loop: retreat when too close, hold range, and damage the player from distance.
-- Tower gatekeeper now exposes a first-pass slam warning and range resolution loop.
-- Added a replaceable programmatic VFX role for the gatekeeper slam warning so authored VFX can be swapped in later.
-- Added behavior snapshots for enemy intent, projectile flags, attack kind, and Boss warning state.
-- Added regression: `tests/regression/regression_prototype_2_5d_ranged_boss_behavior_bridge.gd`.
-
-## 2026-06-19 Update: 2.5D Enemy Readability VFX Contract
-
-- Shadow archer attacks now emit an independent enemy projectile feedback marker with owner, path, hit-confirm, and replaceable `enemy_projectile` role metadata.
-- Tower gatekeeper slam now has a readable charge phase before damage resolves.
-- Added a unified combat readability snapshot for projectile and boss telegraph QA.
-- No new generated art was added; these are temporary geometry hooks for later authored VFX/assets.
-- Added regression: `tests/regression/regression_prototype_2_5d_enemy_readability_vfx_contract.gd`.
-
-## 2026-06-19 Update: 2.5D Combat Rhythm / Player Feedback
-
-- Tower gatekeeper now auto-starts its slam telegraph during normal combat when the player is in skill range.
-- Player damage now routes through `DamageFeedbackService` for hit flash timing, knockback, impact metadata, and a short invulnerability window.
-- Immediate follow-up damage during invulnerability is blocked and counted for QA.
-- Added player damage feedback snapshots for Godot AI / regression inspection.
-- Added regression: `tests/regression/regression_prototype_2_5d_combat_rhythm_player_feedback.gd`.
-
-## 2026-06-19 Update: 2.5D Floor 1-5 Playable Pacing V1
-
-- Added a fixed first-playable floor pacing table for floors 1-5: melee intro, melee density, ranged pressure, mixed pressure, and gatekeeper boss check.
-- Floor templates now expose `pacing_role`, `floor_goal_hint`, `floor_start_message`, `difficulty_step`, and expected duration metadata.
-- HUD objective text now includes the floor goal hint until the exit unlocks.
-- Added a deterministic 1-to-5 climb regression that clears each floor, enters the next floor, and verifies the boss floor endpoint.
-- Added regression: `tests/regression/regression_prototype_2_5d_floor_1_to_5_playable_pacing.gd`.
-
-## 2026-06-19 Update: P2 10 Minute 2.5D Loot Loop QA
-
-- Connected the active 2.5D tower runtime to the existing P2 10-minute loot-loop acceptance model.
-- `Prototype2_5DCombatRoom` now records elapsed time, cleared floors, pickups, equipment drops, upgrade candidates, equipment changes, skill-growth opportunities, deaths, and verification gates.
-- Added `build_p2_loot_loop_qa_snapshot_for_test()` for regression and Godot AI inspection.
-- The QA snapshot explains the difference between `current_floor` and saved `highest_floor`, helping diagnose high-floor start confusion without clearing player saves.
-- Repaired garbled P2 acceptance text in the service and QA document while preserving thresholds and report shape.
-- Added regression: `tests/regression/regression_prototype_2_5d_p2_loot_loop_qa_bridge.gd`.
-
-## 2026-06-19 Update: Town Tower Start Clarity
-
-- Town start options now explain the difference between a fresh Floor 1 run and challenging the saved best floor.
-- `highest_floor` is now described as saved progression, not the active room floor.
-- Town prep summary includes the start explanation, and the town scene exposes `get_tower_start_snapshot_for_test()` for regression and Godot AI inspection.
-- Updated tower start and town prep regressions to keep this explanation from disappearing.
-
-## 2026-06-19 Update: 2.5D Floor Clear Reward Readability
-
-- 2.5D floor clears now write a compact reward summary into the HUD log.
-- The summary includes cleared floor, gold, crystal when present, boss guaranteed reward count, and the next action.
-- `build_loot_xp_reward_snapshot_for_test()` now exposes `floor_clear_summary_text` and `hud_log_text` for regression and Godot AI inspection.
-- Updated regression: `tests/regression/regression_prototype_2_5d_loot_xp_reward_bridge.gd`.
-
-## 2026-06-17 Update: 2.5D Billboard Animation Player
-
-- Added a Sprite3D billboard animation player skeleton with manifest-driven frame ranges, fps, and 4-direction frame offsets.
-- Synced 2.5D player and enemy gameplay states into `idle`, `run`, `attack`, and `death` animation states.
-- Added regressions: `tests/regression/regression_billboard_actor_3d_animation_player.gd` and `tests/regression/regression_prototype_2_5d_animation_state_sync.gd`.
-
-## 2026-06-17 Update: 2.5D Real Texture Manifest V1
-
-- Added `BillboardActorManifestLibrary` as the shared 2.5D actor art manifest entry point.
-- Wired the 2.5D combat prototype to existing production sheets for player warrior, rot melee, and shadow archer actors.
-- `BillboardActor3D` now reports texture-loaded, sprite-visible, asset-pipeline, texture-filter, and direction-mode state for visual QA.
-- `BillboardActorAnimationProfile` can now export the same visual asset manifest format used by the runtime actor.
-- Added regressions: `tests/regression/regression_billboard_actor_real_texture_manifest.gd` and `tests/regression/regression_prototype_2_5d_real_actor_textures.gd`.
-
-## 2026-06-17 Update: 2.5D Visual Grounding QA
-
-- Added manifest-driven contact shadows for 2.5D billboard actors so production sheets read as grounded in the room.
-- Hid colored readability markers by default while keeping a QA toggle for debugging visibility.
-- Added a visual grounding snapshot covering contact shadow count, marker visibility, and soft shadow alpha.
-- Added regression: `tests/regression/regression_prototype_2_5d_visual_grounding_contract.gd`.
-
-## 2026-06-18 Update: 2.5D Main Flow Migration Phase 1
-
-- Began migrating the accepted 2.5D combat room from isolated prototype into the main tower flow.
-- `Prototype2_5DCombatRoom` now loads active player data, consumes `TowerRunStartService` floor requests, tracks `current_floor`, saves progress on next-floor transition, and keeps a return-to-town save bridge.
-- `Game2D.tscn` remains available as the legacy fallback scene while the 2.5D runtime gains the missing gameplay systems.
-- Added regression: `tests/regression/regression_prototype_2_5d_main_flow_migration_contract.gd`.
+1. 继续强化 2.5D 塔内战斗可读性，优先解决敌我动作、攻击预警、受击反馈和死亡反馈。
+2. 完善背包 / 装备系统的正式交互体验，包括筛选、排序、对比、出售、分解、仓库和商人窗口。
+3. 推进主城功能化，让主城真正承担准备、交易、训练、仓库和进塔入口。
+4. 准备正式 2D 人物、敌人、动作和环境素材替换，保留清晰的资产接口。
+5. 扩展 3 到 5 个楼层节奏变化，并增加连续爬塔稳定性测试。
 
 ## License
 

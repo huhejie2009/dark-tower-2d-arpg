@@ -52,8 +52,8 @@ func _run() -> void:
 	_expect(bool(after_death.get("menu_blocks_combat", false)), "death settlement should block combat input")
 	_expect(int(after_death.get("player_health", -1)) == 0, "runtime player health should reach zero on death")
 	_expect(int(after_death.get("saved_player_health", 0)) == 60, "saved player should return with half health")
-	_expect(str(after_death.get("settlement_summary", "")).contains("floor 8"), "settlement summary should mention death floor")
-	_expect(str(after_death.get("settlement_loot_text", "")).contains("Loot"), "settlement should expose loot section")
+	_expect(str(after_death.get("settlement_summary", "")).contains("第 8 层"), "settlement summary should mention death floor")
+	_expect(str(after_death.get("settlement_loot_text", "")).contains("拾取"), "settlement should expose loot section")
 
 	scene.call("force_enemy_attack_player_for_test", 0)
 	await process_frame

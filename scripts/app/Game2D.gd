@@ -109,7 +109,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if is_instance_valid(player) and not _is_menu_blocking_combat():
 			var result: Dictionary = player.cast_basic(_get_attack_direction())
-			_update_hud("Basic attack hit %d target(s)." % int(result.get("hit_count", 0)))
+			_update_hud("基础攻击命中 %d 个目标。" % int(result.get("hit_count", 0)))
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
@@ -666,7 +666,7 @@ func _spawn_floor_template(template: Dictionary) -> void:
 		enemy.died.connect(_on_enemy_died)
 		arena_root.add_child(enemy)
 		enemies_alive += 1
-	_update_hud("Floor %d: %s" % [current_floor, str(template.get("template_id", "clear"))])
+	_update_hud("第 %d 层：%s" % [current_floor, str(template.get("template_id", "clear"))])
 
 func _clear_active_enemies() -> void:
 	if not is_instance_valid(arena_root):
@@ -691,8 +691,8 @@ func _on_enemy_died(enemy: Node) -> void:
 	if enemies_alive <= 0:
 		_on_floor_cleared()
 	else:
-		var level_note := " Level up!" if bool(xp_result.get("leveled_up", false)) else ""
-		_update_hud("Enemies left: %d | +%d XP%s" % [enemies_alive, int(xp_result.get("experience_gained", 0)), level_note])
+		var level_note := " 升级！" if bool(xp_result.get("leveled_up", false)) else ""
+		_update_hud("剩余敌人：%d | +%d 经验%s" % [enemies_alive, int(xp_result.get("experience_gained", 0)), level_note])
 
 func _build_enemy_experience_source(enemy: Node) -> Dictionary:
 	if enemy == null:
@@ -767,7 +767,7 @@ func _on_floor_cleared() -> void:
 	SaveManagerScript.apply_floor_clear(current_floor, rewards, _build_current_player_snapshot())
 	_activate_exit_door()
 	_spawn_portal()
-	_update_hud("Floor %d cleared. Reward saved. Press E or step into the portal." % current_floor)
+	_update_hud("第 %d 层已清理，奖励已保存。按 E 或进入传送门。" % current_floor)
 
 func _clear_floor_for_test() -> void:
 	_on_floor_cleared()
@@ -973,14 +973,14 @@ func _create_pause_overlay() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Paused"
+	title.text = "暂停"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 24)
 	box.add_child(title)
 
 	pause_resume_button = Button.new()
 	pause_resume_button.name = "ResumeButton"
-	pause_resume_button.text = "Resume"
+	pause_resume_button.text = "继续"
 	pause_resume_button.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(pause_resume_button, true)
 	pause_resume_button.pressed.connect(_toggle_pause)
@@ -988,7 +988,7 @@ func _create_pause_overlay() -> void:
 
 	var inventory := Button.new()
 	inventory.name = "PauseInventoryButton"
-	inventory.text = "Inventory / Equipment"
+	inventory.text = "背包 / 装备"
 	inventory.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(inventory)
 	inventory.pressed.connect(_toggle_inventory_window)
@@ -996,7 +996,7 @@ func _create_pause_overlay() -> void:
 
 	var town := Button.new()
 	town.name = "ReturnTownButton"
-	town.text = "Return To Town"
+	town.text = "返回主城"
 	town.custom_minimum_size = Vector2(260, 42)
 	DarkArpgUiThemeScript.style_button(town)
 	town.pressed.connect(_return_to_town)
@@ -1026,7 +1026,7 @@ func _create_death_overlay() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Death Settlement"
+	title.text = "阵亡结算"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 26)
 	box.add_child(title)
@@ -1050,7 +1050,7 @@ func _create_death_overlay() -> void:
 
 	death_return_town_button = Button.new()
 	death_return_town_button.name = "DeathReturnTownButton"
-	death_return_town_button.text = "Return To Town"
+	death_return_town_button.text = "返回主城"
 	death_return_town_button.custom_minimum_size = Vector2(380, 46)
 	DarkArpgUiThemeScript.style_button(death_return_town_button, true)
 	death_return_town_button.pressed.connect(_return_to_town_after_death)
@@ -1131,8 +1131,8 @@ func _build_death_summary_text_for_test() -> String:
 
 func _build_boss_reward_summary() -> String:
 	var settlement := _build_death_settlement()
-	var boss_text := str(settlement.get("boss_reward_text", "Boss reward\nnone"))
-	return boss_text.replace("Boss reward\n", "")
+	var boss_text := str(settlement.get("boss_reward_text", "首领奖励\n无"))
+	return boss_text.replace("首领奖励\n", "")
 
 func _toggle_pause() -> void:
 	if not is_instance_valid(pause_overlay):
@@ -1194,7 +1194,7 @@ func _on_player_data_changed(updated: Dictionary) -> void:
 	if is_instance_valid(player):
 		player.apply_player_data(player_data)
 	_schedule_save()
-	_update_hud("Equipment updated.")
+	_update_hud("装备已更新。")
 
 func _on_player_health_changed(current: int, maximum: int) -> void:
 	player_data["health"] = current
@@ -1277,7 +1277,7 @@ func _lock_transition() -> bool:
 func _update_hud(message: String) -> void:
 	if not is_instance_valid(hud):
 		return
-	hud.set_status("Floor %d | Enemies %d" % [current_floor, enemies_alive])
+	hud.set_status("第 %d 层 | 敌人 %d" % [current_floor, enemies_alive])
 	hud.set_log(message)
 	if hud.has_method("set_objective"):
 		hud.set_objective(str(room_objective_state.get("hud_text", "")))

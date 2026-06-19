@@ -44,11 +44,11 @@ static func build_hud_text(state: Dictionary) -> String:
 	var suffix := "" if hint.is_empty() else " - %s" % hint
 	match objective_id:
 		"defeat_elite":
-			return "Objective: Defeat elite %d/%d%s" % [current, target, suffix]
+			return "目标：击败精英 %d/%d%s" % [current, target, suffix]
 		"defeat_boss":
-			return "Objective: Break the gatekeeper %d/%d%s" % [current, target, suffix]
+			return "目标：击败守门者 %d/%d%s" % [current, target, suffix]
 		_:
-			return "Objective: Clear enemies %d/%d%s" % [current, target, suffix]
+			return "目标：清理敌人 %d/%d%s" % [current, target, suffix]
 
 static func _count_targets(objective_id: String, enemies: Array) -> int:
 	if objective_id == "defeat_elite":

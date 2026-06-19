@@ -40,8 +40,8 @@ func _run() -> void:
 	_expect(bool(initial.get("has_hud", false)), "2.5D runtime should create shared HUD")
 	_expect(bool(initial.get("has_inventory_window", false)), "2.5D runtime should create shared inventory window")
 	_expect(bool(initial.get("has_pause_overlay", false)), "2.5D runtime should create pause overlay")
-	_expect(str(initial.get("hud_status_text", "")).contains("Floor"), "HUD should show floor status")
-	_expect(str(initial.get("hud_inventory_text", "")).contains("Bag"), "HUD should show bag capacity")
+	_expect(str(initial.get("hud_status_text", "")).contains("第"), "HUD should show floor status")
+	_expect(str(initial.get("hud_inventory_text", "")).contains("背包"), "HUD should show bag capacity")
 	_expect(int(initial.get("hud_level", 0)) >= 1, "HUD should expose player level")
 	_expect(not bool(initial.get("tree_paused", true)), "2.5D runtime should start unpaused")
 

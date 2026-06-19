@@ -72,7 +72,7 @@ static func _build_p1_items() -> Array[Dictionary]:
 			"area": "装备",
 			"owner": "UI/系统",
 			"acceptance": "装备窗口有纸娃娃面板、职业、总评分、槽位摘要；穿脱装备后属性和背包状态同步。",
-			"verification": "装备/卸下武器和护甲，确认 Gear Score、Stats、槽位文本更新。",
+			"verification": "装备/卸下武器和护甲，确认装备评分、属性、槽位文本更新。",
 			"severity_if_failed": "P1",
 		},
 		{

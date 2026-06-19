@@ -51,8 +51,8 @@ const FIRST_PLAYABLE_PACING := {
 	1: {
 		"template_id": "melee_intro",
 		"pacing_role": "movement_attack_intro",
-		"floor_goal_hint": "Learn movement and basic attacks",
-		"floor_start_message": "Floor 1: learn movement and basic attacks.",
+		"floor_goal_hint": "练习移动与基础攻击",
+		"floor_start_message": "第 1 层：练习移动与基础攻击。",
 		"expected_duration_seconds": 55,
 		"objective": "clear_all",
 		"enemies": [
@@ -63,8 +63,8 @@ const FIRST_PLAYABLE_PACING := {
 	2: {
 		"template_id": "melee_density",
 		"pacing_role": "positioning_pressure",
-		"floor_goal_hint": "Use movement to separate melee enemies",
-		"floor_start_message": "Floor 2: keep moving and split the pack.",
+		"floor_goal_hint": "用走位拆开近战敌人",
+		"floor_start_message": "第 2 层：保持移动，拆开敌群。",
 		"expected_duration_seconds": 70,
 		"objective": "clear_all",
 		"enemies": [
@@ -77,8 +77,8 @@ const FIRST_PLAYABLE_PACING := {
 	3: {
 		"template_id": "ranged_pressure",
 		"pacing_role": "ranged_dodge_intro",
-		"floor_goal_hint": "Close distance while dodging archer shots",
-		"floor_start_message": "Floor 3: dodge the archers and close the gap.",
+		"floor_goal_hint": "躲开弓手弹道并拉近距离",
+		"floor_start_message": "第 3 层：躲开弓手并贴近击杀。",
 		"expected_duration_seconds": 80,
 		"objective": "clear_all",
 		"enemies": [
@@ -90,8 +90,8 @@ const FIRST_PLAYABLE_PACING := {
 	4: {
 		"template_id": "mixed_pressure",
 		"pacing_role": "mixed_threat_pressure",
-		"floor_goal_hint": "Handle melee pressure while watching ranged fire",
-		"floor_start_message": "Floor 4: mixed threats test your positioning.",
+		"floor_goal_hint": "处理近战压力并留意远程火力",
+		"floor_start_message": "第 4 层：混合威胁会考验站位。",
 		"expected_duration_seconds": 95,
 		"objective": "clear_all",
 		"enemies": [
@@ -104,8 +104,8 @@ const FIRST_PLAYABLE_PACING := {
 	5: {
 		"template_id": "boss_gatekeeper",
 		"pacing_role": "gatekeeper_boss_check",
-		"floor_goal_hint": "Read the warning zone and defeat the gatekeeper",
-		"floor_start_message": "Floor 5: defeat the gatekeeper. Watch the warning zone.",
+		"floor_goal_hint": "读懂预警区域并击败守门者",
+		"floor_start_message": "第 5 层：击败守门者，注意预警区域。",
 		"expected_duration_seconds": 120,
 		"objective": "defeat_boss",
 		"enemies": [
@@ -254,7 +254,7 @@ static func build_floor_template(floor: int) -> Dictionary:
 		"pacing_role": template_id,
 		"difficulty_step": safe_floor,
 		"floor_goal_hint": _default_goal_hint(template_id),
-		"floor_start_message": "Floor %d: %s" % [safe_floor, _default_goal_hint(template_id)],
+		"floor_start_message": "第 %d 层：%s" % [safe_floor, _default_goal_hint(template_id)],
 		"expected_duration_seconds": 75 + safe_floor * 4,
 		"objective": "clear_all",
 		"enemies": enemies,
@@ -270,17 +270,17 @@ static func _build_first_playable_template(floor: int) -> Dictionary:
 static func _default_goal_hint(template_id: String) -> String:
 	match template_id:
 		"dense_room":
-			return "Clear the room while managing enemy density"
+			return "在高密度敌群中清理房间"
 		"ranged_pressure":
-			return "Dodge projectiles and clear enemies"
+			return "躲避弹道并清理敌人"
 		"guardian_mix":
-			return "Break the guardian group"
+			return "击破守卫组合"
 		"elite_preview":
-			return "Defeat the elite threat"
+			return "击败精英威胁"
 		"boss_gatekeeper":
-			return "Defeat the gatekeeper"
+			return "击败守门者"
 		_:
-			return "Clear all enemies"
+			return "清理所有敌人"
 
 static func get_enemy_type_data(enemy_type: String, floor: int = 1, modifiers: Dictionary = {}) -> Dictionary:
 	var safe_type := enemy_type if ENEMY_TYPES.has(enemy_type) else "rot_melee"

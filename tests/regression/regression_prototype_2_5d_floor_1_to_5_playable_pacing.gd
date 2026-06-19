@@ -86,7 +86,7 @@ func _run() -> void:
 		_clear_current_floor(scene)
 		var cleared: Dictionary = scene.call("build_floor_pacing_snapshot_for_test")
 		_expect(bool(cleared.get("exit_unlocked", false)), "floor %d should unlock exit after required kills" % floor)
-		_expect(str(cleared.get("objective_text", "")).contains("enter the blue exit marker"), "floor %d should tell player to enter exit after clear" % floor)
+		_expect(str(cleared.get("objective_text", "")).contains("进入蓝色出口标记"), "floor %d should tell player to enter exit after clear" % floor)
 		if floor < 5:
 			scene.call("enter_next_floor_for_test")
 			await process_frame
@@ -112,9 +112,9 @@ func _check_floor_snapshot(snapshot: Dictionary, floor: int) -> void:
 	_expect(int(snapshot.get("living_enemy_count", 0)) == int(expected.get("enemy_count", 0)), "floor %d should start with all enemies alive" % floor)
 	_expect(str(snapshot.get("objective_id", "")) == str(expected.get("objective_id", "")), "floor %d should use intended objective id" % floor)
 	_expect(bool(snapshot.get("has_boss", false)) == bool(expected.get("boss", false)), "floor %d boss flag should match pacing plan" % floor)
-	_expect(str(snapshot.get("floor_goal_hint", "")).length() >= 12, "floor %d should expose a readable goal hint" % floor)
+	_expect(str(snapshot.get("floor_goal_hint", "")).length() >= 6, "floor %d should expose a readable goal hint" % floor)
 	_expect(str(snapshot.get("objective_text", "")).contains(str(snapshot.get("floor_goal_hint", ""))), "floor %d objective should include goal hint" % floor)
-	_expect(str(snapshot.get("floor_start_message", "")).contains("Floor %d" % floor), "floor %d start message should name the floor" % floor)
+	_expect(str(snapshot.get("floor_start_message", "")).contains("第 %d 层" % floor), "floor %d start message should name the floor" % floor)
 	var enemy_types: Array = Array(snapshot.get("enemy_types", []))
 	for expected_type in Array(expected.get("types", [])):
 		_expect(enemy_types.has(expected_type), "floor %d should include %s" % [floor, expected_type])

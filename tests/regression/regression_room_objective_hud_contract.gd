@@ -14,11 +14,11 @@ func _run() -> void:
 	await process_frame
 	_expect(scene.has_method("get_room_objective_state_for_test"), "Game2D should expose objective state for QA")
 	var state: Dictionary = scene.call("get_room_objective_state_for_test") if scene.has_method("get_room_objective_state_for_test") else {}
-	_expect(str(state.get("hud_text", "")).contains("Objective:"), "objective state should include HUD text")
+	_expect(str(state.get("hud_text", "")).contains("目标："), "objective state should include HUD text")
 	var hud := scene.get("hud") as Node
 	_expect(is_instance_valid(hud), "HUD should exist")
 	if is_instance_valid(hud) and hud.has_method("get_objective_text_for_test"):
-		_expect(str(hud.call("get_objective_text_for_test")).contains("Objective:"), "HUD should show objective text")
+		_expect(str(hud.call("get_objective_text_for_test")).contains("目标："), "HUD should show objective text")
 	scene.queue_free()
 	await process_frame
 	_finish()

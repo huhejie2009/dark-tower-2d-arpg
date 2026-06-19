@@ -54,27 +54,27 @@ static func _build_stat_deltas(candidate_equipment: Dictionary, equipped_equipme
 			"candidate_value": candidate_value,
 			"equipped_value": equipped_value,
 			"delta": delta,
-			"compact_text": "%s %s%d" % [str(stat_id), sign, delta],
+			"compact_text": "%s %s%d" % [_stat_label(str(stat_id)), sign, delta],
 			"positive": delta > 0,
 		})
 	return rows
 
 static func _build_headline(score_delta: int, equipped_item_id: String) -> String:
 	if equipped_item_id == "":
-		return "Empty slot upgrade"
+		return "空部位提升"
 	if score_delta > 0:
-		return "Upgrade candidate"
+		return "升级候选"
 	if score_delta < 0:
-		return "Lower score"
-	return "Sidegrade"
+		return "评分降低"
+	return "同级替换"
 
 static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_item_id: String) -> Array[String]:
 	var reasons: Array[String] = []
 	var score_sign := "+" if score_delta > 0 else ""
 	if equipped_item_id == "":
-		reasons.append("Score %s%d vs empty slot" % [score_sign, score_delta])
+		reasons.append("评分 %s%d 对比空部位" % [score_sign, score_delta])
 	else:
-		reasons.append("Score %s%d vs equipped" % [score_sign, score_delta])
+		reasons.append("评分 %s%d 对比已穿戴" % [score_sign, score_delta])
 	var sorted_deltas := stat_deltas.duplicate(true)
 	sorted_deltas.sort_custom(func(a, b): return abs(int(Dictionary(a).get("delta", 0))) > abs(int(Dictionary(b).get("delta", 0))))
 	for row in sorted_deltas:
@@ -85,14 +85,14 @@ static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_i
 		if delta == 0:
 			continue
 		var sign := "+" if delta > 0 else ""
-		reasons.append("%s %s%d" % [str(data.get("stat_id", "")), sign, delta])
+		reasons.append("%s %s%d" % [_stat_label(str(data.get("stat_id", ""))), sign, delta])
 	return reasons
 
 static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_item_id: String, reason_lines: Array[String] = []) -> String:
 	var score_sign := "+" if score_delta > 0 else ""
-	var parts: Array[String] = ["Score %s%d" % [score_sign, score_delta]]
+	var parts: Array[String] = ["评分 %s%d" % [score_sign, score_delta]]
 	if equipped_item_id == "":
-		parts.append("empty slot")
+		parts.append("空部位")
 	if not reason_lines.is_empty():
 		parts.append(str(reason_lines[0]))
 	var shown := 0
@@ -102,3 +102,18 @@ static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_i
 		parts.append(str(Dictionary(row).get("compact_text", "")))
 		shown += 1
 	return " | ".join(parts)
+
+static func _stat_label(stat_id: String) -> String:
+	match stat_id:
+		"attack_damage":
+			return "伤害"
+		"max_health":
+			return "生命"
+		"max_mana":
+			return "法力"
+		"defense":
+			return "防御"
+		"critical_chance":
+			return "暴击"
+		_:
+			return stat_id

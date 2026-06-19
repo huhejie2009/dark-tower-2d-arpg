@@ -25,14 +25,14 @@ func _build_ui() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Dark Tower 2D"
+	title.text = "暗塔 2D"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 42)
 	box.add_child(title)
 
 	var start := Button.new()
 	start.name = "StartButton"
-	start.text = "Start Game"
+	start.text = "开始游戏"
 	start.custom_minimum_size = Vector2(280, 54)
 	DarkArpgUiThemeScript.style_button(start, true)
 	start.pressed.connect(func(): SceneRouterScript.go_to_character_select(get_tree()))

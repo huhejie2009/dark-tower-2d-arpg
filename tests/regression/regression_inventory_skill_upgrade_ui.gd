@@ -24,7 +24,7 @@ func _run() -> void:
 	_expect(window.find_child("UpgradeBasicAttackButton", true, false) != null, "inventory window should expose basic attack upgrade button")
 	var summary := window.find_child("SkillPointSummary", true, false) as Label
 	if summary != null:
-		_expect(str(summary.text).contains("SP 1"), "skill summary should show available skill points")
+		_expect(str(summary.text).contains("技能点 1"), "skill summary should show available skill points")
 	var button := window.find_child("UpgradeBasicAttackButton", true, false) as Button
 	if button != null:
 		button.pressed.emit()

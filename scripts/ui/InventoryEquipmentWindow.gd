@@ -15,6 +15,7 @@ const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.g
 const SkillNodeGrowthServiceScript := preload("res://scripts/data/SkillNodeGrowthService.gd")
 const SkillUpgradePreviewServiceScript := preload("res://scripts/data/SkillUpgradePreviewService.gd")
 const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
+const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 const DEFAULT_WINDOW_SIZE := Vector2(980, 600)
@@ -97,7 +98,7 @@ func _build_ui() -> void:
 
 	junk_action_confirm_dialog = ConfirmationDialog.new()
 	junk_action_confirm_dialog.name = "JunkActionConfirmDialog"
-	junk_action_confirm_dialog.title = "Process Junk"
+	junk_action_confirm_dialog.title = "处理废品"
 	junk_action_confirm_dialog.dialog_text = ""
 	junk_action_confirm_dialog.confirmed.connect(_confirm_pending_junk_action)
 	add_child(junk_action_confirm_dialog)
@@ -106,7 +107,7 @@ func _build_ui() -> void:
 	root_box.add_child(header)
 
 	var title := Label.new()
-	title.text = "Inventory & Equipment"
+	title.text = "背包与装备"
 	DarkArpgUiThemeScript.style_title(title, 22)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
@@ -135,7 +136,7 @@ func _build_ui() -> void:
 
 	inventory_title_label = Label.new()
 	inventory_title_label.name = "InventoryCapacityTitle"
-	inventory_title_label.text = "Bag"
+	inventory_title_label.text = "背包"
 	DarkArpgUiThemeScript.style_title(inventory_title_label, 17)
 	inventory_panel.add_child(inventory_title_label)
 
@@ -146,19 +147,19 @@ func _build_ui() -> void:
 
 	var sort_button := Button.new()
 	sort_button.name = "SortInventoryButton"
-	sort_button.text = "Sort: Type"
+	sort_button.text = "排序：类型"
 	sort_button.custom_minimum_size = Vector2(62, 30)
 	DarkArpgUiThemeScript.style_button(sort_button)
 	sort_button.pressed.connect(_cycle_sort_mode)
 	tools.add_child(sort_button)
 
-	_add_filter_button(tools, "all", "FilterAllButton", "All", 52, true)
-	_add_filter_button(tools, "equipment", "FilterEquipmentButton", "Equip", 64)
-	_add_filter_button(tools, "material", "FilterMaterialButton", "Mat", 52)
-	_add_filter_button(tools, "upgrade", "FilterUpgradeButton", "Upg", 52)
-	_add_filter_button(tools, "locked", "FilterLockedButton", "Lock", 58)
-	_add_filter_button(tools, "favorite", "FilterFavoriteButton", "Fav", 52)
-	_add_filter_button(tools, "junk", "FilterJunkButton", "Junk", 58)
+	_add_filter_button(tools, "all", "FilterAllButton", "全部", 52, true)
+	_add_filter_button(tools, "equipment", "FilterEquipmentButton", "装备", 64)
+	_add_filter_button(tools, "material", "FilterMaterialButton", "材料", 52)
+	_add_filter_button(tools, "upgrade", "FilterUpgradeButton", "升级", 52)
+	_add_filter_button(tools, "locked", "FilterLockedButton", "锁定", 58)
+	_add_filter_button(tools, "favorite", "FilterFavoriteButton", "收藏", 52)
+	_add_filter_button(tools, "junk", "FilterJunkButton", "废品", 58)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -181,7 +182,7 @@ func _build_ui() -> void:
 	side.add_child(stats_label)
 
 	var skill_title := Label.new()
-	skill_title.text = "Skills"
+	skill_title.text = "技能"
 	DarkArpgUiThemeScript.style_title(skill_title, 16)
 	side.add_child(skill_title)
 
@@ -199,7 +200,7 @@ func _build_ui() -> void:
 
 	upgrade_selected_skill_button = Button.new()
 	upgrade_selected_skill_button.name = "UpgradeSelectedSkillButton"
-	upgrade_selected_skill_button.text = "Upgrade Selected"
+	upgrade_selected_skill_button.text = "升级选中技能"
 	upgrade_selected_skill_button.custom_minimum_size = Vector2(200, 32)
 	DarkArpgUiThemeScript.style_button(upgrade_selected_skill_button, true)
 	upgrade_selected_skill_button.pressed.connect(upgrade_selected_skill_node)
@@ -207,7 +208,7 @@ func _build_ui() -> void:
 
 	upgrade_basic_attack_button = Button.new()
 	upgrade_basic_attack_button.name = "UpgradeBasicAttackButton"
-	upgrade_basic_attack_button.text = "Upgrade Basic Attack"
+	upgrade_basic_attack_button.text = "升级基础攻击"
 	upgrade_basic_attack_button.custom_minimum_size = Vector2(200, 36)
 	DarkArpgUiThemeScript.style_button(upgrade_basic_attack_button, true)
 	upgrade_basic_attack_button.pressed.connect(_on_upgrade_basic_attack_pressed)
@@ -227,7 +228,7 @@ func _build_ui() -> void:
 
 	equip_selected_button = Button.new()
 	equip_selected_button.name = "EquipSelectedButton"
-	equip_selected_button.text = "Equip"
+	equip_selected_button.text = "穿戴"
 	equip_selected_button.custom_minimum_size = Vector2(72, 32)
 	DarkArpgUiThemeScript.style_button(equip_selected_button, true)
 	equip_selected_button.pressed.connect(use_selected_item)
@@ -235,7 +236,7 @@ func _build_ui() -> void:
 
 	lock_selected_button = Button.new()
 	lock_selected_button.name = "LockSelectedButton"
-	lock_selected_button.text = "Lock"
+	lock_selected_button.text = "锁定"
 	lock_selected_button.custom_minimum_size = Vector2(72, 32)
 	DarkArpgUiThemeScript.style_button(lock_selected_button)
 	lock_selected_button.pressed.connect(toggle_selected_lock)
@@ -243,7 +244,7 @@ func _build_ui() -> void:
 
 	favorite_selected_button = Button.new()
 	favorite_selected_button.name = "FavoriteSelectedButton"
-	favorite_selected_button.text = "Fav"
+	favorite_selected_button.text = "收藏"
 	favorite_selected_button.custom_minimum_size = Vector2(62, 32)
 	DarkArpgUiThemeScript.style_button(favorite_selected_button)
 	favorite_selected_button.pressed.connect(toggle_selected_favorite)
@@ -251,7 +252,7 @@ func _build_ui() -> void:
 
 	junk_selected_button = Button.new()
 	junk_selected_button.name = "JunkSelectedButton"
-	junk_selected_button.text = "Junk"
+	junk_selected_button.text = "标废"
 	junk_selected_button.custom_minimum_size = Vector2(62, 32)
 	DarkArpgUiThemeScript.style_button(junk_selected_button)
 	junk_selected_button.pressed.connect(toggle_selected_junk)
@@ -259,7 +260,7 @@ func _build_ui() -> void:
 
 	clear_selected_button = Button.new()
 	clear_selected_button.name = "ClearSelectedButton"
-	clear_selected_button.text = "Clear"
+	clear_selected_button.text = "清除"
 	clear_selected_button.custom_minimum_size = Vector2(72, 32)
 	DarkArpgUiThemeScript.style_button(clear_selected_button)
 	clear_selected_button.pressed.connect(clear_selection)
@@ -272,7 +273,7 @@ func _build_ui() -> void:
 
 	sell_junk_button = Button.new()
 	sell_junk_button.name = "SellJunkButton"
-	sell_junk_button.text = "Sell Junk"
+	sell_junk_button.text = "出售废品"
 	sell_junk_button.custom_minimum_size = Vector2(96, 32)
 	DarkArpgUiThemeScript.style_button(sell_junk_button)
 	sell_junk_button.pressed.connect(sell_junk_items)
@@ -280,7 +281,7 @@ func _build_ui() -> void:
 
 	salvage_junk_button = Button.new()
 	salvage_junk_button.name = "SalvageJunkButton"
-	salvage_junk_button.text = "Salvage"
+	salvage_junk_button.text = "分解废品"
 	salvage_junk_button.custom_minimum_size = Vector2(96, 32)
 	DarkArpgUiThemeScript.style_button(salvage_junk_button)
 	salvage_junk_button.pressed.connect(salvage_junk_items)
@@ -337,7 +338,7 @@ func get_visual_qa_metrics_for_test(viewport_size: Vector2) -> Dictionary:
 
 func _build_equipment_slots() -> void:
 	var title := Label.new()
-	title.text = "Equipment"
+	title.text = "装备"
 	DarkArpgUiThemeScript.style_title(title, 17)
 	equipment_box.add_child(title)
 	var paper_panel := PanelContainer.new()
@@ -358,7 +359,7 @@ func _build_equipment_slots() -> void:
 	paper_doll_class_label = Label.new()
 	paper_doll_class_label.name = "PaperDollClassLabel"
 	paper_doll_class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	paper_doll_class_label.text = str(player_data.get("base_class", "warrior")).capitalize()
+	paper_doll_class_label.text = ClassRulesScript.get_class_name(str(player_data.get("base_class", "warrior")))
 	DarkArpgUiThemeScript.style_body_label(paper_doll_class_label, 15)
 	paper_root.add_child(paper_doll_class_label)
 
@@ -371,7 +372,7 @@ func _build_equipment_slots() -> void:
 	paper_doll_score_label = Label.new()
 	paper_doll_score_label.name = "PaperDollScoreLabel"
 	paper_doll_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	paper_doll_score_label.text = "Gear Score %d" % _get_total_equipment_score()
+	paper_doll_score_label.text = "装备评分 %d" % _get_total_equipment_score()
 	DarkArpgUiThemeScript.style_body_label(paper_doll_score_label, 14, true)
 	paper_root.add_child(paper_doll_score_label)
 
@@ -382,7 +383,7 @@ func _build_equipment_slots() -> void:
 		var button_name := "EquipmentSlot%s" % _slot_node_suffix(slot)
 		button.custom_minimum_size = Vector2(174, 42)
 		var summary := _build_equipment_slot_summary(slot, equipped, inventory)
-		button.text = str(summary.get("button_text", "%s: Empty" % slot.capitalize()))
+		button.text = str(summary.get("button_text", "%s：空" % _slot_label(slot)))
 		button.tooltip_text = str(summary.get("tooltip", ""))
 		DarkArpgUiThemeScript.style_button(button)
 		var button_marker := Control.new()
@@ -403,18 +404,18 @@ func _build_paper_doll_placeholder(parent: Control) -> void:
 
 	var label := Label.new()
 	label.name = "PaperDollPlaceholderLabel"
-	label.text = "ART\nANCHOR"
+	label.text = "素材\n锚点"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 12)
 	label.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_MUTED)
 	silhouette.add_child(label)
 
-	var left_tag := _make_paper_doll_tag("Weapon", Vector2(4, 34))
+	var left_tag := _make_paper_doll_tag("武器", Vector2(4, 34))
 	parent.add_child(left_tag)
-	var right_tag := _make_paper_doll_tag("Armor", Vector2(118, 34))
+	var right_tag := _make_paper_doll_tag("护甲", Vector2(118, 34))
 	parent.add_child(right_tag)
-	var bottom_tag := _make_paper_doll_tag("Ring", Vector2(61, 88))
+	var bottom_tag := _make_paper_doll_tag("戒指", Vector2(61, 88))
 	parent.add_child(bottom_tag)
 
 func _make_paper_doll_tag(text: String, position: Vector2) -> Label:
@@ -463,20 +464,20 @@ func _item_short_text(entry: Dictionary) -> String:
 	return "x%d" % int(entry.get("amount", 1))
 
 func _describe_item(entry: Dictionary) -> String:
-	var lines: Array[String] = [str(entry.get("name", entry.get("id", "Item")))]
-	lines.append("Type: %s" % str(entry.get("type", "item")))
+	var lines: Array[String] = [str(entry.get("name", entry.get("id", "物品")))]
+	lines.append("类型：%s" % _item_type_label(str(entry.get("type", "item"))))
 	if bool(entry.get("locked", false)):
-		lines.append("Locked")
+		lines.append("已锁定")
 	if str(entry.get("type", "")) == "equipment":
 		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
-		lines.append("Slot: %s" % str(equipment.get("slot", "")))
-		lines.append("Level: %d" % int(equipment.get("item_level", 1)))
-		lines.append("Rarity: %s" % str(equipment.get("rarity", "common")))
-		lines.append("Score: %d" % EquipmentDataServiceScript.get_equipment_score(equipment))
-		lines.append("Pool: %s" % str(equipment.get("equipment_pool", "")))
+		lines.append("部位：%s" % _slot_label(str(equipment.get("slot", ""))))
+		lines.append("物品等级：%d" % int(equipment.get("item_level", 1)))
+		lines.append("稀有度：%s" % _rarity_label(str(equipment.get("rarity", "common"))))
+		lines.append("评分：%d" % EquipmentDataServiceScript.get_equipment_score(equipment))
+		lines.append("装备池：%s" % str(equipment.get("equipment_pool", "")))
 		var action_hint := _build_item_action_hint(str(entry.get("id", equipment.get("instance_id", ""))))
 		if not action_hint.is_empty():
-			lines.append("Action:")
+			lines.append("操作：")
 			lines.append(str(action_hint.get("primary_text", "")))
 			lines.append(str(action_hint.get("button_text", "")))
 			var action_detail := str(action_hint.get("detail_text", ""))
@@ -490,25 +491,25 @@ func _describe_item(entry: Dictionary) -> String:
 			var score_delta := int(recommendation.get("score_delta", 0))
 			var score_sign := "+" if score_delta > 0 else ""
 			if source_label != "":
-				lines.append("Source: %s" % source_label)
+				lines.append("来源：%s" % source_label)
 			if quality_tag != "":
-				lines.append("Quality: %s" % quality_tag)
+				lines.append("品质：%s" % quality_tag)
 			if recommendation_text != "":
-				lines.append("Recommendation: %s" % recommendation_text)
-			lines.append("Score Delta: %s%d" % [score_sign, score_delta])
+				lines.append("推荐：%s" % recommendation_text)
+			lines.append("评分变化：%s%d" % [score_sign, score_delta])
 		if EquipmentDataServiceScript.is_equipped_item(player_data, str(entry.get("id", ""))):
-			lines.append("Currently equipped")
+			lines.append("当前已穿戴")
 		var affixes: Dictionary = Dictionary(equipment.get("affixes", {}))
 		for stat_id in affixes.keys():
-			lines.append("+%d %s" % [int(affixes[stat_id]), str(stat_id)])
+			lines.append("+%d %s" % [int(affixes[stat_id]), _stat_label(str(stat_id))])
 		var compare_summary := _build_item_compare_summary(str(entry.get("id", equipment.get("instance_id", ""))), equipment)
 		if not compare_summary.is_empty():
-			lines.append("Compare Summary:")
+			lines.append("对比摘要：")
 			lines.append(str(compare_summary.get("headline", "")))
 			lines.append(str(compare_summary.get("compact_text", "")))
 		lines.append_array(_build_compare_lines(equipment))
 	else:
-		lines.append("Amount: %d" % int(entry.get("amount", 1)))
+		lines.append("数量：%d" % int(entry.get("amount", 1)))
 	return "\n".join(lines)
 
 func _build_compare_lines(candidate_equipment: Dictionary) -> Array[String]:
@@ -516,12 +517,12 @@ func _build_compare_lines(candidate_equipment: Dictionary) -> Array[String]:
 	if summary.is_empty():
 		return []
 	if bool(summary.get("empty_slot", false)):
-		return ["Compare: empty slot"]
-	var lines: Array[String] = ["Compare:"]
+		return ["对比：空部位"]
+	var lines: Array[String] = ["对比："]
 	for row in Array(summary.get("stat_deltas", [])):
 		lines.append(str(Dictionary(row).get("compact_text", "")))
 	if lines.size() == 1:
-		lines.append("No stat change")
+		lines.append("属性无变化")
 	return lines
 
 func describe_item_for_test(item_id: String) -> String:
@@ -590,7 +591,7 @@ func _update_inventory_capacity_title(inventory: Dictionary) -> void:
 	if not is_instance_valid(inventory_title_label):
 		return
 	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(inventory)
-	inventory_title_label.text = str(capacity.get("summary_text", "Bag 0/40"))
+	inventory_title_label.text = str(capacity.get("summary_text", "背包 0/40"))
 	if bool(capacity.get("pressure", false)):
 		inventory_title_label.add_theme_color_override("font_color", DarkArpgUiThemeScript.COLOR_GOLD.lightened(0.18))
 	else:
@@ -643,7 +644,7 @@ func select_item(item_id: String) -> void:
 func clear_selection() -> void:
 	selected_item_id = ""
 	if is_instance_valid(detail_label):
-		detail_label.text = "Select an item to inspect it."
+		detail_label.text = "选择一个物品查看详情。"
 	_update_selected_actions()
 	refresh()
 
@@ -663,7 +664,7 @@ func use_selected_item() -> void:
 	var result := EquipmentDataServiceScript.equip_item(player_data, selected_item_id)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "%s\nCannot equip: %s" % [_describe_item(entry), str(result.get("reason", "unknown"))]
+			detail_label.text = "%s\n无法穿戴：%s" % [_describe_item(entry), _reason_label(str(result.get("reason", "unknown")))]
 		_update_selected_actions()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
@@ -698,13 +699,13 @@ func _request_junk_action_confirmation(mode: String) -> void:
 		pending_junk_action_mode = ""
 		pending_junk_action_preview = {}
 		if is_instance_valid(detail_label):
-			detail_label.text = "No junk to process.\n%s" % str(preview.get("summary_text", ""))
+			detail_label.text = "没有可处理的废品。\n%s" % str(preview.get("summary_text", ""))
 		_update_selected_actions()
 		return
 	pending_junk_action_mode = str(preview.get("mode", mode))
 	pending_junk_action_preview = preview.duplicate(true)
 	if is_instance_valid(junk_action_confirm_dialog):
-		junk_action_confirm_dialog.title = "Salvage Junk" if pending_junk_action_mode == "salvage" else "Sell Junk"
+		junk_action_confirm_dialog.title = "分解废品" if pending_junk_action_mode == "salvage" else "出售废品"
 		junk_action_confirm_dialog.dialog_text = str(preview.get("confirm_text", ""))
 		junk_action_confirm_dialog.popup_centered(Vector2i(420, 220))
 	if is_instance_valid(detail_label):
@@ -726,9 +727,9 @@ func confirm_pending_junk_action_for_test() -> void:
 
 func _build_junk_action_confirm_text(preview: Dictionary) -> String:
 	var mode := str(preview.get("mode", "sell"))
-	var action_label := "Salvage" if mode == "salvage" else "Sell"
-	var reward_text := "+%d Crystal Shard" % int(preview.get("crystal_gain", 0)) if mode == "salvage" else "+%d Gold" % int(preview.get("gold_gain", 0))
-	return "%s marked junk?\nItems %d  Protected %d\nReward %s\nLocked, favorite, equipped, and unsellable items are safe." % [
+	var action_label := "分解" if mode == "salvage" else "出售"
+	var reward_text := "+%d 水晶碎片" % int(preview.get("crystal_gain", 0)) if mode == "salvage" else "+%d 金币" % int(preview.get("gold_gain", 0))
+	return "%s已标记废品？\n处理 %d 件  保护 %d 件\n获得 %s\n锁定、收藏、已穿戴和不可出售物品会被保留。" % [
 		action_label,
 		int(preview.get("processed_count", 0)),
 		int(preview.get("protected_count", 0)),
@@ -740,14 +741,14 @@ func _process_junk_items(mode: String) -> void:
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
 			var preview: Dictionary = Dictionary(result.get("preview", {}))
-			detail_label.text = "No junk to process.\n%s" % str(preview.get("summary_text", ""))
+			detail_label.text = "没有可处理的废品。\n%s" % str(preview.get("summary_text", ""))
 		_update_selected_actions()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	if selected_item_id != "" and not Dictionary(player_data.get("inventory", {})).has(selected_item_id):
 		selected_item_id = ""
 	if is_instance_valid(detail_label):
-		detail_label.text = str(result.get("summary_text", "Junk processed."))
+		detail_label.text = str(result.get("summary_text", "废品已处理。"))
 	player_data_changed.emit(player_data.duplicate(true))
 	refresh()
 
@@ -760,7 +761,7 @@ func _cycle_sort_mode() -> void:
 		sort_mode = "type"
 	var sort_button := find_child("SortInventoryButton", true, false) as Button
 	if sort_button != null:
-		sort_button.text = "Sort: %s" % sort_mode.capitalize()
+		sort_button.text = "排序：%s" % _sort_mode_label(sort_mode)
 	refresh()
 
 func _sync_filter_button_states() -> void:
@@ -803,7 +804,7 @@ func _sort_item_ids(a: String, b: String, inventory: Dictionary) -> bool:
 
 func _update_stats() -> void:
 	var stats := EquipmentDataServiceScript.build_stat_totals(player_data)
-	stats_label.text = "Stats\nDamage: %d\nHealth: %d\nMana: %d\nDefense: %d\nCrit: %d" % [
+	stats_label.text = "属性\n伤害：%d\n生命：%d\n法力：%d\n防御：%d\n暴击：%d" % [
 		int(stats.get("attack_damage", 0)),
 		int(stats.get("max_health", 0)),
 		int(stats.get("max_mana", 0)),
@@ -818,7 +819,7 @@ func _update_skill_summary() -> void:
 		preview = _build_selected_skill_node_preview()
 	var skill_points := int(preview.get("skill_points", player_data.get("skill_points", 0)))
 	if is_instance_valid(skill_point_summary):
-		skill_point_summary.text = "SP %d\n%s\n%s" % [
+		skill_point_summary.text = "技能点 %d\n%s\n%s" % [
 			skill_points,
 			str(preview.get("summary_text", "")),
 			str(preview.get("status_text", "")),
@@ -847,23 +848,23 @@ func _update_selected_actions() -> void:
 	favorite_selected_button.disabled = not has_selection
 	junk_selected_button.disabled = not has_selection
 	clear_selected_button.disabled = not has_selection
-	lock_selected_button.text = "Lock"
-	favorite_selected_button.text = "Fav"
-	junk_selected_button.text = "Junk"
+	lock_selected_button.text = "锁定"
+	favorite_selected_button.text = "收藏"
+	junk_selected_button.text = "标废"
 	if not has_selection:
 		_update_batch_junk_actions()
 		return
 	var entry: Dictionary = Dictionary(inventory[selected_item_id])
 	var flags: Dictionary = Dictionary(entry.get("binding_flags", {}))
-	lock_selected_button.text = "Unlock" if bool(flags.get("locked", entry.get("locked", false))) else "Lock"
-	favorite_selected_button.text = "Unfav" if bool(flags.get("favorite", entry.get("favorite", false))) else "Fav"
-	junk_selected_button.text = "Unjunk" if bool(flags.get("junk", entry.get("junk", false))) else "Junk"
+	lock_selected_button.text = "解锁" if bool(flags.get("locked", entry.get("locked", false))) else "锁定"
+	favorite_selected_button.text = "取消收藏" if bool(flags.get("favorite", entry.get("favorite", false))) else "收藏"
+	junk_selected_button.text = "取消废品" if bool(flags.get("junk", entry.get("junk", false))) else "标废"
 	var hint := _build_item_action_hint(selected_item_id)
 	if not hint.is_empty():
-		equip_selected_button.text = str(hint.get("button_text", "Equip"))
+		equip_selected_button.text = str(hint.get("button_text", "穿戴"))
 		equip_selected_button.disabled = not bool(hint.get("can_equip", false))
 	else:
-		equip_selected_button.text = "Equip"
+		equip_selected_button.text = "穿戴"
 		equip_selected_button.disabled = str(entry.get("type", "")) != "equipment"
 	_update_batch_junk_actions()
 
@@ -874,8 +875,8 @@ func _update_batch_junk_actions() -> void:
 	var salvage_preview: Dictionary = InventoryItemActionServiceScript.build_junk_action_preview(player_data, "salvage")
 	sell_junk_button.disabled = not bool(sell_preview.get("can_process", false))
 	salvage_junk_button.disabled = not bool(salvage_preview.get("can_process", false))
-	sell_junk_button.tooltip_text = str(sell_preview.get("summary_text", "Sell Junk 0"))
-	salvage_junk_button.tooltip_text = str(salvage_preview.get("summary_text", "Salvage Junk 0"))
+	sell_junk_button.tooltip_text = str(sell_preview.get("summary_text", "出售废品 0"))
+	salvage_junk_button.tooltip_text = str(salvage_preview.get("summary_text", "分解废品 0"))
 
 func _sync_selected_detail() -> void:
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
@@ -885,7 +886,7 @@ func _sync_selected_detail() -> void:
 		if selected_item_id != "" and inventory.has(selected_item_id):
 			detail_label.text = _describe_item(Dictionary(inventory[selected_item_id]))
 		elif detail_label.text == "":
-			detail_label.text = "Select an item to inspect it."
+			detail_label.text = "选择一个物品查看详情。"
 	_update_selected_actions()
 
 func _get_entry_score(item_id: String, entry: Dictionary) -> int:
@@ -905,14 +906,14 @@ func _build_equipment_slot_summary(slot: String, equipped: Dictionary, inventory
 	var item_id := str(equipped.get(slot, ""))
 	var summary := {
 		"slot": slot,
-		"slot_label": slot.capitalize(),
+		"slot_label": _slot_label(slot),
 		"item_id": item_id,
 		"item_name": "",
 		"empty": item_id == "" or not inventory.has(item_id),
 		"score": 0,
 		"rarity": "empty",
-		"button_text": "%s: Empty" % slot.capitalize(),
-		"tooltip": "Empty %s slot" % slot,
+		"button_text": "%s：空" % _slot_label(slot),
+		"tooltip": "%s部位为空" % _slot_label(slot),
 	}
 	if bool(summary["empty"]):
 		return summary
@@ -922,7 +923,7 @@ func _build_equipment_slot_summary(slot: String, equipped: Dictionary, inventory
 	summary["item_name"] = str(entry.get("name", item_id))
 	summary["score"] = score
 	summary["rarity"] = str(equipment.get("rarity", "common"))
-	summary["button_text"] = "%s: %s\nScore %d" % [slot.capitalize(), str(summary["item_name"]), score]
+	summary["button_text"] = "%s：%s\n评分 %d" % [_slot_label(slot), str(summary["item_name"]), score]
 	summary["tooltip"] = _describe_item(entry)
 	return summary
 
@@ -1069,6 +1070,88 @@ func _rarity_border_color_hex(rarity: String) -> String:
 func _rarity_background_color_hex(rarity: String) -> String:
 	return DarkArpgUiThemeScript.rarity_background_color(rarity).to_html(false)
 
+func _slot_label(slot: String) -> String:
+	match slot:
+		"weapon":
+			return "武器"
+		"armor":
+			return "护甲"
+		"ring":
+			return "戒指"
+		"trinket":
+			return "饰品"
+		_:
+			return slot.capitalize()
+
+func _item_type_label(item_type: String) -> String:
+	match item_type:
+		"equipment":
+			return "装备"
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		_:
+			return "物品"
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"magic":
+			return "魔法"
+		"rare":
+			return "稀有"
+		"legendary":
+			return "传奇"
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		"empty":
+			return "空"
+		_:
+			return "普通"
+
+func _stat_label(stat_id: String) -> String:
+	match stat_id:
+		"attack_damage":
+			return "伤害"
+		"max_health":
+			return "生命"
+		"max_mana":
+			return "法力"
+		"defense":
+			return "防御"
+		"critical_chance":
+			return "暴击"
+		_:
+			return stat_id
+
+func _sort_mode_label(mode: String) -> String:
+	match mode:
+		"power":
+			return "战力"
+		"name":
+			return "名称"
+		_:
+			return "类型"
+
+func _reason_label(reason: String) -> String:
+	match reason:
+		"wrong_class":
+			return "职业不符"
+		"bad_slot":
+			return "部位无效"
+		"missing_item":
+			return "物品不存在"
+		"no_skill_points":
+			return "技能点不足"
+		"max_level":
+			return "已满级"
+		"equipped":
+			return "已经穿戴"
+		_:
+			return reason
+
 func get_ui_style_id_for_test() -> String:
 	return DarkArpgUiThemeScript.get_style_id()
 
@@ -1084,12 +1167,12 @@ func _on_upgrade_basic_attack_pressed() -> void:
 	var result := PlayerDataServiceScript.upgrade_basic_attack(player_data)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "Cannot upgrade: %s" % str(result.get("reason", "unknown"))
+			detail_label.text = "无法升级：%s" % _reason_label(str(result.get("reason", "unknown")))
 		refresh()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	if is_instance_valid(detail_label):
-		detail_label.text = "Basic Attack Training Lv.%d\nDamage +%d" % [
+		detail_label.text = "基础攻击训练 Lv.%d\n伤害 +%d" % [
 			int(result.get("node_level", 0)),
 			PlayerDataServiceScript.BASIC_ATTACK_TRAINING_DAMAGE_GAIN,
 		]
@@ -1106,7 +1189,7 @@ func upgrade_selected_skill_node() -> void:
 	var result := SkillNodeGrowthServiceScript.upgrade_node(player_data, selected_skill_node_id)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "Cannot upgrade: %s" % str(result.get("reason", "unknown"))
+			detail_label.text = "无法升级：%s" % _reason_label(str(result.get("reason", "unknown")))
 		refresh()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))

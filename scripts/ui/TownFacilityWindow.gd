@@ -25,7 +25,7 @@ func open_facility(id: String) -> void:
 	visible = true
 	if not is_instance_valid(title_label):
 		return
-	title_label.text = str(config.get("title", "Facility"))
+	title_label.text = str(config.get("title", "设施"))
 	subtitle_label.text = str(config.get("subtitle", ""))
 	description_label.text = str(config.get("description", ""))
 	_rebuild_actions(Array(config.get("actions", [])))
@@ -106,7 +106,7 @@ func _rebuild_actions(actions: Array) -> void:
 		var action_data := Dictionary(action)
 		var button := Button.new()
 		button.name = "TownFacilityAction_%s" % str(action_data.get("id", "action"))
-		button.text = str(action_data.get("label", "Action"))
+		button.text = str(action_data.get("label", "操作"))
 		button.custom_minimum_size = Vector2(390, 38)
 		DarkArpgUiThemeScript.style_button(button, bool(action_data.get("primary", false)))
 		var action_id := str(action_data.get("id", ""))

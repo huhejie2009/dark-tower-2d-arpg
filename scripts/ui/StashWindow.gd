@@ -36,10 +36,10 @@ func refresh() -> void:
 		child.queue_free()
 	var inventory := InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
 	_update_titles(inventory)
-	_build_item_buttons(bag_list, inventory, "Store", _on_deposit_pressed)
-	_build_item_buttons(stash_list, stash, "Take", _on_withdraw_pressed)
+	_build_item_buttons(bag_list, inventory, "存入", _on_deposit_pressed)
+	_build_item_buttons(stash_list, stash, "取出", _on_withdraw_pressed)
 	if is_instance_valid(detail_label) and detail_label.text == "":
-		detail_label.text = "Select Store or Take to move a full stack or one equipment instance."
+		detail_label.text = "选择“存入”或“取出”，可移动一整组材料或一件装备。"
 
 func deposit_item_for_test(item_id: String) -> void:
 	_on_deposit_pressed(item_id)
@@ -76,7 +76,7 @@ func _build_ui() -> void:
 	root_box.add_child(header)
 
 	var title := Label.new()
-	title.text = "Stash"
+	title.text = "仓库"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	DarkArpgUiThemeScript.style_title(title, 24)
 	header.add_child(title)
@@ -97,12 +97,12 @@ func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 12)
 	root_box.add_child(body)
 
-	var bag_panel := _make_column("Bag")
+	var bag_panel := _make_column("背包")
 	body.add_child(bag_panel)
 	bag_title = bag_panel.get_node("ColumnTitle") as Label
 	bag_list = bag_panel.get_node("Scroll/List") as VBoxContainer
 
-	var stash_panel := _make_column("Stash")
+	var stash_panel := _make_column("仓库")
 	body.add_child(stash_panel)
 	stash_title = stash_panel.get_node("ColumnTitle") as Label
 	stash_list = stash_panel.get_node("Scroll/List") as VBoxContainer
@@ -137,16 +137,16 @@ func _make_column(title_text: String) -> VBoxContainer:
 func _update_titles(inventory: Dictionary) -> void:
 	if is_instance_valid(bag_title):
 		var bag_capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(inventory)
-		bag_title.text = str(bag_capacity.get("summary_text", "Bag"))
+		bag_title.text = str(bag_capacity.get("summary_text", "背包"))
 	if is_instance_valid(stash_title):
 		var stash_capacity: Dictionary = StashStorageServiceScript.build_capacity_summary(stash)
-		stash_title.text = "Stash %d/%d" % [int(stash_capacity.get("used_slots", 0)), int(stash_capacity.get("capacity", 0))]
+		stash_title.text = "仓库 %d/%d" % [int(stash_capacity.get("used_slots", 0)), int(stash_capacity.get("capacity", 0))]
 
 func _build_item_buttons(parent: VBoxContainer, container: Dictionary, action_label: String, callback: Callable) -> void:
 	var ids := _sorted_item_ids(container)
 	if ids.is_empty():
 		var empty := Label.new()
-		empty.text = "Empty"
+		empty.text = "空"
 		DarkArpgUiThemeScript.style_body_label(empty, 15, true)
 		parent.add_child(empty)
 		return
@@ -171,18 +171,18 @@ func _on_withdraw_pressed(item_id: String) -> void:
 func _apply_transfer_result(result: Dictionary) -> void:
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "Cannot move item: %s" % str(result.get("reason", "unknown"))
+			detail_label.text = "无法移动物品：%s" % _reason_label(str(result.get("reason", "unknown")))
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	stash = StashStorageServiceScript.normalize_stash(result.get("stash", stash))
 	player_data_changed.emit(player_data.duplicate(true))
 	stash_changed.emit(stash.duplicate(true))
 	if is_instance_valid(detail_label):
-		detail_label.text = "Moved %s." % str(result.get("item_id", "item"))
+		detail_label.text = "已移动 %s。" % str(result.get("item_id", "物品"))
 	refresh()
 
 func _format_item(entry: Dictionary) -> String:
-	var name := str(entry.get("name", entry.get("id", "Item")))
+	var name := str(entry.get("name", entry.get("id", "物品")))
 	var amount := int(entry.get("amount", 1))
 	if str(entry.get("type", "")) == "equipment":
 		return name
@@ -194,3 +194,20 @@ func _sorted_item_ids(container: Dictionary) -> Array[String]:
 		ids.append(str(item_id))
 	ids.sort()
 	return ids
+
+func _reason_label(reason: String) -> String:
+	match reason:
+		"missing_bag_item":
+			return "背包中没有该物品"
+		"missing_stash_item":
+			return "仓库中没有该物品"
+		"equipped_item":
+			return "已穿戴物品不能存入"
+		"bag_full":
+			return "背包已满"
+		"stash_full", "container_full":
+			return "仓库已满"
+		"duplicate_item_id":
+			return "已存在同实例物品"
+		_:
+			return reason

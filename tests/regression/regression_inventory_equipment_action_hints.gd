@@ -27,9 +27,9 @@ func _run() -> void:
 	window.select_item("better_sword")
 	await process_frame
 	var detail := window.describe_item_for_test("better_sword")
-	_expect(detail.contains("Action:"), "equipment detail should include action hint section")
-	_expect(detail.contains("Can equip"), "upgrade detail should say it can be equipped")
-	_expect(detail.contains("Equip +"), "upgrade detail should expose equip score delta")
+	_expect(detail.contains("操作："), "equipment detail should include action hint section")
+	_expect(detail.contains("可穿戴"), "upgrade detail should say it can be equipped")
+	_expect(detail.contains("穿戴 +"), "upgrade detail should expose equip score delta")
 	var equip_button := window.find_child("EquipSelectedButton", true, false) as Button
 	if equip_button != null:
 		_expect(not equip_button.disabled, "upgrade item equip button should be enabled")
@@ -38,10 +38,10 @@ func _run() -> void:
 	window.select_item("ranger_bow")
 	await process_frame
 	var blocked_detail := window.describe_item_for_test("ranger_bow")
-	_expect(blocked_detail.contains("Wrong class"), "blocked item detail should explain wrong class")
+	_expect(blocked_detail.contains("职业不符"), "blocked item detail should explain wrong class")
 	if equip_button != null:
 		_expect(equip_button.disabled, "wrong class item equip button should be disabled")
-		_expect(str(equip_button.text) == "Class blocked", "wrong class button should explain block")
+		_expect(str(equip_button.text) == "职业限制", "wrong class button should explain block")
 
 	window.queue_free()
 	await process_frame
