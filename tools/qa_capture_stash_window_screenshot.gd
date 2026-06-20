@@ -9,11 +9,15 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	if DisplayServer.get_name() == "headless":
+		push_error("Screenshot QA requires rendered Godot; run without --headless to avoid viewport capture hangs.")
+		quit(2)
+		return
 	root.size = Vector2i(1280, 720)
-	var player := SaveManagerScript.create_character("slot_1", "Stash QA", "warrior")
+	var player := SaveManagerScript.create_character("slot_1", "仓库验收", "warrior")
 	player["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player.get("inventory", {})), {
 		"id": "qa_crystal",
-		"name": "Crystal Shard",
+		"name": "水晶碎片",
 		"type": "material",
 		"amount": 12,
 	})

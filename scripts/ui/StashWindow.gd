@@ -59,8 +59,8 @@ func _build_ui() -> void:
 	anchor_top = 0.0
 	anchor_right = 0.0
 	anchor_bottom = 0.0
-	size = Vector2(920, 560)
-	position = Vector2(180, 80)
+	size = Vector2(680, 560)
+	position = Vector2(160, 108)
 
 	var panel := PanelContainer.new()
 	panel.name = "StashPanel"
@@ -110,14 +110,14 @@ func _build_ui() -> void:
 	detail_label = Label.new()
 	detail_label.name = "StashDetail"
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.custom_minimum_size = Vector2(220, 0)
+	detail_label.custom_minimum_size = Vector2(150, 0)
 	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	DarkArpgUiThemeScript.style_body_label(detail_label, 15)
 	body.add_child(detail_label)
 
 func _make_column(title_text: String) -> VBoxContainer:
 	var column := VBoxContainer.new()
-	column.custom_minimum_size = Vector2(320, 0)
+	column.custom_minimum_size = Vector2(230, 0)
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var title := Label.new()
 	title.name = "ColumnTitle"
@@ -154,7 +154,7 @@ func _build_item_buttons(parent: VBoxContainer, container: Dictionary, action_la
 		var entry: Dictionary = Dictionary(container[item_id])
 		var button := Button.new()
 		button.text = "%s  %s" % [action_label, _format_item(entry)]
-		button.custom_minimum_size = Vector2(300, 34)
+		button.custom_minimum_size = Vector2(218, 34)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		DarkArpgUiThemeScript.style_button(button)
 		button.pressed.connect(func(): callback.call(item_id))

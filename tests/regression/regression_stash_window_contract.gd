@@ -32,13 +32,18 @@ func _run() -> void:
 		var stash_window := town.find_child("StashWindow", true, false) as Control
 		var facility_window := town.find_child("TownFacilityWindow", true, false) as Control
 		var inventory := town.find_child("InventoryEquipmentWindow", true, false) as Control
+		var prep_panel := town.find_child("TownPrepPanel", true, false) as Control
 		_expect(stash_window != null and stash_window.visible, "stash facility action should open stash window")
 		_expect(facility_window != null and not facility_window.visible, "opening stash should close the facility panel")
 		_expect(inventory != null and not inventory.visible, "stash window should not force inventory window open")
+		_expect(prep_panel != null, "town should expose prep panel for stash layout QA")
 		if stash_window != null:
 			var rect := stash_window.get_global_rect()
 			_expect(rect.position.x >= 0.0 and rect.position.y >= 0.0, "stash window should not be clipped off the top-left screen edge")
 			_expect(rect.end.x <= 1280.0 and rect.end.y <= 720.0, "stash window should fit inside 1280x720")
+			_expect(rect.position.y >= 100.0, "stash window should sit below the town title and subtitle area")
+			if prep_panel != null:
+				_expect(rect.end.x <= prep_panel.global_position.x - 16.0, "stash window should not overlap the right-side town prep panel at 1280x720")
 			_expect(stash_window.has_method("deposit_item_for_test"), "stash window should expose deposit test hook")
 			_expect(stash_window.has_method("withdraw_item_for_test"), "stash window should expose withdraw test hook")
 			stash_window.call("deposit_item_for_test", "stash_test_crystal")

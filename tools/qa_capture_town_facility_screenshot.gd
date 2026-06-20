@@ -6,6 +6,10 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	if DisplayServer.get_name() == "headless":
+		push_error("Screenshot QA requires rendered Godot; run without --headless to avoid viewport capture hangs.")
+		quit(2)
+		return
 	root.size = Vector2i(1280, 720)
 	var packed := load("res://scenes/Town.tscn")
 	if not (packed is PackedScene):

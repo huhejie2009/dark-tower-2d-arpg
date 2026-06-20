@@ -35,15 +35,27 @@ static func save_data(data: Dictionary) -> void:
 	file.flush()
 
 static func is_transient_save_active() -> bool:
-	for arg in OS.get_cmdline_args():
-		var text := str(arg)
-		if text.contains("tests/regression") or text.contains("tests\\regression") or text.begins_with("regression_"):
+	return _should_use_transient_save_for_args(OS.get_cmdline_args(), OS.get_cmdline_user_args())
+
+func should_use_transient_save_for_args_for_test(cmdline_args: Array, user_args: Array) -> bool:
+	return _should_use_transient_save_for_args(cmdline_args, user_args)
+
+static func _should_use_transient_save_for_args(cmdline_args: Array, user_args: Array) -> bool:
+	for arg in cmdline_args:
+		if _is_transient_save_script_arg(str(arg)):
 			return true
-	for arg in OS.get_cmdline_user_args():
-		var text := str(arg)
-		if text.contains("tests/regression") or text.contains("tests\\regression") or text.begins_with("regression_"):
+	for arg in user_args:
+		if _is_transient_save_script_arg(str(arg)):
 			return true
 	return false
+
+static func _is_transient_save_script_arg(text: String) -> bool:
+	var normalized := text.replace("\\", "/")
+	var file_name := normalized.get_file()
+	return normalized.contains("tests/regression") \
+		or file_name.begins_with("regression_") \
+		or normalized.contains("tools/qa_") \
+		or file_name.begins_with("qa_")
 
 static func set_active_slot_in_data(data: Dictionary, slot_id: String) -> Dictionary:
 	var result := SaveSchemaScript.normalize_save(data)
