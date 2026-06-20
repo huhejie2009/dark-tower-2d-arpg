@@ -24,6 +24,7 @@ const WIDE_LAYOUT_MIN_WIDTH := 940.0
 const WIDE_GRID_COLUMNS := 9
 const COMPACT_GRID_COLUMNS := 6
 const DETAIL_WIDE_MIN_WIDTH := 260.0
+const DETAIL_SCROLL_MIN_HEIGHT := 132.0
 
 var player_data: Dictionary = {}
 var inventory_grid: GridContainer
@@ -172,6 +173,7 @@ func _build_ui() -> void:
 
 	var side := VBoxContainer.new()
 	side.custom_minimum_size = Vector2(DETAIL_WIDE_MIN_WIDTH, 0)
+	side.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(side)
 
 	stats_label = Label.new()
@@ -214,12 +216,18 @@ func _build_ui() -> void:
 	upgrade_basic_attack_button.pressed.connect(_on_upgrade_basic_attack_pressed)
 	side.add_child(upgrade_basic_attack_button)
 
+	var detail_scroll := ScrollContainer.new()
+	detail_scroll.name = "ItemDetailScroll"
+	detail_scroll.custom_minimum_size = Vector2(DETAIL_WIDE_MIN_WIDTH, DETAIL_SCROLL_MIN_HEIGHT)
+	detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side.add_child(detail_scroll)
+
 	detail_label = Label.new()
 	detail_label.name = "ItemDetail"
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	DarkArpgUiThemeScript.style_body_label(detail_label)
-	side.add_child(detail_label)
+	detail_scroll.add_child(detail_label)
 
 	var action_row := HBoxContainer.new()
 	action_row.name = "SelectedItemActions"
@@ -333,6 +341,7 @@ func get_visual_qa_metrics_for_test(viewport_size: Vector2) -> Dictionary:
 		"window_size": window_size,
 		"grid_columns": WIDE_GRID_COLUMNS if window_size.x >= WIDE_LAYOUT_MIN_WIDTH else COMPACT_GRID_COLUMNS,
 		"detail_min_width": DETAIL_WIDE_MIN_WIDTH,
+		"detail_scroll_min_height": DETAIL_SCROLL_MIN_HEIGHT,
 		"default_window_size": DEFAULT_WINDOW_SIZE,
 	}
 
@@ -460,8 +469,19 @@ func _item_short_text(entry: Dictionary) -> String:
 	var item_type := str(entry.get("type", "item"))
 	if item_type == "equipment":
 		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
-		return str(equipment.get("slot", "EQ")).substr(0, 3).to_upper()
-	return "x%d" % int(entry.get("amount", 1))
+		return _slot_short_label(str(equipment.get("slot", "")))
+	return _stack_short_label(entry)
+
+func _stack_short_label(entry: Dictionary) -> String:
+	var item_type := str(entry.get("type", "item"))
+	var item_name := str(entry.get("name", entry.get("id", "")))
+	var amount := int(entry.get("amount", 1))
+	var hint := "物"
+	if item_type == "currency":
+		hint = "金"
+	elif item_type == "material":
+		hint = "晶" if item_name.contains("晶") or str(entry.get("id", "")).contains("crystal") else "材"
+	return "%s\n%d" % [hint, amount]
 
 func _describe_item(entry: Dictionary) -> String:
 	var lines: Array[String] = [str(entry.get("name", entry.get("id", "物品")))]
@@ -937,7 +957,7 @@ func _build_item_visual_metadata(item_id: String, entry: Dictionary) -> Dictiona
 	if item_type == "equipment":
 		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
 		rarity = str(equipment.get("rarity", "common"))
-		var slot_label := str(equipment.get("slot", "EQ")).substr(0, 3).to_upper()
+		var slot_label := _slot_short_label(str(equipment.get("slot", "")))
 		label = slot_label
 		recommendation = _build_item_recommendation(item_id, entry)
 		upgrade = bool(recommendation.get("upgrade", EquipmentDataServiceScript.is_upgrade_candidate(player_data, item_id)))
@@ -1076,12 +1096,37 @@ func _slot_label(slot: String) -> String:
 			return "武器"
 		"armor":
 			return "护甲"
+		"gloves":
+			return "手套"
 		"ring":
 			return "戒指"
+		"ring_1":
+			return "戒指 1"
+		"ring_2":
+			return "戒指 2"
 		"trinket":
 			return "饰品"
 		_:
 			return slot.capitalize()
+
+func _slot_short_label(slot: String) -> String:
+	match slot:
+		"weapon":
+			return "武器"
+		"armor":
+			return "护甲"
+		"gloves":
+			return "手套"
+		"ring":
+			return "戒指"
+		"ring_1":
+			return "戒1"
+		"ring_2":
+			return "戒2"
+		"trinket":
+			return "饰品"
+		_:
+			return "装备"
 
 func _item_type_label(item_type: String) -> String:
 	match item_type:

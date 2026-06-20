@@ -4,6 +4,7 @@ const SCREENSHOT_TOOLS := [
 	"res://tools/qa_capture_town_screenshot.gd",
 	"res://tools/qa_capture_town_facility_screenshot.gd",
 	"res://tools/qa_capture_stash_window_screenshot.gd",
+	"res://tools/qa_capture_inventory_window_screenshot.gd",
 ]
 
 var failures: Array[String] = []

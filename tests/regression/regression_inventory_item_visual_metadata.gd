@@ -27,6 +27,18 @@ func _run() -> void:
 		"type": "equipment",
 		"equipment": better_weapon,
 	})
+	player["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player["inventory"]), {
+		"id": "gold",
+		"name": "金币",
+		"type": "currency",
+		"amount": 240,
+	})
+	player["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player["inventory"]), {
+		"id": "crystal_shard",
+		"name": "水晶碎片",
+		"type": "material",
+		"amount": 18,
+	})
 
 	var window := InventoryEquipmentWindowScript.new()
 	root.add_child(window)
@@ -44,7 +56,15 @@ func _run() -> void:
 		_expect(str(better_meta.get("badge", "")) == "+", "stronger equipment should use upgrade badge")
 		_expect(bool(better_meta.get("upgrade", false)), "better item should be marked as upgrade")
 		_expect(str(better_meta.get("border_color", "")) != "", "metadata should expose rarity border color")
-		_expect(str(better_meta.get("label", "")).contains("WEA"), "equipment label should include slot abbreviation")
+		_expect(str(better_meta.get("label", "")).contains("武器"), "equipment label should include localized slot label")
+		_expect(not str(better_meta.get("label", "")).contains("WEA"), "equipment label should not use English slot abbreviation")
+
+		var gold_meta: Dictionary = Dictionary(window.call("get_item_visual_metadata_for_test", "gold"))
+		var crystal_meta: Dictionary = Dictionary(window.call("get_item_visual_metadata_for_test", "crystal_shard"))
+		_expect(str(gold_meta.get("label", "")).contains("金"), "currency label should show a localized item hint")
+		_expect(str(gold_meta.get("label", "")).contains("240"), "currency label should include stack amount")
+		_expect(str(crystal_meta.get("label", "")).contains("晶"), "material label should show a localized item hint")
+		_expect(str(crystal_meta.get("label", "")).contains("18"), "material label should include stack amount")
 
 	window.queue_free()
 	await process_frame

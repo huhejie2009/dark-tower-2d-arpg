@@ -45,11 +45,13 @@ func _check_inventory_reading_space() -> void:
 	var rect := window.get_responsive_window_rect_for_test(Vector2(1280, 720))
 	_expect(rect.size.x >= 960.0, "inventory window should reserve enough width for equipment, grid, and detail columns at 1280x720")
 	_expect(rect.size.y >= 560.0, "inventory window should reserve enough height to lower text density at 1280x720")
+	_expect(window.find_child("ItemDetailScroll", true, false) != null, "item detail should live inside a scroll area so long equipment text stays readable")
 	_expect(window.has_method("get_visual_qa_metrics_for_test"), "inventory should expose visual QA density metrics")
 	if window.has_method("get_visual_qa_metrics_for_test"):
 		var metrics: Dictionary = Dictionary(window.call("get_visual_qa_metrics_for_test", Vector2(1280, 720)))
 		_expect(int(metrics.get("grid_columns", 0)) >= 9, "inventory grid should show at least 9 columns on 1280px width")
 		_expect(float(metrics.get("detail_min_width", 0.0)) >= 260.0, "item detail column should be wide enough for readable comparison text")
+		_expect(float(metrics.get("detail_scroll_min_height", 0.0)) >= 120.0, "item detail scroll area should reserve readable vertical space at 1280x720")
 	root.remove_child(window)
 	window.free()
 

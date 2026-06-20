@@ -31,6 +31,15 @@ func _run() -> void:
 		_expect(int(weapon_summary.get("score", 0)) > 0, "equipped weapon summary should include score")
 		var armor_summary: Dictionary = Dictionary(window.call("get_equipment_slot_summary_for_test", "armor"))
 		_expect(bool(armor_summary.get("empty", false)), "starter armor slot should be empty")
+		var gloves_summary: Dictionary = Dictionary(window.call("get_equipment_slot_summary_for_test", "gloves"))
+		var ring_1_summary: Dictionary = Dictionary(window.call("get_equipment_slot_summary_for_test", "ring_1"))
+		var ring_2_summary: Dictionary = Dictionary(window.call("get_equipment_slot_summary_for_test", "ring_2"))
+		_expect(str(gloves_summary.get("button_text", "")).begins_with("手套："), "gloves slot should use Chinese label")
+		_expect(str(ring_1_summary.get("button_text", "")).begins_with("戒指 1："), "ring_1 slot should use Chinese label")
+		_expect(str(ring_2_summary.get("button_text", "")).begins_with("戒指 2："), "ring_2 slot should use Chinese label")
+		_expect(not str(gloves_summary.get("button_text", "")).contains("Gloves"), "gloves slot should not leak English label")
+		_expect(not str(ring_1_summary.get("button_text", "")).contains("Ring"), "ring_1 slot should not leak English label")
+		_expect(not str(ring_2_summary.get("button_text", "")).contains("Ring"), "ring_2 slot should not leak English label")
 
 	window.queue_free()
 	await process_frame
