@@ -16,7 +16,7 @@ const CLASSES := {
 		"max_mana": 55,
 		"attack_damage": 24,
 		"starter_weapon": "starter_ranger_bow",
-		"basic_skill": "ranger_shot",
+		"basic_skill": "ranger_ice_shot",
 	},
 	"mage": {
 		"name": "法师",

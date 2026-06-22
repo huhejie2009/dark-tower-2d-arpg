@@ -4,30 +4,70 @@ class_name SkillNodeGrowthService
 const NODES := {
 	"basic_attack_training": {
 		"node_id": "basic_attack_training",
-		"title": "Basic Attack Training",
+		"title": "基础攻击训练",
 		"stat_id": "attack_damage",
-		"stat_label": "Damage",
+		"stat_label": "伤害",
 		"stat_gain": 3,
 		"max_level": 5,
 		"skill_point_cost": 1,
 	},
 	"vitality_training": {
 		"node_id": "vitality_training",
-		"title": "Vitality Training",
+		"title": "生命训练",
 		"stat_id": "max_health",
-		"stat_label": "Health",
+		"stat_label": "生命",
 		"stat_gain": 12,
 		"max_level": 5,
 		"skill_point_cost": 1,
 	},
 	"precision_training": {
 		"node_id": "precision_training",
-		"title": "Precision Training",
+		"title": "精准训练",
 		"stat_id": "critical_chance",
-		"stat_label": "Crit",
+		"stat_label": "暴击",
 		"stat_gain": 2,
 		"max_level": 5,
 		"skill_point_cost": 1,
+	},
+	"ranger_coc_precision": {
+		"node_id": "ranger_coc_precision",
+		"title": "触发精准",
+		"stat_id": "critical_chance",
+		"stat_label": "暴击",
+		"stat_gain": 3,
+		"max_level": 5,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_trigger_flow": {
+		"node_id": "ranger_trigger_flow",
+		"title": "触发流动",
+		"stat_id": "coc_cooldown_recovery",
+		"stat_label": "触发恢复",
+		"stat_gain": 4,
+		"max_level": 3,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_ice_mastery": {
+		"node_id": "ranger_ice_mastery",
+		"title": "冰霜精通",
+		"stat_id": "cold_damage",
+		"stat_label": "冰冷伤害",
+		"stat_gain": 5,
+		"max_level": 5,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
+	},
+	"ranger_projectile_split": {
+		"node_id": "ranger_projectile_split",
+		"title": "分裂冰矢",
+		"stat_id": "ice_lance_split",
+		"stat_label": "冰矢分裂",
+		"stat_gain": 1,
+		"max_level": 1,
+		"skill_point_cost": 1,
+		"class_tag": "ranger",
 	},
 }
 
@@ -112,6 +152,30 @@ static func upgrade_node(player_data: Dictionary, node_id: String) -> Dictionary
 		"player_data": result,
 	}
 
+static func reset_skill_nodes(player_data: Dictionary) -> Dictionary:
+	var result := _normalize_growth_data(player_data)
+	var nodes: Dictionary = Dictionary(result.get("unlocked_skill_nodes", {}))
+	var refunded := 0
+	for node_id in nodes.keys():
+		var node := get_node(str(node_id))
+		if node.is_empty():
+			continue
+		var level := clampi(int(nodes[node_id]), 0, int(node.get("max_level", 1)))
+		var cost := int(node.get("skill_point_cost", 1))
+		var stat_id := str(node.get("stat_id", ""))
+		var stat_gain := int(node.get("stat_gain", 0)) * level
+		refunded += level * cost
+		if stat_id != "" and stat_gain != 0:
+			result[stat_id] = int(result.get(stat_id, 0)) - stat_gain
+			if stat_id == "max_health":
+				result["max_health"] = maxi(1, int(result.get("max_health", 1)))
+				result["health"] = clampi(int(result.get("health", 1)), 1, int(result["max_health"]))
+			else:
+				result[stat_id] = maxi(0, int(result.get(stat_id, 0)))
+	result["unlocked_skill_nodes"] = {}
+	result["skill_points"] = int(result.get("skill_points", 0)) + refunded
+	return {"ok": true, "refunded_skill_points": refunded, "player_data": result}
+
 static func _normalize_growth_data(player_data: Dictionary) -> Dictionary:
 	var result := player_data.duplicate(true)
 	result["skill_points"] = maxi(0, int(result.get("skill_points", 0)))
@@ -121,15 +185,18 @@ static func _normalize_growth_data(player_data: Dictionary) -> Dictionary:
 	result["max_health"] = maxi(1, int(result.get("max_health", 1)))
 	result["health"] = clampi(int(result.get("health", result["max_health"])), 1, int(result["max_health"]))
 	result["critical_chance"] = maxi(0, int(result.get("critical_chance", 0)))
+	result["cold_damage"] = maxi(0, int(result.get("cold_damage", 0)))
+	result["coc_cooldown_recovery"] = maxi(0, int(result.get("coc_cooldown_recovery", 0)))
+	result["ice_lance_split"] = maxi(0, int(result.get("ice_lance_split", 0)))
 	return result
 
 static func _build_summary_text(node: Dictionary, current_level: int, next_level: int, max_level: int) -> String:
-	var title := str(node.get("title", "Skill"))
+	var title := str(node.get("title", "技能"))
 	var stat_label := str(node.get("stat_label", node.get("stat_id", "")))
 	var stat_gain := int(node.get("stat_gain", 0))
 	if current_level >= max_level:
-		return "%s Lv.%d/%d\nMax Level\n%s +%d" % [title, current_level, max_level, stat_label, stat_gain]
-	return "%s Lv.%d/%d\nNext +%d %s (%s +%d, Lv.%d)\nCost %d SP" % [
+		return "%s 等级%d/%d\n已满级\n%s +%d" % [title, current_level, max_level, stat_label, stat_gain]
+	return "%s 等级%d/%d\n下级 +%d %s（%s +%d，等级%d）\n消耗 %d 天赋点" % [
 		title,
 		current_level,
 		max_level,
@@ -143,15 +210,15 @@ static func _build_summary_text(node: Dictionary, current_level: int, next_level
 
 static func _build_status_text(can_upgrade: bool, reason: String, cost: int) -> String:
 	if can_upgrade:
-		return "Ready to upgrade"
+		return "可以升级"
 	if reason == "max_level":
-		return "Max level reached"
-	return "Need %d SP" % cost
+		return "已达到最高等级"
+	return "需要 %d 天赋点" % cost
 
 static func _build_tooltip_text(node: Dictionary, current_level: int, next_level: int, max_level: int, cost: int) -> String:
-	var title := str(node.get("title", "Skill"))
+	var title := str(node.get("title", "技能"))
 	var stat_label := str(node.get("stat_label", node.get("stat_id", "")))
 	var stat_gain := int(node.get("stat_gain", 0))
 	if current_level >= max_level:
-		return "%s\nLv.%d/%d\nMax Level" % [title, current_level, max_level]
-	return "%s\nLv.%d -> Lv.%d\n%s +%d\nCost %d SP" % [title, current_level, next_level, stat_label, stat_gain, cost]
+		return "%s\n等级%d/%d\n已满级" % [title, current_level, max_level]
+	return "%s\n等级%d -> 等级%d\n%s +%d\n消耗 %d 天赋点" % [title, current_level, next_level, stat_label, stat_gain, cost]

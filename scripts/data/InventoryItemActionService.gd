@@ -33,8 +33,8 @@ static func build_junk_action_preview(player_data: Dictionary, mode: String = "s
 			gold_gain += _get_sell_value(entry)
 	candidate_ids.sort()
 	protected_ids.sort()
-	var action_label := "Salvage" if action_mode == "salvage" else "Sell"
-	var reward_text := "+%d Crystal" % crystal_gain if action_mode == "salvage" else "+%d Gold" % gold_gain
+	var action_label := "分解" if action_mode == "salvage" else "出售"
+	var reward_text := "+%d 水晶" % crystal_gain if action_mode == "salvage" else "+%d 金币" % gold_gain
 	return {
 		"mode": action_mode,
 		"can_process": candidate_ids.size() > 0,
@@ -44,7 +44,7 @@ static func build_junk_action_preview(player_data: Dictionary, mode: String = "s
 		"protected_count": protected_ids.size(),
 		"gold_gain": gold_gain,
 		"crystal_gain": crystal_gain,
-		"summary_text": "%s Junk %d (%s)" % [action_label, candidate_ids.size(), reward_text],
+		"summary_text": "%s废品 %d 件（%s）" % [action_label, candidate_ids.size(), reward_text],
 	}
 
 static func process_junk_action(player_data: Dictionary, mode: String = "sell") -> Dictionary:
@@ -66,7 +66,7 @@ static func process_junk_action(player_data: Dictionary, mode: String = "sell") 
 		if crystal_gain > 0:
 			inventory = InventoryDataServiceScript.add_item(inventory, {
 				"id": SALVAGE_MATERIAL_ID,
-				"name": "Crystal Shard",
+				"name": "水晶碎片",
 				"type": "material",
 				"amount": crystal_gain,
 			})
@@ -75,7 +75,7 @@ static func process_junk_action(player_data: Dictionary, mode: String = "sell") 
 		if gold_gain > 0:
 			inventory = InventoryDataServiceScript.add_item(inventory, {
 				"id": SELL_GOLD_ID,
-				"name": "Gold",
+				"name": "金币",
 				"type": "currency",
 				"amount": gold_gain,
 			})

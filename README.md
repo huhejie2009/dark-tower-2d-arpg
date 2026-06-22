@@ -1,6 +1,6 @@
 # Dark Tower 2D ARPG
 
-Godot 4.6.2 纯 2D 暗黑刷宝 / 爬塔 ARPG 新项目。
+Godot 4.6.3 纯 2D 暗黑刷宝 / 爬塔 ARPG 项目。
 
 项目目标是先做出稳定可试玩的 2D 刷宝闭环，再逐步补齐正式美术、动作素材、楼层内容、装备成长、技能成长和长期可维护的制作管线。
 
@@ -27,31 +27,33 @@ Godot 4.6.2 纯 2D 暗黑刷宝 / 爬塔 ARPG 新项目。
 - 清怪开门 / 传送门进入下一层
 - 从第 1 层开始或挑战历史最高层
 - HUD 显示生命、魔力、经验、技能点、掉落提示
+- 手动 / 挂机战斗模式
+- 游侠寒冰射击暴击触发冰矛的 CoC 构筑
+- 游侠 CoC 天赋、装备词条和装备作用解释
+- 通用宝石孔、宝石属性聚合与背包镶嵌入口
+- 宝石刷图掉落、中文通知和独立掉落视觉
+- 主菜单、主城、战斗、背包、装备、天赋和结算中文化
 - Godot AI 与 godot-devtool MCP 插件接入
 - 回归测试与场景启动烟测
 
 ## 项目路径
 
-```text
-H:\GODOT_PROJECT\dark-tower-2d-arpg
-```
+当前工作区由开发者自行选择，不依赖固定盘符。
 
 Godot 项目入口：
 
-```text
-H:\GODOT_PROJECT\dark-tower-2d-arpg\project.godot
-```
+项目根目录下的 `project.godot`。
 
 推荐 Godot 版本：
 
 ```text
-Godot 4.6.2 stable
+Godot 4.6.3 stable
 ```
 
 当前机器常用 Godot console：
 
 ```text
-C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe
+D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
 ```
 
 ## 目录说明
@@ -90,12 +92,13 @@ C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe
 PowerShell 示例：
 
 ```powershell
-$godot = 'C:\Users\huhej\.codex\mcp\godot-bin\Godot_v4.6.2-stable_win64_console.exe'
-$project = 'H:\GODOT_PROJECT\dark-tower-2d-arpg'
+$godot = 'D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe'
+$project = (Resolve-Path '.').Path
+$log = Join-Path $project '.godot\regression.log'
 $tests = Get-ChildItem -Path "$project\tests\regression" -File -Filter '*.gd' | Sort-Object Name | ForEach-Object { 'res://tests/regression/' + $_.Name }
 foreach ($test in $tests) {
   Write-Host "RUN $test"
-  & $godot --headless --path $project --script $test
+  & $godot --headless --log-file $log --path $project --script $test
   if ($LASTEXITCODE -ne 0) {
     Write-Host "FAILED $test EXIT $LASTEXITCODE"
     exit $LASTEXITCODE
@@ -116,11 +119,21 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 
 短期优先级：
 
-1. 基于 `binding_flags` 完成废品批量出售/分解前置数据服务。
-2. 为仓库、商人、铁匠窗口复用 `InventoryQueryService` 做接口准备。
-3. 继续完善 HUD、背包、装备、技能与死亡结算体验。
-4. 准备正式 2D 人物、敌人、动作和环境素材替换。
-5. 扩展 3 到 5 个楼层节奏变化，并增加更稳定的连续楼层测试。
+1. 让冰矛穿透与分裂属性真正改变弹道行为。
+2. 增加宝石选择、替换和取下界面。
+3. 完成 10 分钟游侠挂机刷宝试玩与数值调整。
+4. 扩展自动拾取过滤、危险规避和挂机构筑摘要。
+5. 在通用系统上制作战士、法师和侍僧的首套代表性 Build。
+
+## 2026-06-14 更新：游侠 CoC 与宝石刷宝闭环
+
+- 完成游侠寒冰射击暴击触发冰矛的第一版战斗循环。
+- 手动与挂机模式共用技能、暴击和触发冷却规则。
+- 新增寒霜、精准、迅捷、穿透和分裂宝石。
+- 宝石可从刷图掉落进入背包，并镶嵌到已装备物品。
+- 装备详情显示孔位、已镶宝石和 Build 相关作用说明。
+- 完成主要游戏界面和战斗信息中文化。
+- 详细记录见 `CHANGELOG.md` 与 `docs/progress/2026-06-14-localization-gem-loot-loop-progress.md`。
 
 ## 2026-06-10 更新：废品批量处理前置
 

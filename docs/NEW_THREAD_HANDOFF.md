@@ -4,15 +4,15 @@
 
 ---
 
-你现在接手一个全新的 Godot 4.6.2 纯 2D 暗黑刷宝/爬塔 ARPG 项目。
+你现在接手一个 Godot 4.6.3 纯 2D 暗黑刷宝/爬塔 ARPG 项目。
 
 项目路径：
 
-`H:\GODOT_PROJECT\dark-tower-2d-arpg`
+当前 Git 工作区中的 `dark-tower-2d-arpg` 根目录。
 
 Godot console 路径：
 
-`C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe`
+`D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe`
 
 请继续使用 Superpowers 工作流。回答、设计文档、进度文档尽量使用中文。不要清除玩家存档，除非我明确要求。
 
@@ -36,6 +36,25 @@ Godot console 路径：
 - 清怪开传送门
 - 进入下一层
 - 回城/死亡后保存角色状态
+
+游戏当前强调挂机友好的刷宝体验：技能可自动释放，玩家也可以切换为手动操作。所有职业共用装备、技能、天赋和宝石底层系统。
+
+## 2026-06-14 当前重点
+
+- 游侠基础攻击已经切换为寒冰射击。
+- 寒冰射击暴击可以触发冰矛，且使用独立触发冷却。
+- 已有手动 / 挂机模式，两种模式共用同一套 Build 规则。
+- 已有游侠 CoC 天赋、装备词条、装备推荐和作用解释。
+- 已有寒霜、精准、迅捷、穿透和分裂宝石。
+- 宝石可以从战斗掉落进入背包，并镶嵌到已装备物品。
+- 主要游戏界面、技能、装备、敌人、掉落和结算已中文化。
+- 下一步优先让穿透和分裂真正改变冰矛弹道。
+
+本轮详细记录：
+
+- `CHANGELOG.md`
+- `docs/progress/2026-06-11-ranger-coc-ice-build-progress.md`
+- `docs/progress/2026-06-14-localization-gem-loot-loop-progress.md`
 
 ## 当前新项目已完成
 
@@ -110,12 +129,13 @@ Godot console 路径：
 完整回归：
 
 ```powershell
-$godot = 'C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe'
-$project = 'H:\GODOT_PROJECT\dark-tower-2d-arpg'
+$godot = 'D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe'
+$project = (Resolve-Path '.').Path
+$log = Join-Path $project '.godot\regression.log'
 $tests = Get-ChildItem -Path "$project\tests\regression" -File -Filter '*.gd' | Sort-Object Name | ForEach-Object { 'res://tests/regression/' + $_.Name }
 foreach ($test in $tests) {
   Write-Host "RUN $test"
-  & $godot --headless --path $project --script $test
+  & $godot --headless --log-file $log --path $project --script $test
   if ($LASTEXITCODE -ne 0) {
     Write-Host "FAILED $test EXIT $LASTEXITCODE"
     exit $LASTEXITCODE
@@ -127,35 +147,33 @@ Write-Host 'ALL_NEW_PROJECT_REGRESSION_OK'
 场景烟测：
 
 ```powershell
-& 'C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe' --headless --path 'H:\GODOT_PROJECT\dark-tower-2d-arpg' --script 'res://tests/regression/regression_scene_boot.gd'
+& 'D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe' --headless --log-file '.godot\scene-boot.log' --path '.' --script 'res://tests/regression/regression_scene_boot.gd'
 ```
 
 主入口启动烟测：
 
 ```powershell
-& 'C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe' --headless --path 'H:\GODOT_PROJECT\dark-tower-2d-arpg' --quit-after 5
+& 'D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe' --headless --log-file '.godot\boot.log' --path '.' --quit-after 5
 ```
 
 检查残留 Godot 进程：
 
 ```powershell
-Get-Process | Where-Object { $_.ProcessName -like 'Godot_v4.6.2-stable_win64*' } | Select-Object Id,ProcessName
+Get-Process | Where-Object { $_.ProcessName -like 'Godot_v4.6.3-stable_win64*' } | Select-Object Id,ProcessName
 ```
 
 ## 下一步推荐路线
 
-优先做“第一版可稳定试玩 UI 与稳定性增强”，不要先做大而散的系统。
+优先完成“游侠寒冰射击 CoC 垂直切片”，不要先同时铺开多个职业。
 
 推荐顺序：
 
-1. 角色选择/存档槽 UI。
-2. 紧凑图标网格背包窗口。
-3. 装备窗口与装备穿脱交互。
-4. 战斗内暂停、回城、死亡结算。
-5. 连续楼层稳定性与卡死防护测试。
-6. 增加 3 到 5 个楼层节奏变化。
-7. 增加敌人类型、精英怪、Boss 雏形。
-8. 再扩展职业技能树、主动技能栏、装备词条和符石。
+1. 实现冰矛穿透与分裂弹道。
+2. 增加宝石选择、替换和取下交互。
+3. 完成 10 分钟挂机 / 手操接管混合试玩。
+4. 调整宝石掉率、暴击触发频率和装备成长速度。
+5. 增加自动拾取过滤和挂机危险规避。
+6. 再在通用系统上开发其他职业的首套 Build。
 
 ## 重要设计偏好
 

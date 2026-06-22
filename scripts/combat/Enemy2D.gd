@@ -1,4 +1,4 @@
-extends CharacterBody2D
+﻿extends CharacterBody2D
 class_name Enemy2D
 
 const Vfx2DFactoryScript := preload("res://scripts/combat/Vfx2DFactory.gd")
@@ -644,14 +644,13 @@ func _build_nameplate_text() -> String:
 	if not is_boss and not is_elite:
 		return ""
 	var lines: Array[String] = []
-	var rank := "Boss" if is_boss else "Elite"
+	var rank := "Boss" if is_boss else "精英"
 	lines.append("%s %s" % [rank, display_name])
 	if is_boss and not boss_skills.is_empty():
-		lines.append("Skills: %s" % ", ".join(_stringify_array(boss_skills)))
+		lines.append("技能：%s" % ", ".join(_stringify_array(boss_skills)))
 	elif is_elite and not elite_affixes.is_empty():
-		lines.append("Affixes: %s" % ", ".join(_stringify_array(elite_affixes)))
+		lines.append("词缀：%s" % ", ".join(_stringify_array(elite_affixes)))
 	return "\n".join(lines)
-
 func _stringify_array(values: Array) -> Array[String]:
 	var result: Array[String] = []
 	for value in values:
@@ -817,7 +816,6 @@ func _spawn_gatekeeper_slam_area(direction: Vector2) -> void:
 	var tween := area.create_tween()
 	tween.tween_property(area, "modulate:a", 0.0, 0.22)
 	tween.tween_callback(area.queue_free)
-
 func _trigger_gatekeeper_charge(direction: Vector2) -> void:
 	if not is_boss or not boss_charge_ready:
 		return

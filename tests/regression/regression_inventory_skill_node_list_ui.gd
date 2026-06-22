@@ -45,8 +45,8 @@ func _run() -> void:
 		var summary := window.find_child("SkillPointSummary", true, false) as Label
 		if summary != null:
 			var text := str(summary.text)
-			_expect(text.contains("Vitality Training"), "summary should show selected skill title")
-			_expect(text.contains("Health +12"), "summary should show selected skill gain")
+			_expect(text.contains("生命训练"), "summary should show selected skill title")
+			_expect(text.contains("生命 +12"), "summary should show selected skill gain")
 
 	var upgrade_button := window.find_child("UpgradeSelectedSkillButton", true, false) as Button
 	if upgrade_button != null:

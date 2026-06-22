@@ -15,7 +15,7 @@ func _run() -> void:
 	player["highest_floor"] = 9
 	player["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player.get("inventory", {})), {
 		"id": "gold",
-		"name": "Gold",
+		"name": "金币",
 		"type": "currency",
 		"amount": 55,
 	})
@@ -43,15 +43,15 @@ func _run() -> void:
 		if character != null:
 			_expect(str(character.text).contains("Prep Panel"), "character summary should include character name")
 		if progress != null:
-			_expect(str(progress.text).contains("Best Floor 9"), "progress summary should include best floor")
+			_expect(str(progress.text).contains("最高层 9"), "progress summary should include best floor")
 		if resources != null:
-			_expect(str(resources.text).contains("Gold 55"), "resource summary should include gold")
+			_expect(str(resources.text).contains("金币 55"), "resource summary should include gold")
 		if growth != null:
-			_expect(str(growth.text).contains("SP 2"), "growth summary should include skill points")
+			_expect(str(growth.text).contains("天赋点 2"), "growth summary should include skill points")
 		if start != null:
-			_expect(str(start.text).contains("Floor 1") and str(start.text).contains("9"), "start summary should explain both start options")
+			_expect(str(start.text).contains("第 1 层") and str(start.text).contains("9"), "start summary should explain both start options")
 		if recommendations != null:
-			_expect(str(recommendations.text).contains("SP 2"), "recommendations should mention unspent skill points")
+			_expect(str(recommendations.text).contains("2 点天赋点"), "recommendations should mention unspent skill points")
 		town.queue_free()
 		await process_frame
 	_finish()

@@ -48,7 +48,7 @@ func _run() -> void:
 		var after_select: Dictionary = Dictionary(window.get("player_data"))
 		_expect(str(Dictionary(after_select.get("equipped_items", {})).get("weapon", "")) == starter_weapon_id, "selecting an item should not auto-equip it")
 		var detail := str(window.find_child("ItemDetail", true, false).get("text"))
-		_expect(detail.contains("Score"), "selected equipment detail should include score")
+		_expect(detail.contains("评分"), "selected equipment detail should include score")
 
 	if window.has_method("use_selected_item"):
 		window.call("use_selected_item")

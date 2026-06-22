@@ -36,12 +36,12 @@ func _run() -> void:
 		var mana_label := hud.find_child("ManaLabel", true, false) as Label
 		var mana_bar := hud.find_child("ManaBar", true, false) as ProgressBar
 		if health_label != null:
-			_expect(str(health_label.text).contains("HP 73/130"), "health label should show current and max health")
+			_expect(str(health_label.text).contains("生命 73/130"), "health label should show current and max health")
 		if health_bar != null:
 			_expect(int(health_bar.max_value) == 130, "health bar max should match max health")
 			_expect(int(health_bar.value) == 73, "health bar value should match current health")
 		if mana_label != null:
-			_expect(str(mana_label.text).contains("MP 21/45"), "mana label should show current and max mana")
+			_expect(str(mana_label.text).contains("法力 21/45"), "mana label should show current and max mana")
 		if mana_bar != null:
 			_expect(int(mana_bar.max_value) == 45, "mana bar max should match max mana")
 			_expect(int(mana_bar.value) == 21, "mana bar value should match current mana")

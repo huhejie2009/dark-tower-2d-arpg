@@ -48,6 +48,8 @@ static func choose_drop_kind(profile: Dictionary, kill_index: int) -> String:
 	if bool(profile.get("guaranteed_equipment", false)):
 		return "equipment"
 	var safe_kill := maxi(1, kill_index)
+	if safe_kill % 7 == 0:
+		return "gem"
 	if safe_kill % 3 == 0:
 		return "equipment"
 	if safe_kill % 2 == 0:

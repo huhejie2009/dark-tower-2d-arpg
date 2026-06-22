@@ -14,12 +14,12 @@ func _run() -> void:
 	var player := PlayerDataServiceScript.build_starter_player("slot_1", "Junk Actions", "warrior")
 	var starter_weapon_id := str(Dictionary(player.get("equipped_items", {})).get("weapon", ""))
 	var inventory: Dictionary = Dictionary(player.get("inventory", {}))
-	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "gold", "name": "Gold", "type": "currency", "amount": 12})
-	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "crystal_shard", "name": "Crystal Shard", "type": "material", "amount": 2})
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_sword", "Junk Sword", "weapon", 2, {"attack_damage": 3}, {"junk": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_armor", "Junk Armor", "armor", 3, {"defense": 2}, {"junk": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("locked_junk", "Locked Junk", "armor", 1, {"defense": 1}, {"junk": true, "locked": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("favorite_junk", "Favorite Junk", "ring", 1, {"critical_chance": 1}, {"junk": true, "favorite": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "gold", "name": "金币", "type": "currency", "amount": 12})
+	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 2})
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_sword", "废品剑", "weapon", 2, {"attack_damage": 3}, {"junk": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_armor", "废品护甲", "armor", 3, {"defense": 2}, {"junk": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("locked_junk", "锁定废品", "armor", 1, {"defense": 1}, {"junk": true, "locked": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("favorite_junk", "收藏废品", "ring", 1, {"critical_chance": 1}, {"junk": true, "favorite": true}))
 	player["inventory"] = inventory
 
 	var service := InventoryItemActionServiceScript.new()
@@ -33,7 +33,7 @@ func _run() -> void:
 	_expect(Array(preview.get("protected_item_ids", [])).has("favorite_junk"), "preview should protect favorite junk")
 	_expect(not Array(preview.get("candidate_item_ids", [])).has(starter_weapon_id), "equipped starter weapon should never be processed")
 	_expect(int(preview.get("gold_gain", 0)) > 0, "sell preview should show gold gain")
-	_expect(str(preview.get("summary_text", "")).contains("Sell"), "sell preview should produce UI summary text")
+	_expect(str(preview.get("summary_text", "")).contains("出售"), "sell preview should produce UI summary text")
 
 	var sell_result: Dictionary = Dictionary(service.call("process_junk_action", player, "sell"))
 	_expect(bool(sell_result.get("ok", false)), "sell action should succeed when junk candidates exist")

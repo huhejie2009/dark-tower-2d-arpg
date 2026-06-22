@@ -3,6 +3,7 @@ class_name LootRules
 
 const EquipmentAffixRulesScript := preload("res://scripts/rules/EquipmentAffixRules.gd")
 const LootQualityServiceScript := preload("res://scripts/data/LootQualityService.gd")
+const GemSocketServiceScript := preload("res://scripts/data/GemSocketService.gd")
 
 static func generate_enemy_drop(floor: int, base_class: String, kill_index: int) -> Dictionary:
 	return generate_enemy_drop_with_source(floor, base_class, kill_index, "normal")
@@ -15,15 +16,17 @@ static func generate_enemy_drop_with_source(floor: int, base_class: String, kill
 			var equipment := _build_quality_equipment(floor, base_class, kill_index, quality)
 			return _wrap_drop_payload({
 				"id": str(equipment.get("instance_id", "")),
-				"name": str(equipment.get("name", "Equipment")),
+				"name": str(equipment.get("name", "装备")),
 				"type": "equipment",
 				"amount": 1,
 				"equipment": equipment,
 			}, quality)
 		"material":
-			return _wrap_drop_payload({"id": "crystal_shard", "name": "Crystal Shard", "type": "material", "amount": 1 + int(maxi(1, floor) / 6)}, quality)
+			return _wrap_drop_payload({"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 1 + int(maxi(1, floor) / 6)}, quality)
+		"gem":
+			return _wrap_drop_payload(GemSocketServiceScript.build_drop_payload(base_class, floor, kill_index), quality)
 		_:
-			return _wrap_drop_payload({"id": "gold", "name": "Gold", "type": "currency", "amount": 8 + maxi(1, floor) * 2 + int(quality.get("item_level", floor))}, quality)
+			return _wrap_drop_payload({"id": "gold", "name": "金币", "type": "currency", "amount": 8 + maxi(1, floor) * 2 + int(quality.get("item_level", floor))}, quality)
 
 static func generate_boss_clear_reward(floor: int, base_class: String) -> Dictionary:
 	var quality := LootQualityServiceScript.build_quality_profile(floor, "boss", 1)
@@ -31,7 +34,7 @@ static func generate_boss_clear_reward(floor: int, base_class: String) -> Dictio
 	_apply_quality_to_equipment(equipment, quality, 17)
 	return _wrap_drop_payload({
 		"id": str(equipment.get("instance_id", "")),
-		"name": str(equipment.get("name", "Boss Reward")),
+		"name": str(equipment.get("name", "Boss 奖励")),
 		"type": "equipment",
 		"amount": 1,
 		"equipment": equipment,

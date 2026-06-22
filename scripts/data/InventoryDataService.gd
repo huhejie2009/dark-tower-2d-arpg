@@ -39,6 +39,8 @@ static func add_item(inventory: Dictionary, payload: Dictionary) -> Dictionary:
 		entry["source_tags"] = Array(payload.get("source_tags", [])).duplicate(true)
 	if payload.has("item_power"):
 		entry["item_power"] = int(payload.get("item_power", 0))
+	if payload.has("gem_id"):
+		entry["gem_id"] = str(payload.get("gem_id", ""))
 	if item_type == "equipment":
 		entry["equipment"] = Dictionary(payload.get("equipment", {})).duplicate(true)
 	result[item_id] = InventoryItemSchemaServiceScript.normalize_item_entry(item_id, entry)
@@ -74,5 +76,5 @@ static func build_capacity_summary(inventory: Dictionary, capacity: int = DEFAUL
 		"pressure_ratio": ratio,
 		"pressure": ratio >= PRESSURE_RATIO,
 		"full": ratio >= FULL_RATIO,
-		"summary_text": "Bag %d/%d" % [used_slots, safe_capacity],
+		"summary_text": "背包 %d/%d" % [used_slots, safe_capacity],
 	}
