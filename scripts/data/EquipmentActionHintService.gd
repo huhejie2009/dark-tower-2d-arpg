@@ -25,9 +25,9 @@ static func build_hint(player_data: Dictionary, item_id: String) -> Dictionary:
 			"upgrade": false,
 			"reason": "equipped",
 			"score_delta": score_delta,
-			"button_text": "已穿戴",
-			"primary_text": "当前已穿戴",
-			"detail_text": "这件装备已经在使用中。",
+			"button_text": "已装备",
+			"primary_text": "当前已装备",
+			"detail_text": "这件物品已经在使用中。",
 		}
 	if not bool(can_equip.get("ok", false)):
 		var reason := str(can_equip.get("reason", "blocked"))
@@ -71,54 +71,54 @@ static func _blocked(reason: String, primary_text: String, button_text: String) 
 
 static func _equip_button_text(score_delta: int) -> String:
 	if score_delta > 0:
-		return "穿戴 +%d" % score_delta
+		return "装备 +%d" % score_delta
 	if score_delta < 0:
-		return "穿戴 %d" % score_delta
-	return "穿戴"
+		return "装备 %d" % score_delta
+	return "装备"
 
 static func _equippable_primary_text(score_delta: int) -> String:
 	if score_delta > 0:
-		return "可穿戴：评分提升 +%d" % score_delta
+		return "可装备：评分提升 +%d" % score_delta
 	if score_delta < 0:
-		return "可穿戴：评分降低 %d" % score_delta
-	return "可穿戴：同级替换"
+		return "可装备：评分降低 %d" % score_delta
+	return "可装备：平替"
 
 static func _equippable_detail_text(score_delta: int) -> String:
 	if score_delta > 0:
-		return "推荐穿戴，可提升整体装备强度。"
+		return "如果想提升总装备强度，建议更换。"
 	if score_delta < 0:
-		return "可以穿戴，但弱于当前装备。"
-	return "同级替换，换装前建议对比词条。"
+		return "可以装备，但整体弱于当前装备。"
+	return "可作为平替。更换前建议对比词条。"
 
 static func _blocked_button_text(reason: String) -> String:
 	match reason:
 		"wrong_class":
-			return "职业限制"
+			return "职业不符"
 		"bad_slot":
-			return "部位无效"
+			return "槽位错误"
 		"missing_item":
 			return "缺失"
 		_:
-			return "不可穿戴"
+			return "不可装备"
 
 static func _blocked_primary_text(reason: String) -> String:
 	match reason:
 		"wrong_class":
-			return "职业不符：无法穿戴"
+			return "职业不符：无法装备"
 		"bad_slot":
-			return "部位无效：无法穿戴"
+			return "槽位无效：无法装备"
 		"missing_item":
 			return "物品不存在"
 		_:
-			return "无法穿戴：%s" % reason
+			return "无法装备：%s" % reason
 
 static func _blocked_detail_text(reason: String) -> String:
 	match reason:
 		"wrong_class":
-			return "这件装备属于其他职业池。"
+			return "这件物品属于其他职业装备池。"
 		"bad_slot":
-			return "当前装备部位暂不支持。"
+			return "当前装备槽位暂不支持。"
 		"missing_item":
-			return "选中物品已经不在背包中。"
+			return "所选物品已不在背包中。"
 		_:
-			return "穿戴操作被阻止。"
+			return "装备操作被阻止。"

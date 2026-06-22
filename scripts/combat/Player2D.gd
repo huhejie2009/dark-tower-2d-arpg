@@ -3,8 +3,10 @@ class_name Player2D
 
 const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
 const Skill2DLibraryScript := preload("res://scripts/combat/Skill2DLibrary.gd")
+const Vfx2DFactoryScript := preload("res://scripts/combat/Vfx2DFactory.gd")
 const CombatFeelServiceScript := preload("res://scripts/data/CombatFeelService.gd")
 const DamageFeedbackServiceScript := preload("res://scripts/data/DamageFeedbackService.gd")
+const TriggerRuleServiceScript := preload("res://scripts/data/TriggerRuleService.gd")
 const PROCEDURAL_VISUAL_NAMES := ["PlayerBody", "PlayerBodyOutline", "PlayerFacingHint"]
 
 signal died
@@ -40,6 +42,7 @@ var footstep_offset_x := 0.0
 var last_damage_feedback: Dictionary = {}
 var damage_stagger_remaining := 0.0
 var damage_hit_flash_remaining := 0.0
+var trigger_state: Dictionary = TriggerRuleServiceScript.create_trigger_state()
 
 func _ready() -> void:
 	_create_collision()
@@ -65,6 +68,7 @@ func export_player_patch() -> Dictionary:
 	return patch
 
 func _physics_process(delta: float) -> void:
+	trigger_state = TriggerRuleServiceScript.tick_trigger_state(trigger_state, delta)
 	_tick_attack_feel(delta)
 	_tick_damage_feedback(delta)
 	update_actor_animation_state(move_vector, attack_phase != "ready")
@@ -99,6 +103,10 @@ func cast_basic(direction: Vector2) -> Dictionary:
 			"cooldown": attack_cooldown_remaining,
 			"accepted": false,
 			"buffered": true,
+			"critical_hit": false,
+			"triggered": false,
+			"trigger_skill_id": "",
+			"trigger_reason": "attack_cooldown",
 			"attack_phase": attack_phase,
 			"input_buffer": float(attack_feel_profile.get("input_buffer", 0.0)),
 		}
@@ -106,6 +114,20 @@ func cast_basic(direction: Vector2) -> Dictionary:
 	if direction.length_squared() <= 0.001:
 		direction = facing_direction
 	var result := Skill2DLibraryScript.cast_basic_skill(self, basic_skill_id, direction, attack_damage)
+	var critical_hit := _roll_critical_hit()
+	result["critical_hit"] = critical_hit
+	var trigger := TriggerRuleServiceScript.evaluate_coc_trigger(result, _build_coc_stats(), trigger_state)
+	trigger_state = Dictionary(trigger.get("next_state", trigger_state))
+	result["triggered"] = bool(trigger.get("triggered", false))
+	result["trigger_skill_id"] = str(trigger.get("trigger_skill_id", ""))
+	result["trigger_reason"] = str(trigger.get("reason", ""))
+	if bool(result.get("triggered", false)):
+		var trigger_result := Skill2DLibraryScript.cast_triggered_skill(self, str(result["trigger_skill_id"]), direction, attack_damage)
+		result["trigger_hit_count"] = int(trigger_result.get("hit_count", 0))
+		var parent := get_parent()
+		if is_instance_valid(parent):
+			var flash_direction := direction.normalized() if direction.length_squared() > 0.001 else facing_direction
+			Vfx2DFactoryScript.spawn_coc_trigger_flash(parent, global_position + flash_direction * 18.0)
 	_start_attack_feel()
 	attack_cooldown_remaining = float(attack_feel_profile.get("cooldown", result.get("cooldown", 0.35)))
 	result["cooldown"] = attack_cooldown_remaining
@@ -118,6 +140,23 @@ func cast_basic(direction: Vector2) -> Dictionary:
 	result["input_buffer"] = float(attack_feel_profile.get("input_buffer", 0.0))
 	result["hit_stop"] = float(attack_feel_profile.get("hit_stop", 0.0))
 	return result
+
+func _roll_critical_hit() -> bool:
+	var crit_chance := clampi(int(player_data.get("critical_chance", 0)), 0, 100)
+	if crit_chance >= 100:
+		return true
+	if crit_chance <= 0:
+		return false
+	return randi_range(1, 100) <= crit_chance
+
+func _build_coc_stats() -> Dictionary:
+	var recovery := maxf(0.0, float(player_data.get("coc_cooldown_recovery", 0.0)))
+	var base_cooldown := 0.30
+	var cooldown := maxf(0.05, base_cooldown / (1.0 + recovery / 100.0))
+	return {
+		"critical_chance": int(player_data.get("critical_chance", 0)),
+		"coc_trigger_cooldown": cooldown,
+	}
 
 func _refresh_attack_feel_profile() -> void:
 	attack_feel_profile = CombatFeelServiceScript.get_basic_attack_feel(basic_skill_id)

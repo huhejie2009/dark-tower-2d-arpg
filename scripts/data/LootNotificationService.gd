@@ -6,7 +6,7 @@ const EquipmentRecommendationServiceScript := preload("res://scripts/data/Equipm
 
 static func build_pickup_notification(player_data: Dictionary, payload: Dictionary, source: String = "drop") -> Dictionary:
 	var item_type := str(payload.get("type", "item"))
-	var item_name := str(payload.get("name", payload.get("id", "Item")))
+	var item_name := str(payload.get("name", payload.get("id", "物品")))
 	var amount := maxi(1, int(payload.get("amount", 1)))
 	var payload_source := str(Dictionary(payload.get("loot_quality", {})).get("source", payload.get("source", "normal")))
 	var notification := {
@@ -53,18 +53,21 @@ static func build_pickup_notification(player_data: Dictionary, payload: Dictiona
 		notification["score_delta"] = int(recommendation.get("score_delta", 0))
 		notification["recommendation_rank"] = str(recommendation.get("recommendation_rank", "none"))
 		notification["recommendation_text"] = str(recommendation.get("recommendation_text", ""))
-		notification["source_label"] = str(recommendation.get("source_label", notification.get("source_label", "掉落"))) if source != "boss_reward" else "首领奖励"
-		notification["headline"] = "首领奖励" if source == "boss_reward" else ("发现升级装备" if upgrade else "获得装备")
+		notification["source_label"] = str(recommendation.get("source_label", notification.get("source_label", "掉落"))) if source != "boss_reward" else "Boss 奖励"
+		notification["headline"] = "Boss 奖励" if source == "boss_reward" else ("发现提升装备" if upgrade else "获得装备")
 		notification["short_tag"] = _build_short_tag(notification)
 		notification["log_text"] = "%s：%s | %s | 评分 %d%s" % [
 			str(notification["headline"]),
 			item_name,
 			_rarity_label(str(notification["rarity"])),
 			score,
-			" | 可升级" if upgrade else "",
+			" | 提升" if upgrade else "",
 		]
 	else:
-		notification["headline"] = "获得金币" if item_type == "currency" else "获得材料"
+		if item_type == "gem":
+			notification["headline"] = "获得宝石"
+		else:
+			notification["headline"] = "获得货币" if item_type == "currency" else "获得材料"
 		notification["short_tag"] = str(notification.get("source_label", "掉落"))
 		notification["log_text"] = "%s：%s %s" % [str(notification["headline"]), item_name, str(notification["quantity_text"])]
 	notification["accent_color"] = _rarity_color_hex(str(notification.get("rarity", "common")))
@@ -72,20 +75,10 @@ static func build_pickup_notification(player_data: Dictionary, payload: Dictiona
 
 static func _source_label(notification_source: String, loot_source: String) -> String:
 	if notification_source == "boss_reward" or loot_source == "boss":
-		return "首领奖励"
+		return "Boss 奖励"
 	if loot_source == "elite":
 		return "精英掉落"
 	return "掉落"
-
-static func _build_short_tag(notification: Dictionary) -> String:
-	var tags: Array[String] = []
-	var source_label := str(notification.get("source_label", ""))
-	if source_label != "":
-		tags.append(source_label)
-	var recommendation := str(notification.get("recommendation_text", ""))
-	if recommendation != "":
-		tags.append(recommendation)
-	return " | ".join(tags)
 
 static func _rarity_label(rarity: String) -> String:
 	match rarity:
@@ -99,8 +92,20 @@ static func _rarity_label(rarity: String) -> String:
 			return "货币"
 		"material":
 			return "材料"
+		"gem":
+			return "宝石"
 		_:
 			return "普通"
+
+static func _build_short_tag(notification: Dictionary) -> String:
+	var tags: Array[String] = []
+	var source_label := str(notification.get("source_label", ""))
+	if source_label != "":
+		tags.append(source_label)
+	var recommendation := str(notification.get("recommendation_text", ""))
+	if recommendation != "":
+		tags.append(recommendation)
+	return " | ".join(tags)
 
 static func _get_payload_rarity(payload: Dictionary) -> String:
 	if str(payload.get("type", "")) == "equipment":
@@ -110,6 +115,8 @@ static func _get_payload_rarity(payload: Dictionary) -> String:
 		return "currency"
 	if item_type == "material":
 		return "material"
+	if item_type == "gem":
+		return "gem"
 	return "common"
 
 static func _rarity_color_hex(rarity: String) -> String:
@@ -124,5 +131,7 @@ static func _rarity_color_hex(rarity: String) -> String:
 			return "#c7a34a"
 		"material":
 			return "#8b949e"
+		"gem":
+			return "#72d7ff"
 		_:
 			return "#9ca3af"

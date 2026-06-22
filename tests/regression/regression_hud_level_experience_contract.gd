@@ -31,12 +31,12 @@ func _run() -> void:
 		var exp_bar := hud.find_child("ExperienceBar", true, false) as ProgressBar
 		var skill_label := hud.find_child("SkillPointLabel", true, false) as Label
 		if level_label != null:
-			_expect(str(level_label.text).contains("Lv.3"), "HUD level label should include player level")
+			_expect(str(level_label.text).contains("等级3"), "HUD level label should include player level")
 		if exp_bar != null:
 			_expect(int(exp_bar.max_value) == 120, "HUD experience bar max should match exp_to_next_level")
 			_expect(int(exp_bar.value) == 45, "HUD experience bar value should match current_exp")
 		if skill_label != null:
-			_expect(str(skill_label.text).contains("技能点 2"), "HUD skill point label should include skill points")
+			_expect(str(skill_label.text).contains("天赋点 2"), "HUD skill point label should include skill points")
 
 	scene.queue_free()
 	await process_frame

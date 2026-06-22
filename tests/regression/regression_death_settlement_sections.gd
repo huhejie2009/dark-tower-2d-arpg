@@ -20,14 +20,14 @@ func _run() -> void:
 		scene.set("current_floor", 5)
 		scene.set("current_floor_template", {"template_id": "boss_gatekeeper"})
 		scene.set("floor_kill_count", 4)
-		var pickups: Array[String] = ["金币", "Gatekeeper Trophy 5"]
+		var pickups: Array[String] = ["金币", "守门者战利品 5"]
 		scene.set("floor_pickup_names", pickups)
-		scene.set("last_floor_rewards", {"is_boss_floor": true, "guaranteed_items": [{"name": "Gatekeeper Trophy 5"}]})
+		scene.set("last_floor_rewards", {"is_boss_floor": true, "guaranteed_items": [{"name": "守门者战利品 5"}]})
 		scene.call("_refresh_death_settlement_sections_for_test")
 		_expect(str(scene.find_child("DeathFloorSection", true, false).get("text")).contains("boss_gatekeeper"), "floor section should show template")
 		_expect(str(scene.find_child("DeathKillsSection", true, false).get("text")).contains("4"), "kills section should show kill count")
 		_expect(str(scene.find_child("DeathLootSection", true, false).get("text")).contains("金币"), "loot section should show picked item")
-		_expect(str(scene.find_child("DeathBossRewardSection", true, false).get("text")).contains("Gatekeeper Trophy 5"), "boss section should show boss reward")
+		_expect(str(scene.find_child("DeathBossRewardSection", true, false).get("text")).contains("守门者战利品 5"), "boss section should show boss reward")
 	scene.queue_free()
 	await process_frame
 	_finish()

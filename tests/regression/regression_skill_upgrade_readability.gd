@@ -37,14 +37,14 @@ func _run() -> void:
 	var summary := window.find_child("SkillPointSummary", true, false) as Label
 	if summary != null:
 		var summary_text := str(summary.text)
-		_expect(summary_text.contains("技能点 1"), "summary should show skill points")
-		_expect(summary_text.contains("下一级 +3 伤害"), "summary should show next damage gain")
-		_expect(summary_text.contains("消耗 1 技能点"), "summary should show skill point cost")
+		_expect(summary_text.contains("天赋点 1"), "summary should show skill points")
+		_expect(summary_text.contains("下级 +3 伤害"), "summary should show next damage gain")
+		_expect(summary_text.contains("消耗 1 天赋点"), "summary should show skill point cost")
 
 	var button := window.find_child("UpgradeBasicAttackButton", true, false) as Button
 	if button != null:
 		_expect(str(button.tooltip_text).contains("伤害 +3"), "button tooltip should describe upgrade gain")
-		_expect(str(button.tooltip_text).contains("消耗 1 技能点"), "button tooltip should describe cost")
+		_expect(str(button.tooltip_text).contains("消耗 1 天赋点"), "button tooltip should describe cost")
 
 	player["skill_points"] = 0
 	window.set_player_data(player)
@@ -53,7 +53,7 @@ func _run() -> void:
 		var blocked: Dictionary = Dictionary(window.call("get_basic_attack_upgrade_preview_for_test"))
 		_expect(not bool(blocked.get("can_upgrade", true)), "preview should block upgrade without skill points")
 		_expect(str(blocked.get("reason", "")) == "no_skill_points", "preview should expose no skill point reason")
-		_expect(str(blocked.get("status_text", "")).contains("需要 1 技能点"), "blocked preview should explain missing SP")
+		_expect(str(blocked.get("status_text", "")).contains("需要 1 天赋点"), "blocked preview should explain missing SP")
 	if button != null:
 		_expect(button.disabled, "button should be disabled without skill points")
 

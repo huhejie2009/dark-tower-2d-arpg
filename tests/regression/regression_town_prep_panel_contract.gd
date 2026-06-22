@@ -47,12 +47,11 @@ func _run() -> void:
 		if resources != null:
 			_expect(str(resources.text).contains("金币 55"), "resource summary should include gold")
 		if growth != null:
-			_expect(str(growth.text).contains("技能点 2"), "growth summary should include skill points")
+			_expect(str(growth.text).contains("天赋点 2"), "growth summary should include skill points")
 		if start != null:
 			_expect(str(start.text).contains("第 1 层") and str(start.text).contains("9"), "start summary should explain both start options")
-			_expect(str(start.text).contains("最高层"), "start summary should explain saved highest floor")
 		if recommendations != null:
-			_expect(str(recommendations.text).contains("技能点 2"), "recommendations should mention unspent skill points")
+			_expect(str(recommendations.text).contains("2 点天赋点"), "recommendations should mention unspent skill points")
 		town.queue_free()
 		await process_frame
 	_finish()

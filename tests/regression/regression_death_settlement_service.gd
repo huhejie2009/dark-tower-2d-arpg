@@ -12,16 +12,16 @@ func _run() -> void:
 		"floor": 5,
 		"template_id": "boss_gatekeeper",
 		"kill_count": 4,
-		"pickup_names": ["金币", "Gatekeeper Trophy 5"],
-		"last_floor_rewards": {"is_boss_floor": true, "guaranteed_items": [{"name": "Gatekeeper Trophy 5"}]},
+		"pickup_names": ["金币", "守门者战利品 5"],
+		"last_floor_rewards": {"is_boss_floor": true, "guaranteed_items": [{"name": "守门者战利品 5"}]},
 		"return_health_mode": "half",
 	}
 	var settlement: Dictionary = DeathSettlementServiceScript.build_death_settlement(context)
 	_expect(str(settlement.get("floor_text", "")).contains("boss_gatekeeper"), "floor text should include template id")
 	_expect(str(settlement.get("combat_text", "")).contains("4"), "combat text should include kill count")
 	_expect(str(settlement.get("loot_text", "")).contains("金币"), "loot text should include picked item")
-	_expect(str(settlement.get("boss_reward_text", "")).contains("Gatekeeper Trophy 5"), "boss text should include boss reward")
-	_expect(str(settlement.get("summary_text", "")).contains("首领奖励"), "summary should include boss reward")
+	_expect(str(settlement.get("boss_reward_text", "")).contains("守门者战利品 5"), "boss text should include boss reward")
+	_expect(str(settlement.get("summary_text", "")).contains("Boss 奖励"), "summary should include boss reward")
 	_expect(str(settlement.get("action_text", "")).contains("半血"), "action should explain return health")
 	_expect(Array(settlement.get("sections", [])).size() >= 5, "settlement should expose structured sections")
 	_expect(bool(settlement.get("boss_reward", false)), "settlement should flag boss reward")

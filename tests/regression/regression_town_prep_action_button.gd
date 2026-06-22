@@ -24,7 +24,7 @@ func _run() -> void:
 		_expect(action_button != null, "town prep panel should expose an action button")
 		_expect(inventory != null, "town should still own inventory equipment window")
 		if action_button != null:
-			_expect(str(action_button.text) == "打开技能", "skill recommendation should drive prep action button text")
+			_expect(str(action_button.text) == "打开天赋", "skill recommendation should drive prep action button text")
 			_expect(not action_button.disabled, "prep action button should be enabled when action exists")
 			action_button.pressed.emit()
 			await process_frame

@@ -16,14 +16,14 @@ func _run() -> void:
 		scene.set("current_floor", 5)
 		scene.set("current_floor_template", {"template_id": "boss_gatekeeper"})
 		scene.set("floor_kill_count", 3)
-		var pickups: Array[String] = ["金币", "Boss Sword"]
+		var pickups: Array[String] = ["金币", "Boss 剑"]
 		scene.set("floor_pickup_names", pickups)
-		scene.set("last_floor_rewards", {"is_boss_floor": true, "guaranteed_items": [{"name": "Boss Sword"}]})
+		scene.set("last_floor_rewards", {"is_boss_floor": true, "guaranteed_items": [{"name": "Boss 剑"}]})
 		var text := str(scene.call("_build_death_summary_text_for_test"))
 		_expect(text.contains("boss_gatekeeper"), "death summary should include floor template id")
 		_expect(text.contains("击杀：3"), "death summary should include kill count")
-		_expect(text.contains("金币") and text.contains("Boss Sword"), "death summary should include picked items")
-		_expect(text.contains("首领奖励"), "death summary should mention boss reward")
+		_expect(text.contains("金币") and text.contains("Boss 剑"), "death summary should include picked items")
+		_expect(text.contains("Boss 奖励"), "death summary should mention boss reward")
 	scene.queue_free()
 	await process_frame
 	_finish()

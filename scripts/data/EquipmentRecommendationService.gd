@@ -2,6 +2,7 @@ extends RefCounted
 class_name EquipmentRecommendationService
 
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
+const EquipmentCompareSummaryServiceScript := preload("res://scripts/data/EquipmentCompareSummaryService.gd")
 
 static func build_recommendation(player_data: Dictionary, equipment: Dictionary, loot_quality: Dictionary = {}) -> Dictionary:
 	var item_id := str(equipment.get("instance_id", "candidate"))
@@ -21,6 +22,7 @@ static func build_recommendation(player_data: Dictionary, equipment: Dictionary,
 	var score_delta := score - equipped_score
 	var upgrade := bool(can_equip.get("ok", false)) and score_delta > 0
 	var source := str(loot_quality.get("source", "normal"))
+	var compare_summary := EquipmentCompareSummaryServiceScript.build_summary(candidate_data, item_id, equipment)
 	return {
 		"score": score,
 		"equipped_score": equipped_score,
@@ -32,6 +34,7 @@ static func build_recommendation(player_data: Dictionary, equipment: Dictionary,
 		"source_label": _source_label(source),
 		"quality_tag": str(loot_quality.get("quality_tag", "")),
 		"equip_reason": "ok" if bool(can_equip.get("ok", false)) else str(can_equip.get("reason", "blocked")),
+		"reason_lines": Array(compare_summary.get("reason_lines", [])),
 	}
 
 static func _get_equipped_slot_score(player_data: Dictionary, slot: String) -> int:
@@ -54,15 +57,15 @@ static func _build_rank(score_delta: int, upgrade: bool) -> String:
 
 static func _build_recommendation_text(score_delta: int, upgrade: bool) -> String:
 	if upgrade:
-		return "提升 +%d" % score_delta
+		return "+%d 提升" % score_delta
 	if score_delta < 0:
-		return "低于已穿戴 %d" % score_delta
-	return "同级替换"
+		return "比已装备低 %d" % abs(score_delta)
+	return "平替"
 
 static func _source_label(source: String) -> String:
 	match source:
 		"boss":
-			return "首领奖励"
+			return "Boss 奖励"
 		"elite":
 			return "精英掉落"
 		_:

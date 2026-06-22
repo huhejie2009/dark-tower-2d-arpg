@@ -35,7 +35,7 @@ static func _entry_matches_filter(player_data: Dictionary, item_id: String, entr
 	if filter_mode == "equipment":
 		return item_type == "equipment"
 	if filter_mode == "material":
-		return item_type == "material" or item_type == "currency"
+		return item_type == "material" or item_type == "currency" or item_type == "gem"
 	if filter_mode == "upgrade":
 		return EquipmentDataServiceScript.is_upgrade_candidate(player_data, item_id)
 	var flags := _binding_flags(entry)
@@ -81,4 +81,3 @@ static func _binding_flags(entry: Dictionary) -> Dictionary:
 	if entry.has("junk"):
 		flags["junk"] = bool(entry.get("junk", false))
 	return flags
-

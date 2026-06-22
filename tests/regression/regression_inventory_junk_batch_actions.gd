@@ -16,10 +16,10 @@ func _run() -> void:
 	var inventory: Dictionary = Dictionary(player.get("inventory", {}))
 	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "gold", "name": "金币", "type": "currency", "amount": 12})
 	inventory = InventoryDataServiceScript.add_item(inventory, {"id": "crystal_shard", "name": "水晶碎片", "type": "material", "amount": 2})
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_sword", "Junk Sword", "weapon", 2, {"attack_damage": 3}, {"junk": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_armor", "Junk Armor", "armor", 3, {"defense": 2}, {"junk": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("locked_junk", "Locked Junk", "armor", 1, {"defense": 1}, {"junk": true, "locked": true}))
-	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("favorite_junk", "Favorite Junk", "ring", 1, {"critical_chance": 1}, {"junk": true, "favorite": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_sword", "废品剑", "weapon", 2, {"attack_damage": 3}, {"junk": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("junk_armor", "废品护甲", "armor", 3, {"defense": 2}, {"junk": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("locked_junk", "锁定废品", "armor", 1, {"defense": 1}, {"junk": true, "locked": true}))
+	inventory = InventoryDataServiceScript.add_item(inventory, _equipment_payload("favorite_junk", "收藏废品", "ring", 1, {"critical_chance": 1}, {"junk": true, "favorite": true}))
 	player["inventory"] = inventory
 
 	var service := InventoryItemActionServiceScript.new()

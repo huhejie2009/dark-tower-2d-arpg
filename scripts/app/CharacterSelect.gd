@@ -26,7 +26,7 @@ func _build_ui() -> void:
 	add_child(background)
 
 	var title := Label.new()
-	title.text = "选择角色存档"
+	title.text = "选择英雄存档"
 	title.position = Vector2(480, 70)
 	DarkArpgUiThemeScript.style_title(title, 34)
 	add_child(title)
@@ -84,7 +84,7 @@ func _build_ui() -> void:
 
 	var create := Button.new()
 	create.name = "CreateCharacterButton"
-	create.text = "创建并进入选中存档"
+	create.text = "在所选空位创建角色"
 	create.position = Vector2(480, 490)
 	create.size = Vector2(280, 54)
 	DarkArpgUiThemeScript.style_button(create, true)
@@ -95,10 +95,10 @@ func _build_ui() -> void:
 func _build_slot_text(slot: Dictionary) -> String:
 	var label := str(slot.get("slot_id", "slot"))
 	if not bool(slot.get("exists", false)):
-		return "%s\n空存档\n点击选择" % label
-	return "%s\n%s\n%s Lv.%d | 最高层 %d" % [
+		return "%s\n空位\n点击选择" % label
+	return "%s\n%s\n%s 等级%d | 第 %d 层" % [
 		label,
-		str(slot.get("character_name", "Hero")),
+		str(slot.get("character_name", "英雄")),
 		ClassRulesScript.get_class_name(str(slot.get("base_class", "warrior"))),
 		int(slot.get("player_level", 1)),
 		int(slot.get("highest_floor", 1)),
@@ -147,5 +147,5 @@ func _create_character() -> void:
 		SaveManagerScript.set_active_slot(selected_slot_id)
 		SceneRouterScript.go_to_town(get_tree())
 		return
-	SaveManagerScript.create_character(selected_slot_id, "新角色", selected_class)
+	SaveManagerScript.create_character(selected_slot_id, "新英雄", selected_class)
 	SceneRouterScript.go_to_town(get_tree())

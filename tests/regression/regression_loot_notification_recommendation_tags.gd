@@ -34,19 +34,19 @@ func _run() -> void:
 		},
 	}
 	var note := LootNotificationServiceScript.build_pickup_notification(player, payload, "boss_reward")
-	_expect(str(note.get("source_label", "")) == "首领奖励", "notification should expose boss source label")
+	_expect(str(note.get("source_label", "")) == "Boss 奖励", "notification should expose boss source label")
 	_expect(str(note.get("quality_tag", "")) == "boss_floor_10", "notification should include quality tag")
 	_expect(int(note.get("score_delta", 0)) > 0, "notification should include score delta")
 	_expect(str(note.get("recommendation_rank", "")) != "", "notification should include recommendation rank")
 	_expect(str(note.get("recommendation_text", "")).contains("+"), "recommendation text should show positive delta")
-	_expect(str(note.get("short_tag", "")).contains("首领"), "short tag should mention boss")
+	_expect(str(note.get("short_tag", "")).contains("Boss 奖励"), "short tag should mention boss")
 
 	var hud := HudControllerScript.new()
 	root.add_child(hud)
 	await process_frame
 	hud.show_loot_notification(note)
 	var label := hud.find_child("LootNotificationLabel", true, false) as Label
-	_expect(label != null and str(label.text).contains("首领"), "HUD loot notification should render source tag")
+	_expect(label != null and str(label.text).contains("Boss 奖励"), "HUD loot notification should render source tag")
 	_expect(label != null and str(label.text).contains("+"), "HUD loot notification should render recommendation delta")
 	hud.queue_free()
 	await process_frame

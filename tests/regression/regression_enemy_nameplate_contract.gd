@@ -18,7 +18,7 @@ func _run() -> void:
 	await process_frame
 	var elite_nameplate := elite.find_child("EnemyNameplate", true, false)
 	_expect(elite_nameplate != null, "elite should create nameplate")
-	_expect(str(elite.get("nameplate_text")).contains("Elite"), "elite nameplate text should include rank")
+	_expect(str(elite.get("nameplate_text")).contains("精英"), "elite nameplate text should include rank")
 	_expect(str(elite.get("nameplate_text")).contains("tough"), "elite nameplate should include affix")
 	_expect(str(elite.get("nameplate_text")).contains("death_burst"), "elite nameplate should include death burst affix")
 
@@ -29,7 +29,7 @@ func _run() -> void:
 	var boss_nameplate := boss.find_child("EnemyNameplate", true, false)
 	_expect(boss_nameplate != null, "boss should create nameplate")
 	_expect(str(boss.get("nameplate_text")).contains("Boss"), "boss nameplate text should include boss rank")
-	_expect(str(boss.get("nameplate_text")).contains("Tower Gatekeeper"), "boss nameplate should include name")
+	_expect(str(boss.get("nameplate_text")).contains("守门者"), "boss nameplate should include name")
 	_expect(str(boss.get("nameplate_text")).contains("short_charge"), "boss nameplate should include boss skill")
 
 	host.queue_free()

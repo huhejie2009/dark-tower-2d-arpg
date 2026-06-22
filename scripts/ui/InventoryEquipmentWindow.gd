@@ -14,8 +14,9 @@ const EquipmentRecommendationServiceScript := preload("res://scripts/data/Equipm
 const PlayerDataServiceScript := preload("res://scripts/data/PlayerDataService.gd")
 const SkillNodeGrowthServiceScript := preload("res://scripts/data/SkillNodeGrowthService.gd")
 const SkillUpgradePreviewServiceScript := preload("res://scripts/data/SkillUpgradePreviewService.gd")
-const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
+const GemSocketServiceScript := preload("res://scripts/data/GemSocketService.gd")
 const ClassRulesScript := preload("res://scripts/rules/ClassRules.gd")
+const GameConstantsScript := preload("res://scripts/app/GameConstants.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
 
 const DEFAULT_WINDOW_SIZE := Vector2(980, 600)
@@ -115,7 +116,7 @@ func _build_ui() -> void:
 
 	var close_button := Button.new()
 	close_button.name = "CloseInventoryButton"
-	close_button.text = "X"
+	close_button.text = "关"
 	close_button.custom_minimum_size = Vector2(36, 32)
 	DarkArpgUiThemeScript.style_button(close_button)
 	close_button.pressed.connect(func(): close_requested.emit())
@@ -157,7 +158,7 @@ func _build_ui() -> void:
 	_add_filter_button(tools, "all", "FilterAllButton", "全部", 52, true)
 	_add_filter_button(tools, "equipment", "FilterEquipmentButton", "装备", 64)
 	_add_filter_button(tools, "material", "FilterMaterialButton", "材料", 52)
-	_add_filter_button(tools, "upgrade", "FilterUpgradeButton", "升级", 52)
+	_add_filter_button(tools, "upgrade", "FilterUpgradeButton", "提升", 52)
 	_add_filter_button(tools, "locked", "FilterLockedButton", "锁定", 58)
 	_add_filter_button(tools, "favorite", "FilterFavoriteButton", "收藏", 52)
 	_add_filter_button(tools, "junk", "FilterJunkButton", "废品", 58)
@@ -184,7 +185,7 @@ func _build_ui() -> void:
 	side.add_child(stats_label)
 
 	var skill_title := Label.new()
-	skill_title.text = "技能"
+	skill_title.text = "天赋"
 	DarkArpgUiThemeScript.style_title(skill_title, 16)
 	side.add_child(skill_title)
 
@@ -202,7 +203,7 @@ func _build_ui() -> void:
 
 	upgrade_selected_skill_button = Button.new()
 	upgrade_selected_skill_button.name = "UpgradeSelectedSkillButton"
-	upgrade_selected_skill_button.text = "升级选中技能"
+	upgrade_selected_skill_button.text = "升级所选"
 	upgrade_selected_skill_button.custom_minimum_size = Vector2(200, 32)
 	DarkArpgUiThemeScript.style_button(upgrade_selected_skill_button, true)
 	upgrade_selected_skill_button.pressed.connect(upgrade_selected_skill_node)
@@ -236,7 +237,7 @@ func _build_ui() -> void:
 
 	equip_selected_button = Button.new()
 	equip_selected_button.name = "EquipSelectedButton"
-	equip_selected_button.text = "穿戴"
+	equip_selected_button.text = "装备"
 	equip_selected_button.custom_minimum_size = Vector2(72, 32)
 	DarkArpgUiThemeScript.style_button(equip_selected_button, true)
 	equip_selected_button.pressed.connect(use_selected_item)
@@ -260,7 +261,7 @@ func _build_ui() -> void:
 
 	junk_selected_button = Button.new()
 	junk_selected_button.name = "JunkSelectedButton"
-	junk_selected_button.text = "标废"
+	junk_selected_button.text = "废品"
 	junk_selected_button.custom_minimum_size = Vector2(62, 32)
 	DarkArpgUiThemeScript.style_button(junk_selected_button)
 	junk_selected_button.pressed.connect(toggle_selected_junk)
@@ -289,7 +290,7 @@ func _build_ui() -> void:
 
 	salvage_junk_button = Button.new()
 	salvage_junk_button.name = "SalvageJunkButton"
-	salvage_junk_button.text = "分解废品"
+	salvage_junk_button.text = "分解"
 	salvage_junk_button.custom_minimum_size = Vector2(96, 32)
 	DarkArpgUiThemeScript.style_button(salvage_junk_button)
 	salvage_junk_button.pressed.connect(salvage_junk_items)
@@ -413,7 +414,7 @@ func _build_paper_doll_placeholder(parent: Control) -> void:
 
 	var label := Label.new()
 	label.name = "PaperDollPlaceholderLabel"
-	label.text = "素材\n锚点"
+	label.text = "美术\n定位"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 12)
@@ -490,11 +491,12 @@ func _describe_item(entry: Dictionary) -> String:
 		lines.append("已锁定")
 	if str(entry.get("type", "")) == "equipment":
 		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
-		lines.append("部位：%s" % _slot_label(str(equipment.get("slot", ""))))
-		lines.append("物品等级：%d" % int(equipment.get("item_level", 1)))
+		lines.append("槽位：%s" % _slot_label(str(equipment.get("slot", ""))))
+		lines.append("等级：%d" % int(equipment.get("item_level", 1)))
 		lines.append("稀有度：%s" % _rarity_label(str(equipment.get("rarity", "common"))))
 		lines.append("评分：%d" % EquipmentDataServiceScript.get_equipment_score(equipment))
-		lines.append("装备池：%s" % str(equipment.get("equipment_pool", "")))
+		lines.append("职业池：%s" % ClassRulesScript.get_class_name(str(equipment.get("equipment_pool", ""))))
+		lines.append_array(_build_socket_detail_lines(equipment))
 		var action_hint := _build_item_action_hint(str(entry.get("id", equipment.get("instance_id", ""))))
 		if not action_hint.is_empty():
 			lines.append("操作：")
@@ -516,31 +518,58 @@ func _describe_item(entry: Dictionary) -> String:
 				lines.append("品质：%s" % quality_tag)
 			if recommendation_text != "":
 				lines.append("推荐：%s" % recommendation_text)
-			lines.append("评分变化：%s%d" % [score_sign, score_delta])
+			lines.append("评分差：%s%d" % [score_sign, score_delta])
 		if EquipmentDataServiceScript.is_equipped_item(player_data, str(entry.get("id", ""))):
-			lines.append("当前已穿戴")
+			lines.append("当前已装备")
 		var affixes: Dictionary = Dictionary(equipment.get("affixes", {}))
 		for stat_id in affixes.keys():
 			lines.append("+%d %s" % [int(affixes[stat_id]), _stat_label(str(stat_id))])
 		var compare_summary := _build_item_compare_summary(str(entry.get("id", equipment.get("instance_id", ""))), equipment)
 		if not compare_summary.is_empty():
-			lines.append("对比摘要：")
+			lines.append("装备对比：")
 			lines.append(str(compare_summary.get("headline", "")))
 			lines.append(str(compare_summary.get("compact_text", "")))
+			for reason in Array(compare_summary.get("reason_lines", [])):
+				lines.append("- %s" % str(reason))
 		lines.append_array(_build_compare_lines(equipment))
 	else:
+		if _is_gem_entry(entry):
+			var gem_id := _get_entry_gem_id(entry)
+			var gem_def := GemSocketServiceScript.get_gem_definition(gem_id)
+			var stats: Dictionary = Dictionary(gem_def.get("stats", {}))
+			for stat_id in stats.keys():
+				lines.append("+%d %s" % [int(stats[stat_id]), _stat_label(str(stat_id))])
 		lines.append("数量：%d" % int(entry.get("amount", 1)))
 	return "\n".join(lines)
+
+func _build_socket_detail_lines(equipment: Dictionary) -> Array[String]:
+	var limit := GemSocketServiceScript.get_socket_limit(str(equipment.get("slot", "")))
+	if limit <= 0:
+		return []
+	var socketed := GemSocketServiceScript.normalize_socketed_gems(equipment)
+	var lines: Array[String] = ["宝石孔：%d/%d" % [socketed.size(), limit]]
+	if not socketed.is_empty():
+		var names: Array[String] = []
+		for gem_id in socketed:
+			names.append(GemSocketServiceScript.get_gem_name(str(gem_id)))
+		lines.append("已镶嵌：%s" % "、".join(names))
+	var preview := _build_socket_preview_for_equipment(equipment)
+	if bool(preview.get("can_socket", false)):
+		lines.append("可镶嵌：%s" % str(preview.get("gem_name", "")))
+	return lines
 
 func _build_compare_lines(candidate_equipment: Dictionary) -> Array[String]:
 	var summary := _build_item_compare_summary(str(candidate_equipment.get("instance_id", "")), candidate_equipment)
 	if summary.is_empty():
 		return []
 	if bool(summary.get("empty_slot", false)):
-		return ["对比：空部位"]
+		return ["对比：空槽位"]
 	var lines: Array[String] = ["对比："]
 	for row in Array(summary.get("stat_deltas", [])):
 		lines.append(str(Dictionary(row).get("compact_text", "")))
+		var reason := str(Dictionary(row).get("reason_text", ""))
+		if reason != "":
+			lines.append("  %s" % reason)
 	if lines.size() == 1:
 		lines.append("属性无变化")
 	return lines
@@ -681,15 +710,55 @@ func use_selected_item() -> void:
 			detail_label.text = _describe_item(entry)
 		_update_selected_actions()
 		return
+	if EquipmentDataServiceScript.is_equipped_item(player_data, selected_item_id):
+		var socket_result := socket_selected_equipment()
+		if not bool(socket_result.get("ok", false)) and is_instance_valid(detail_label):
+			detail_label.text = "%s\n无法镶嵌：%s" % [_describe_item(entry), str(socket_result.get("reason", "unknown"))]
+		return
 	var result := EquipmentDataServiceScript.equip_item(player_data, selected_item_id)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "%s\n无法穿戴：%s" % [_describe_item(entry), _reason_label(str(result.get("reason", "unknown")))]
+			detail_label.text = "%s\n无法装备：%s" % [_describe_item(entry), str(result.get("reason", "unknown"))]
 		_update_selected_actions()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	player_data_changed.emit(player_data.duplicate(true))
 	refresh()
+
+func socket_selected_equipment() -> Dictionary:
+	if selected_item_id == "":
+		return {"ok": false, "reason": "no_selection", "player_data": player_data.duplicate(true)}
+	var result := player_data.duplicate(true)
+	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(result.get("inventory", {}))
+	if not inventory.has(selected_item_id):
+		return {"ok": false, "reason": "missing_equipment", "player_data": result}
+	var entry: Dictionary = Dictionary(inventory[selected_item_id])
+	if str(entry.get("type", "")) != "equipment":
+		return {"ok": false, "reason": "not_equipment", "player_data": result}
+	var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
+	var preview := _build_socket_preview_for_equipment(equipment)
+	if not bool(preview.get("can_socket", false)):
+		return {"ok": false, "reason": str(preview.get("reason", "no_socket_gem")), "player_data": result}
+	var gem_item_id := str(preview.get("gem_item_id", ""))
+	var gem_id := str(preview.get("gem_id", ""))
+	var socketed := GemSocketServiceScript.socket_gem(equipment, gem_id)
+	if not bool(socketed.get("ok", false)):
+		return {"ok": false, "reason": str(socketed.get("reason", "socket_failed")), "player_data": result}
+	equipment = Dictionary(socketed.get("equipment", equipment))
+	entry["equipment"] = equipment
+	inventory[selected_item_id] = entry
+	var gem_entry: Dictionary = Dictionary(inventory.get(gem_item_id, {}))
+	var amount := int(gem_entry.get("amount", 1)) - 1
+	if amount <= 0:
+		inventory.erase(gem_item_id)
+	else:
+		gem_entry["amount"] = amount
+		inventory[gem_item_id] = gem_entry
+	result["inventory"] = inventory
+	player_data = result
+	player_data_changed.emit(player_data.duplicate(true))
+	refresh()
+	return {"ok": true, "gem_id": gem_id, "gem_item_id": gem_item_id, "player_data": player_data.duplicate(true)}
 
 func toggle_selected_lock() -> void:
 	if selected_item_id == "":
@@ -839,7 +908,7 @@ func _update_skill_summary() -> void:
 		preview = _build_selected_skill_node_preview()
 	var skill_points := int(preview.get("skill_points", player_data.get("skill_points", 0)))
 	if is_instance_valid(skill_point_summary):
-		skill_point_summary.text = "技能点 %d\n%s\n%s" % [
+		skill_point_summary.text = "天赋点 %d\n%s\n%s" % [
 			skill_points,
 			str(preview.get("summary_text", "")),
 			str(preview.get("status_text", "")),
@@ -870,7 +939,7 @@ func _update_selected_actions() -> void:
 	clear_selected_button.disabled = not has_selection
 	lock_selected_button.text = "锁定"
 	favorite_selected_button.text = "收藏"
-	junk_selected_button.text = "标废"
+	junk_selected_button.text = "废品"
 	if not has_selection:
 		_update_batch_junk_actions()
 		return
@@ -878,14 +947,24 @@ func _update_selected_actions() -> void:
 	var flags: Dictionary = Dictionary(entry.get("binding_flags", {}))
 	lock_selected_button.text = "解锁" if bool(flags.get("locked", entry.get("locked", false))) else "锁定"
 	favorite_selected_button.text = "取消收藏" if bool(flags.get("favorite", entry.get("favorite", false))) else "收藏"
-	junk_selected_button.text = "取消废品" if bool(flags.get("junk", entry.get("junk", false))) else "标废"
+	junk_selected_button.text = "取消废品" if bool(flags.get("junk", entry.get("junk", false))) else "废品"
 	var hint := _build_item_action_hint(selected_item_id)
 	if not hint.is_empty():
-		equip_selected_button.text = str(hint.get("button_text", "穿戴"))
+		equip_selected_button.text = str(hint.get("button_text", "装备"))
 		equip_selected_button.disabled = not bool(hint.get("can_equip", false))
 	else:
-		equip_selected_button.text = "穿戴"
+		equip_selected_button.text = "装备"
 		equip_selected_button.disabled = str(entry.get("type", "")) != "equipment"
+	if str(entry.get("type", "")) == "equipment" and EquipmentDataServiceScript.is_equipped_item(player_data, selected_item_id):
+		var equipment: Dictionary = Dictionary(entry.get("equipment", {}))
+		var socket_preview := _build_socket_preview_for_equipment(equipment)
+		if bool(socket_preview.get("can_socket", false)):
+			equip_selected_button.text = "镶嵌"
+			equip_selected_button.disabled = false
+			equip_selected_button.tooltip_text = "镶嵌%s" % str(socket_preview.get("gem_name", "宝石"))
+		else:
+			equip_selected_button.text = "已装备"
+			equip_selected_button.disabled = true
 	_update_batch_junk_actions()
 
 func _update_batch_junk_actions() -> void:
@@ -933,7 +1012,7 @@ func _build_equipment_slot_summary(slot: String, equipped: Dictionary, inventory
 		"score": 0,
 		"rarity": "empty",
 		"button_text": "%s：空" % _slot_label(slot),
-		"tooltip": "%s部位为空" % _slot_label(slot),
+		"tooltip": "%s槽位为空" % _slot_label(slot),
 	}
 	if bool(summary["empty"]):
 		return summary
@@ -1029,7 +1108,7 @@ func _build_skill_node_list() -> void:
 		button.name = "SkillNode%s" % _skill_node_suffix(node_id)
 		button.custom_minimum_size = Vector2(200, 32)
 		var selected_prefix := "* " if node_id == selected_skill_node_id else ""
-		button.text = "%s%s Lv.%d/%d" % [
+		button.text = "%s%s 等级%d/%d" % [
 			selected_prefix,
 			str(data.get("title", node_id)),
 			int(data.get("current_level", 0)),
@@ -1096,46 +1175,32 @@ func _slot_label(slot: String) -> String:
 			return "武器"
 		"armor":
 			return "护甲"
-		"gloves":
-			return "手套"
 		"ring":
 			return "戒指"
-		"ring_1":
-			return "戒指 1"
-		"ring_2":
-			return "戒指 2"
-		"trinket":
-			return "饰品"
 		_:
-			return slot.capitalize()
+			return slot.capitalize() if slot != "" else "未知"
 
 func _slot_short_label(slot: String) -> String:
 	match slot:
 		"weapon":
-			return "武器"
+			return "武"
 		"armor":
-			return "护甲"
-		"gloves":
-			return "手套"
+			return "甲"
 		"ring":
-			return "戒指"
-		"ring_1":
-			return "戒1"
-		"ring_2":
-			return "戒2"
-		"trinket":
-			return "饰品"
+			return "戒"
 		_:
-			return "装备"
+			return slot.substr(0, 1).to_upper() if slot != "" else "?"
 
 func _item_type_label(item_type: String) -> String:
 	match item_type:
 		"equipment":
 			return "装备"
-		"currency":
-			return "货币"
 		"material":
 			return "材料"
+		"currency":
+			return "货币"
+		"gem":
+			return "宝石"
 		_:
 			return "物品"
 
@@ -1147,14 +1212,19 @@ func _rarity_label(rarity: String) -> String:
 			return "稀有"
 		"legendary":
 			return "传奇"
-		"currency":
-			return "货币"
-		"material":
-			return "材料"
 		"empty":
 			return "空"
 		_:
 			return "普通"
+
+func _sort_mode_label(mode: String) -> String:
+	match mode:
+		"power":
+			return "强度"
+		"name":
+			return "名称"
+		_:
+			return "类型"
 
 func _stat_label(stat_id: String) -> String:
 	match stat_id:
@@ -1168,34 +1238,69 @@ func _stat_label(stat_id: String) -> String:
 			return "防御"
 		"critical_chance":
 			return "暴击"
+		"attack_speed":
+			return "攻击速度"
+		"projectile_count":
+			return "投射物数量"
+		"cold_damage":
+			return "冰冷伤害"
+		"ice_lance_pierce":
+			return "冰矢穿透"
+		"ice_lance_split":
+			return "冰矢分裂"
+		"coc_cooldown_recovery":
+			return "触发恢复"
+		"mana":
+			return "法力"
+		"summon_damage":
+			return "召唤伤害"
 		_:
 			return stat_id
 
-func _sort_mode_label(mode: String) -> String:
-	match mode:
-		"power":
-			return "战力"
-		"name":
-			return "名称"
-		_:
-			return "类型"
+func _build_socket_preview_for_equipment(equipment: Dictionary) -> Dictionary:
+	var limit := GemSocketServiceScript.get_socket_limit(str(equipment.get("slot", "")))
+	if limit <= 0:
+		return {"can_socket": false, "reason": "no_socket"}
+	var socketed := GemSocketServiceScript.normalize_socketed_gems(equipment)
+	if socketed.size() >= limit:
+		return {"can_socket": false, "reason": "socket_full"}
+	var inventory: Dictionary = InventoryDataServiceScript.normalize_inventory(player_data.get("inventory", {}))
+	var gem_item_id := _find_first_socketable_gem_item_id(inventory, equipment)
+	if gem_item_id == "":
+		return {"can_socket": false, "reason": "no_gem"}
+	var gem_entry: Dictionary = Dictionary(inventory[gem_item_id])
+	var gem_id := _get_entry_gem_id(gem_entry)
+	return {
+		"can_socket": true,
+		"gem_item_id": gem_item_id,
+		"gem_id": gem_id,
+		"gem_name": GemSocketServiceScript.get_gem_name(gem_id),
+	}
 
-func _reason_label(reason: String) -> String:
-	match reason:
-		"wrong_class":
-			return "职业不符"
-		"bad_slot":
-			return "部位无效"
-		"missing_item":
-			return "物品不存在"
-		"no_skill_points":
-			return "技能点不足"
-		"max_level":
-			return "已满级"
-		"equipped":
-			return "已经穿戴"
-		_:
-			return reason
+func _find_first_socketable_gem_item_id(inventory: Dictionary, equipment: Dictionary) -> String:
+	var ids: Array[String] = []
+	for item_id in inventory.keys():
+		ids.append(str(item_id))
+	ids.sort()
+	for item_id in ids:
+		var entry: Dictionary = Dictionary(inventory[item_id])
+		if not _is_gem_entry(entry):
+			continue
+		var gem_id := _get_entry_gem_id(entry)
+		if bool(GemSocketServiceScript.socket_gem(equipment, gem_id).get("ok", false)):
+			return item_id
+	return ""
+
+func _is_gem_entry(entry: Dictionary) -> bool:
+	if str(entry.get("type", "")) == "gem":
+		return true
+	return str(entry.get("gem_id", "")) != ""
+
+func _get_entry_gem_id(entry: Dictionary) -> String:
+	var gem_id := str(entry.get("gem_id", ""))
+	if gem_id != "":
+		return gem_id
+	return str(entry.get("id", ""))
 
 func get_ui_style_id_for_test() -> String:
 	return DarkArpgUiThemeScript.get_style_id()
@@ -1212,12 +1317,12 @@ func _on_upgrade_basic_attack_pressed() -> void:
 	var result := PlayerDataServiceScript.upgrade_basic_attack(player_data)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "无法升级：%s" % _reason_label(str(result.get("reason", "unknown")))
+			detail_label.text = "无法升级：%s" % str(result.get("reason", "unknown"))
 		refresh()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	if is_instance_valid(detail_label):
-		detail_label.text = "基础攻击训练 Lv.%d\n伤害 +%d" % [
+		detail_label.text = "基础攻击训练 等级%d\n伤害 +%d" % [
 			int(result.get("node_level", 0)),
 			PlayerDataServiceScript.BASIC_ATTACK_TRAINING_DAMAGE_GAIN,
 		]
@@ -1234,12 +1339,12 @@ func upgrade_selected_skill_node() -> void:
 	var result := SkillNodeGrowthServiceScript.upgrade_node(player_data, selected_skill_node_id)
 	if not bool(result.get("ok", false)):
 		if is_instance_valid(detail_label):
-			detail_label.text = "无法升级：%s" % _reason_label(str(result.get("reason", "unknown")))
+			detail_label.text = "无法升级：%s" % str(result.get("reason", "unknown"))
 		refresh()
 		return
 	player_data = Dictionary(result.get("player_data", player_data))
 	if is_instance_valid(detail_label):
-		detail_label.text = "%s Lv.%d\n%s +%d" % [
+		detail_label.text = "%s 等级%d\n%s +%d" % [
 			str(_build_selected_skill_node_preview().get("title", selected_skill_node_id)),
 			int(result.get("node_level", 0)),
 			str(_build_selected_skill_node_preview().get("stat_label", result.get("stat_id", ""))),

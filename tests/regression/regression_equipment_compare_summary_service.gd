@@ -40,7 +40,7 @@ func _run() -> void:
 		_expect(str(summary.get("equipped_item_id", "")) != "", "summary should expose equipped item id")
 		_expect(int(summary.get("candidate_score", 0)) > int(summary.get("equipped_score", 0)), "summary should expose score improvement")
 		_expect(int(summary.get("score_delta", 0)) > 0, "summary should expose positive score delta")
-		_expect(str(summary.get("headline", "")).contains("升级"), "summary headline should flag upgrade")
+		_expect(str(summary.get("headline", "")).contains("提升"), "summary headline should flag upgrade")
 		var stat_deltas: Array = Array(summary.get("stat_deltas", []))
 		_expect(stat_deltas.size() >= 2, "summary should expose stat delta rows")
 		var found_attack := false
@@ -59,7 +59,7 @@ func _run() -> void:
 		_expect(str(summary.get("compact_text", "")).contains("评分 +"), "summary should expose compact score text")
 
 	var detail := str(window.call("describe_item_for_test", "better_weapon"))
-	_expect(detail.contains("对比摘要："), "detail should include compact compare summary section")
+	_expect(detail.contains("装备对比："), "detail should include compact compare summary section")
 	_expect(detail.contains("评分 +"), "detail should include score delta text")
 	_expect(detail.contains("暴击"), "detail should include non-overlapping stat gains")
 

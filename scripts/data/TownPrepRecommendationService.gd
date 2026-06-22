@@ -13,16 +13,16 @@ static func build_recommendations(player_data: Dictionary) -> Dictionary:
 		items.append(_make_item(
 			"spend_skill_points",
 			10,
-			"进塔前可分配技能点 %d。" % skill_points,
+			"出发前可花费 %d 点天赋点。" % skill_points,
 			"open_skills",
-			"打开技能"
+			"打开天赋"
 		))
 	var upgrade_count := _count_equipment_upgrades(player_data, inventory)
 	if upgrade_count > 0:
 		items.append(_make_item(
 			"equip_upgrade",
 			20,
-			"可穿戴更强装备：%d 件。" % upgrade_count,
+			"发现 %d 件更强装备，建议更换。" % upgrade_count,
 			"open_equipment",
 			"打开装备"
 		))
@@ -30,7 +30,7 @@ static func build_recommendations(player_data: Dictionary) -> Dictionary:
 		var bag_item := _make_item(
 			"manage_bag",
 			30,
-			"背包压力：%d/%d 格，长线爬塔前建议整理。" % [
+			"背包压力：%d/%d 格，长线挂机前建议整理。" % [
 				int(capacity.get("used_slots", 0)),
 				int(capacity.get("capacity", 0)),
 			],
@@ -47,7 +47,7 @@ static func build_recommendations(player_data: Dictionary) -> Dictionary:
 		return {
 			"has_action": false,
 			"items": [],
-			"recommendation_text": "准备就绪：没有紧急整备项。",
+			"recommendation_text": "准备完毕：没有紧急出发前操作。",
 			"primary_action_id": "",
 			"primary_button_text": "",
 			"primary_recommendation_id": "",

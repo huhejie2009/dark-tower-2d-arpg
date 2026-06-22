@@ -17,8 +17,8 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 	var gear_score := _get_total_equipment_score(player_data)
 	var gold := _get_inventory_amount(inventory, "gold")
 	var crystal := _get_inventory_amount(inventory, "crystal_shard")
-	var character_text := "%s | %s | Lv.%d" % [
-		str(player_data.get("character_name", "Hero")),
+	var character_text := "%s | %s | 等级%d" % [
+		str(player_data.get("character_name", "英雄")),
 		ClassRulesScript.get_class_name(str(player_data.get("base_class", "warrior"))),
 		int(player_data.get("player_level", 1)),
 	]
@@ -29,9 +29,9 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 	var resource_text := "金币 %d | 水晶 %d | %s" % [
 		gold,
 		crystal,
-		str(inventory_capacity.get("summary_text", "Bag 0/40")),
+		str(inventory_capacity.get("summary_text", "背包 0/40")),
 	]
-	var growth_text := "技能点 %d | 伤害 %d | 生命 %d | 法力 %d" % [
+	var growth_text := "天赋点 %d | 伤害 %d | 生命 %d | 法力 %d" % [
 		int(player_data.get("skill_points", 0)),
 		int(stats.get("attack_damage", 0)),
 		int(player_data.get("max_health", stats.get("max_health", 0))),
@@ -39,7 +39,7 @@ static func build_summary(player_data: Dictionary) -> Dictionary:
 	]
 	var start_explanation := str(start_options.get("explanation_text", "第 1 层用于重新开爬；最高层会读取已保存进度。"))
 	var start_text := "%s\n%s\n%s" % [
-		str(start_options.get("fresh_label", "进入通天塔：第 1 层")),
+		str(start_options.get("fresh_label", "进入暗塔：第 1 层")),
 		str(start_options.get("best_label", "挑战最高层")),
 		start_explanation,
 	]

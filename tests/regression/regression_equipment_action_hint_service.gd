@@ -21,7 +21,7 @@ func _run() -> void:
 	_expect(bool(better.get("can_equip", false)), "better warrior sword should be equippable")
 	_expect(bool(better.get("upgrade", false)), "better warrior sword should be marked as upgrade")
 	_expect(str(better.get("button_text", "")).contains("+"), "upgrade button should expose score delta")
-	_expect(str(better.get("primary_text", "")).contains("可穿戴"), "equippable hint should say can equip")
+	_expect(str(better.get("primary_text", "")).contains("可装备"), "equippable hint should say can equip")
 
 	var weaker: Dictionary = EquipmentActionHintServiceScript.build_hint(player, "weaker_sword")
 	_expect(bool(weaker.get("can_equip", false)), "weaker warrior sword should still be equippable")
@@ -31,12 +31,12 @@ func _run() -> void:
 	var blocked: Dictionary = EquipmentActionHintServiceScript.build_hint(player, "ranger_bow")
 	_expect(not bool(blocked.get("can_equip", true)), "wrong class equipment should not be equippable")
 	_expect(str(blocked.get("reason", "")) == "wrong_class", "wrong class reason should be preserved")
-	_expect(str(blocked.get("button_text", "")) == "职业限制", "blocked button should explain class block")
+	_expect(str(blocked.get("button_text", "")) == "职业不符", "blocked button should explain class block")
 	_expect(str(blocked.get("primary_text", "")).contains("职业不符"), "blocked hint should be readable")
 
 	var equipped: Dictionary = EquipmentActionHintServiceScript.build_hint(player, "starter_warrior_sword")
 	_expect(bool(equipped.get("equipped", false)), "starter weapon should be marked equipped")
-	_expect(str(equipped.get("button_text", "")) == "已穿戴", "equipped item button should read equipped")
+	_expect(str(equipped.get("button_text", "")) == "已装备", "equipped item button should read equipped")
 
 	_finish()
 

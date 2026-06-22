@@ -14,7 +14,8 @@ const STARTER_EQUIPMENT := {
 		"slot": "weapon",
 		"equipment_pool": "ranger",
 		"equipment_type": "bow",
-		"affixes": {"attack_damage": 7, "projectile_count": 1},
+		"affixes": {"attack_damage": 7, "projectile_count": 1, "critical_chance": 2},
+		"socketed_gems": [],
 	},
 	"starter_mage_staff": {
 		"name": "学徒法杖",
@@ -24,7 +25,7 @@ const STARTER_EQUIPMENT := {
 		"affixes": {"attack_damage": 6, "mana": 15},
 	},
 	"starter_acolyte_wand": {
-		"name": "骨烛短杖",
+		"name": "骨烬短杖",
 		"slot": "weapon",
 		"equipment_pool": "acolyte",
 		"equipment_type": "wand",
@@ -52,6 +53,11 @@ static func build_floor_drop(floor: int, base_class: String, index: int) -> Dict
 		affixes = {"defense": 3 + safe_floor, "max_health": 8 + safe_floor * 2}
 	if pool == "ranger" and slot == "weapon":
 		affixes["projectile_count"] = 1
+		affixes["critical_chance"] = 2 + int(safe_floor / 3)
+		if safe_floor % 2 == 0:
+			affixes["cold_damage"] = 4 + safe_floor
+		if safe_floor % 4 == 0:
+			affixes["coc_cooldown_recovery"] = 4
 	if pool == "mage" and slot == "weapon":
 		affixes["mana"] = 10 + safe_floor
 	if pool == "acolyte" and slot == "weapon":
@@ -68,6 +74,7 @@ static func build_floor_drop(floor: int, base_class: String, index: int) -> Dict
 		"locked": false,
 		"affixes": affixes,
 		"mechanic_affixes": {},
+		"socketed_gems": [],
 	}
 
 static func build_boss_clear_reward(floor: int, base_class: String) -> Dictionary:
@@ -80,6 +87,9 @@ static func build_boss_clear_reward(floor: int, base_class: String) -> Dictionar
 	}
 	if pool == "ranger":
 		affixes["projectile_count"] = 1
+		affixes["critical_chance"] = 4
+		affixes["cold_damage"] = 8 + safe_floor
+		affixes["ice_lance_pierce"] = 1
 	elif pool == "mage":
 		affixes["mana"] = 14 + safe_floor
 	elif pool == "acolyte":
@@ -87,7 +97,7 @@ static func build_boss_clear_reward(floor: int, base_class: String) -> Dictionar
 	return {
 		"instance_id": item_id,
 		"template_id": "boss_clear_reward",
-		"name": "Gatekeeper Trophy %d" % safe_floor,
+		"name": "守门者战利品 %d" % safe_floor,
 		"slot": "weapon",
 		"equipment_pool": pool,
 		"equipment_type": "boss_trophy",
@@ -96,4 +106,5 @@ static func build_boss_clear_reward(floor: int, base_class: String) -> Dictionar
 		"locked": false,
 		"affixes": affixes,
 		"mechanic_affixes": {},
+		"socketed_gems": [],
 	}

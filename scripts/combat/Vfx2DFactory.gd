@@ -21,6 +21,52 @@ static func spawn_slash(parent: Node, position: Vector2, direction: Vector2) -> 
 	root.add_child(edge)
 	_fade(parent, root, 0.16)
 
+static func spawn_projectile_trail(parent: Node, origin: Vector2, direction: Vector2, distance: float, color: Color = Color(0.62, 0.88, 1.0, 0.88)) -> void:
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	direction = direction.normalized()
+	var root := Node2D.new()
+	root.name = "ProjectileTrailVFX"
+	root.set_meta("vfx_role", "projectile_trail")
+	parent.add_child(root)
+	root.global_position = origin
+	root.rotation = direction.angle()
+	var trail := Line2D.new()
+	trail.name = "ProjectileTrailLine"
+	trail.width = 5.0
+	trail.default_color = color
+	trail.points = PackedVector2Array([Vector2(18, 0), Vector2(maxf(42.0, distance), 0)])
+	root.add_child(trail)
+	var head := Polygon2D.new()
+	head.name = "ProjectileTrailHead"
+	var head_x := maxf(42.0, distance)
+	head.polygon = PackedVector2Array([Vector2(head_x + 14, 0), Vector2(head_x - 10, -8), Vector2(head_x - 6, 0), Vector2(head_x - 10, 8)])
+	head.color = color
+	root.add_child(head)
+	_fade(parent, root, 0.14)
+
+static func spawn_ice_arrow_trail(parent: Node, origin: Vector2, direction: Vector2, distance: float) -> void:
+	_spawn_named_projectile(parent, "IceArrowTrailVFX", "ice_arrow_trail", origin, direction, distance, 7.0, Color(0.36, 0.84, 1.0, 0.90), 0.16)
+
+static func spawn_ice_lance_trail(parent: Node, origin: Vector2, direction: Vector2, distance: float) -> void:
+	_spawn_named_projectile(parent, "IceLanceTrailVFX", "ice_lance_trail", origin, direction, distance + 28.0, 3.0, Color(0.78, 0.96, 1.0, 0.96), 0.12)
+
+static func spawn_coc_trigger_flash(parent: Node, position: Vector2) -> void:
+	var root := Node2D.new()
+	root.name = "CocTriggerFlashVFX"
+	root.set_meta("vfx_role", "coc_trigger_flash")
+	parent.add_child(root)
+	root.global_position = position
+	for i in range(8):
+		var ray := Line2D.new()
+		ray.name = "CocTriggerRay"
+		ray.width = 2.0
+		ray.default_color = Color(0.58, 0.90, 1.0, 0.86)
+		var angle := TAU * float(i) / 8.0
+		ray.points = PackedVector2Array([Vector2.ZERO, Vector2(cos(angle), sin(angle)) * 24.0])
+		root.add_child(ray)
+	_fade(parent, root, 0.12)
+
 static func spawn_hit(parent: Node, position: Vector2) -> void:
 	var root := Node2D.new()
 	root.name = "HitImpactVFX"
@@ -102,6 +148,30 @@ static func _apply_vfx_manifest_meta(root: Node2D, manifest: Dictionary) -> void
 	root.set_meta("vfx_manifest", manifest.duplicate(true))
 	root.set_meta("fallback_programmatic", bool(manifest.get("fallback_programmatic", false)))
 	root.set_meta("vfx_interface_id", str(manifest.get("interface_id", "")))
+
+static func _spawn_named_projectile(parent: Node, node_name: String, role: String, origin: Vector2, direction: Vector2, distance: float, width: float, color: Color, duration: float) -> void:
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	direction = direction.normalized()
+	var root := Node2D.new()
+	root.name = node_name
+	root.set_meta("vfx_role", role)
+	parent.add_child(root)
+	root.global_position = origin
+	root.rotation = direction.angle()
+	var line := Line2D.new()
+	line.name = "%sLine" % node_name
+	line.width = width
+	line.default_color = color
+	line.points = PackedVector2Array([Vector2(16, 0), Vector2(maxf(48.0, distance), 0)])
+	root.add_child(line)
+	var head := Polygon2D.new()
+	head.name = "%sHead" % node_name
+	var head_x := maxf(48.0, distance)
+	head.polygon = PackedVector2Array([Vector2(head_x + 16, 0), Vector2(head_x - 10, -width * 1.5), Vector2(head_x - 5, 0), Vector2(head_x - 10, width * 1.5)])
+	head.color = color
+	root.add_child(head)
+	_fade(parent, root, duration)
 
 static func _fade(parent: Node, root: Node2D, duration: float) -> void:
 	var tween := parent.create_tween()

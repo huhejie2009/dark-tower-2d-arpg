@@ -106,12 +106,12 @@ func set_player_progress(level: int, current_exp: int, exp_to_next_level: int, s
 	var safe_next := maxi(1, exp_to_next_level)
 	var safe_current := clampi(current_exp, 0, safe_next)
 	if is_instance_valid(level_label):
-		level_label.text = "Lv.%d  经验 %d/%d" % [safe_level, safe_current, safe_next]
+		level_label.text = "等级%d  经验 %d/%d" % [safe_level, safe_current, safe_next]
 	if is_instance_valid(experience_bar):
 		experience_bar.max_value = safe_next
 		experience_bar.value = safe_current
 	if is_instance_valid(skill_point_label):
-		skill_point_label.text = "技能点 %d" % maxi(0, skill_points)
+		skill_point_label.text = "天赋点 %d" % maxi(0, skill_points)
 
 func show_loot_notification(notification: Dictionary) -> void:
 	last_loot_notification = notification.duplicate(true)
@@ -131,6 +131,23 @@ func show_loot_notification(notification: Dictionary) -> void:
 	loot_notification_label.visible = true
 	var accent := Color.html(str(notification.get("accent_color", "#9ca3af")))
 	loot_notification_label.add_theme_color_override("font_color", accent)
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"magic":
+			return "魔法"
+		"rare":
+			return "稀有"
+		"legendary":
+			return "传奇"
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		"gem":
+			return "宝石"
+		_:
+			return "普通"
 
 func get_last_loot_notification_for_test() -> Dictionary:
 	return last_loot_notification.duplicate(true)
@@ -188,19 +205,4 @@ func get_visual_qa_rects_for_test(viewport_size: Vector2) -> Dictionary:
 		"experience_bar": Rect2(Vector2(20.0, 194.0), Vector2(260.0, 14.0)),
 		"inventory": Rect2(Vector2(inventory_x, 18.0), inventory_size),
 		"loot": Rect2(Vector2(loot_x, 64.0), loot_size),
-	}
-
-func _rarity_label(rarity: String) -> String:
-	match rarity:
-		"magic":
-			return "魔法"
-		"rare":
-			return "稀有"
-		"legendary":
-			return "传奇"
-		"currency":
-			return "货币"
-		"material":
-			return "材料"
-		_:
-			return "普通"
+}

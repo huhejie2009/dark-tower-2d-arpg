@@ -61,7 +61,7 @@ func _check_enemy(manifest: Dictionary) -> void:
 	await process_frame
 
 func _check_actor_direction(actor: Node, direction: Vector2, expected_bucket: String, expected_resolved_run_frame: int, label: String) -> void:
-	if actor is Player2D:
+	if actor.get_script() == Player2DScript:
 		actor.call("set_move_vector", direction)
 		actor.call("face_world_position", (actor as Node2D).global_position + direction)
 	else:

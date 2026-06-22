@@ -8,12 +8,8 @@ static func build_start_options(player_data: Dictionary) -> Dictionary:
 	return {
 		"fresh_floor": 1,
 		"best_floor": best_floor,
-		"fresh_label": "进入通天塔：第 1 层",
+		"fresh_label": "进入暗塔：第 1 层",
 		"best_label": "挑战最高层：第 %d 层" % best_floor,
-		"fresh_description": "从第 1 层开始新的爬塔，不会清除已保存进度。",
-		"best_description": "从已保存进度挑战第 %d 层。" % best_floor,
-		"highest_floor_explanation": "最高层是已保存的爬塔进度；当前层只代表本次挑战。",
-		"explanation_text": "第 1 层用于重新开爬；最高层会读取已保存进度。",
 	}
 
 static func request_start_floor(floor: int) -> void:

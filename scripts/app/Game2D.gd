@@ -20,6 +20,7 @@ const SceneRouterScript := preload("res://scripts/app/SceneRouter.gd")
 const InventoryEquipmentWindowScript := preload("res://scripts/ui/InventoryEquipmentWindow.gd")
 const P2LootLoopMetricsRecorderScript := preload("res://scripts/data/P2LootLoopMetricsRecorder.gd")
 const DarkArpgUiThemeScript := preload("res://scripts/ui/DarkArpgUiTheme.gd")
+const AutoCombatControllerScript := preload("res://scripts/data/AutoCombatController.gd")
 
 const ROOM_VISUAL_MODE := "topdown_production"
 const ENVIRONMENT_FAMILY := "brutalist_tower_interior"
@@ -33,6 +34,7 @@ const DEATH_SETTLEMENT_PANEL_SIZE := Vector2(560, 500)
 const DEATH_SETTLEMENT_SECTION_MIN_HEIGHT := 64
 const IMAGE2_ENVIRONMENT_BACKGROUND_PATH := "res://assets/generated/environments/tower_interior_brutalist_room_v1.png"
 const DEFAULT_PLAYER_IMAGE2_SPRITE_PATH := "res://assets/generated/actors/player_warrior_sheet_v3.png"
+const RANGER_PLAYER_SPRITE_PATH := "res://assets/generated/actors/player_ranger_sheet_v1.png"
 
 var player_data: Dictionary = {}
 var player: CharacterBody2D
@@ -88,6 +90,7 @@ var death_settlement_active: bool = false
 var death_presentation_pending: bool = false
 var death_presentation_delay_override := -1.0
 var p2_loot_loop_metrics: Dictionary = P2LootLoopMetricsRecorderScript.create_metrics()
+var combat_control_mode := "manual"
 var divine_pressure_state: Dictionary = {"active": false}
 var divine_pressure_warning_node: Node2D
 
@@ -103,7 +106,7 @@ func _ready() -> void:
 	_create_inventory_window()
 	_create_pause_overlay()
 	_create_death_overlay()
-	_update_hud("Entered floor %d. Left click attacks, I opens inventory, Esc pauses." % current_floor)
+	_update_hud("已进入第 %d 层。左键攻击，I 打开背包，Esc 暂停。" % current_floor)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -125,10 +128,31 @@ func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(player) or _is_menu_blocking_combat():
 		return
 	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.add_elapsed_seconds(p2_loot_loop_metrics, _delta)
-	player.set_move_vector(_get_move_vector())
-	player.face_world_position(get_global_mouse_position())
+	if combat_control_mode == "auto":
+		var intent := AutoCombatControllerScript.build_intent(player.global_position, _build_auto_enemy_snapshots(), 280.0)
+		player.set_move_vector(intent.get("move_vector", Vector2.ZERO))
+		if bool(intent.get("has_target", false)):
+			player.face_world_position(intent.get("target_position", player.global_position + Vector2.RIGHT))
+		if bool(intent.get("should_attack", false)):
+			player.cast_basic(intent.get("attack_direction", Vector2.RIGHT))
+	else:
+		player.set_move_vector(_get_move_vector())
+		player.face_world_position(get_global_mouse_position())
 	player.global_position = player.global_position.clamp(room_rect.position + Vector2(24, 24), room_rect.end - Vector2(24, 24))
 	_update_foot_anchor_z_sort()
+
+func _build_auto_enemy_snapshots() -> Array:
+	var result: Array = []
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if enemy is Node2D:
+			result.append({"position": (enemy as Node2D).global_position, "alive": true})
+	return result
+
+func set_combat_control_mode_for_test(mode: String) -> void:
+	combat_control_mode = "auto" if mode == "auto" else "manual"
+
+func get_combat_control_mode_for_test() -> String:
+	return combat_control_mode
 
 func _ensure_input_actions() -> void:
 	_add_key_action("move_left", [KEY_A, KEY_LEFT])
@@ -525,9 +549,36 @@ func _spawn_player() -> void:
 func _apply_default_player_art() -> void:
 	if not is_instance_valid(player) or not player.has_method("apply_visual_asset_manifest"):
 		return
-	if not FileAccess.file_exists(DEFAULT_PLAYER_IMAGE2_SPRITE_PATH):
+	var manifest := _build_player_visual_manifest()
+	if manifest.is_empty():
 		return
-	player.apply_visual_asset_manifest({
+	player.apply_visual_asset_manifest(manifest)
+
+func _build_player_visual_manifest() -> Dictionary:
+	var base_class := str(player_data.get("base_class", "warrior"))
+	if base_class == "ranger":
+		if not FileAccess.file_exists(RANGER_PLAYER_SPRITE_PATH):
+			return {}
+		return {
+			"asset_pipeline": "generated",
+			"pose_variation_version": "ranger_ice_coc_v1",
+			"direction_mode": "runtime_flip_2dir",
+			"enabled": true,
+			"sprite_sheet_path": RANGER_PLAYER_SPRITE_PATH,
+			"frame_size": Vector2i(160, 160),
+			"hide_procedural_body": true,
+			"animations": {
+				"idle": {"from": 0, "to": 3, "fps": 6},
+				"run": {"from": 4, "to": 9, "fps": 9},
+				"attack": {"from": 10, "to": 15, "fps": 12},
+				"death": {"from": 16, "to": 19, "fps": 6},
+			},
+		}
+	if base_class != "warrior":
+		return {}
+	if not FileAccess.file_exists(DEFAULT_PLAYER_IMAGE2_SPRITE_PATH):
+		return {}
+	return {
 		"asset_pipeline": "IMAGE2",
 		"pose_variation_version": "production_dark_armor_v3",
 		"art_family": "dark_high_res_pixel_actor",
@@ -565,7 +616,7 @@ func _apply_default_player_art() -> void:
 			"attack": {"from": 10, "to": 15, "fps": 10},
 			"death": {"from": 16, "to": 19, "fps": 6},
 		},
-	})
+	}
 
 func _is_default_player_art_loaded() -> bool:
 	if not is_instance_valid(player):
@@ -750,11 +801,11 @@ func _spawn_drop(position: Vector2) -> void:
 func _on_drop_collected(payload: Dictionary) -> void:
 	var notification := _build_loot_notification(payload, "drop")
 	player_data["inventory"] = InventoryDataServiceScript.add_item(Dictionary(player_data.get("inventory", {})), payload)
-	floor_pickup_names.append(str(payload.get("name", "Item")))
+	floor_pickup_names.append(str(payload.get("name", "物品")))
 	p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_pickup(p2_loot_loop_metrics, payload, notification)
 	_schedule_save()
 	_show_loot_notification(notification)
-	_update_hud(str(notification.get("log_text", "Picked up: %s" % str(payload.get("name", "Item")))))
+	_update_hud(str(notification.get("log_text", "拾取：%s" % str(payload.get("name", "物品")))))
 
 func _on_floor_cleared() -> void:
 	if portal_available:
@@ -767,7 +818,7 @@ func _on_floor_cleared() -> void:
 	SaveManagerScript.apply_floor_clear(current_floor, rewards, _build_current_player_snapshot())
 	_activate_exit_door()
 	_spawn_portal()
-	_update_hud("第 %d 层已清理，奖励已保存。按 E 或进入传送门。" % current_floor)
+	_update_hud("第 %d 层已清理。奖励已保存。按 E 或进入传送门。" % current_floor)
 
 func _clear_floor_for_test() -> void:
 	_on_floor_cleared()
@@ -787,7 +838,7 @@ func _apply_floor_clear_rewards_to_player(data: Dictionary, rewards: Dictionary)
 		var payload: Dictionary = Dictionary(item)
 		var notification := _build_loot_notification(payload, "boss_reward")
 		inventory = InventoryDataServiceScript.add_item(inventory, payload)
-		floor_pickup_names.append(str(payload.get("name", "Item")))
+		floor_pickup_names.append(str(payload.get("name", "物品")))
 		last_loot_notification = notification
 		p2_loot_loop_metrics = P2LootLoopMetricsRecorderScript.record_pickup(p2_loot_loop_metrics, payload, notification)
 	result["inventory"] = inventory
@@ -859,7 +910,7 @@ func _enter_next_floor() -> void:
 			child.queue_free()
 	player.global_position = _find_safe_spawn_position(Vector2.ZERO, 24.0)
 	_spawn_wave()
-	_update_hud("Entered floor %d." % current_floor)
+	_update_hud("已进入第 %d 层。" % current_floor)
 	floor_transition_locked = false
 
 func _apply_floor_template_for_test(floor: int) -> void:
@@ -888,7 +939,7 @@ func _on_player_died() -> void:
 	player_data = _build_current_player_snapshot()
 	player_data["health"] = maxi(1, int(player_data.get("max_health", 120)) / 2)
 	SaveManagerScript.save_active_player_data(player_data, current_floor)
-	_update_hud("You fell. Returning after death animation...")
+	_update_hud("你倒下了。死亡动画结束后返回主城...")
 	var delay := _get_death_presentation_delay()
 	if delay <= 0.0:
 		_finish_death_presentation()
@@ -1026,7 +1077,7 @@ func _create_death_overlay() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "阵亡结算"
+	title.text = "死亡结算"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	DarkArpgUiThemeScript.style_title(title, 26)
 	box.add_child(title)
@@ -1131,8 +1182,8 @@ func _build_death_summary_text_for_test() -> String:
 
 func _build_boss_reward_summary() -> String:
 	var settlement := _build_death_settlement()
-	var boss_text := str(settlement.get("boss_reward_text", "首领奖励\n无"))
-	return boss_text.replace("首领奖励\n", "")
+	var boss_text := str(settlement.get("boss_reward_text", "Boss 奖励\n无"))
+	return boss_text.replace("Boss 奖励\n", "")
 
 func _toggle_pause() -> void:
 	if not is_instance_valid(pause_overlay):
@@ -1282,7 +1333,7 @@ func _update_hud(message: String) -> void:
 	if hud.has_method("set_objective"):
 		hud.set_objective(str(room_objective_state.get("hud_text", "")))
 	var capacity: Dictionary = InventoryDataServiceScript.build_capacity_summary(Dictionary(player_data.get("inventory", {})))
-	hud.set_inventory(str(capacity.get("summary_text", "Bag 0/40")))
+	hud.set_inventory(str(capacity.get("summary_text", "背包 0/40")))
 	if hud.has_method("set_player_vitals"):
 		var health := int(player_data.get("health", 0))
 		var max_health := int(player_data.get("max_health", 1))

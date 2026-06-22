@@ -39,6 +39,8 @@ static func add_item(inventory: Dictionary, payload: Dictionary) -> Dictionary:
 		entry["source_tags"] = Array(payload.get("source_tags", [])).duplicate(true)
 	if payload.has("item_power"):
 		entry["item_power"] = int(payload.get("item_power", 0))
+	if payload.has("gem_id"):
+		entry["gem_id"] = str(payload.get("gem_id", ""))
 	if item_type == "equipment":
 		entry["equipment"] = Dictionary(payload.get("equipment", {})).duplicate(true)
 	result[item_id] = InventoryItemSchemaServiceScript.normalize_item_entry(item_id, entry)

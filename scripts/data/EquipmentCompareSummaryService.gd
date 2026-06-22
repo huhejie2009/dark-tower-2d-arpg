@@ -3,6 +3,15 @@ class_name EquipmentCompareSummaryService
 
 const EquipmentDataServiceScript := preload("res://scripts/data/EquipmentDataService.gd")
 
+const RANGER_COC_REASON_TEXT := {
+	"critical_chance": "更频繁触发冰矢",
+	"attack_speed": "更多寒冰射击尝试，但仍受触发冷却限制",
+	"cold_damage": "增强寒冰射击和冰矢",
+	"ice_lance_pierce": "冰矢穿透，清理密集敌人更强",
+	"ice_lance_split": "冰矢分裂，提升清图覆盖",
+	"coc_cooldown_recovery": "允许更高频率触发冰矢",
+}
+
 static func build_summary(player_data: Dictionary, candidate_item_id: String, candidate_equipment: Dictionary) -> Dictionary:
 	var slot := EquipmentDataServiceScript.resolve_equip_slot(player_data, candidate_equipment)
 	var inventory: Dictionary = Dictionary(player_data.get("inventory", {}))
@@ -49,50 +58,74 @@ static func _build_stat_deltas(candidate_equipment: Dictionary, equipped_equipme
 		if delta == 0:
 			continue
 		var sign := "+" if delta > 0 else ""
+		var reason := _build_stat_reason(str(stat_id), delta)
 		rows.append({
 			"stat_id": str(stat_id),
 			"candidate_value": candidate_value,
 			"equipped_value": equipped_value,
 			"delta": delta,
 			"compact_text": "%s %s%d" % [_stat_label(str(stat_id)), sign, delta],
+			"reason_text": reason,
 			"positive": delta > 0,
 		})
 	return rows
 
 static func _build_headline(score_delta: int, equipped_item_id: String) -> String:
 	if equipped_item_id == "":
-		return "空部位提升"
+		return "空槽位提升"
 	if score_delta > 0:
-		return "升级候选"
+		return "可提升装备"
 	if score_delta < 0:
-		return "评分降低"
-	return "同级替换"
+		return "评分更低"
+	return "平替"
 
 static func _build_reason_lines(score_delta: int, stat_deltas: Array, equipped_item_id: String) -> Array[String]:
 	var reasons: Array[String] = []
 	var score_sign := "+" if score_delta > 0 else ""
 	if equipped_item_id == "":
-		reasons.append("评分 %s%d 对比空部位" % [score_sign, score_delta])
+		reasons.append("评分 %s%d，对比空槽位" % [score_sign, score_delta])
 	else:
-		reasons.append("评分 %s%d 对比已穿戴" % [score_sign, score_delta])
+		reasons.append("评分 %s%d，对比已装备" % [score_sign, score_delta])
 	var sorted_deltas := stat_deltas.duplicate(true)
-	sorted_deltas.sort_custom(func(a, b): return abs(int(Dictionary(a).get("delta", 0))) > abs(int(Dictionary(b).get("delta", 0))))
+	sorted_deltas.sort_custom(_sort_reason_rows)
 	for row in sorted_deltas:
-		if reasons.size() >= 3:
+		if reasons.size() >= 4:
 			break
 		var data: Dictionary = Dictionary(row)
 		var delta := int(data.get("delta", 0))
 		if delta == 0:
 			continue
+		var reason := str(data.get("reason_text", ""))
+		if delta > 0 and reason != "":
+			reasons.append(reason)
+			continue
 		var sign := "+" if delta > 0 else ""
 		reasons.append("%s %s%d" % [_stat_label(str(data.get("stat_id", ""))), sign, delta])
 	return reasons
+
+static func _build_stat_reason(stat_id: String, delta: int) -> String:
+	if delta <= 0:
+		return ""
+	return str(RANGER_COC_REASON_TEXT.get(stat_id, ""))
+
+static func _sort_reason_rows(a: Variant, b: Variant) -> bool:
+	var data_a: Dictionary = Dictionary(a)
+	var data_b: Dictionary = Dictionary(b)
+	var reason_a := str(data_a.get("reason_text", "")) != ""
+	var reason_b := str(data_b.get("reason_text", "")) != ""
+	if reason_a != reason_b:
+		return reason_a
+	var positive_a := int(data_a.get("delta", 0)) > 0
+	var positive_b := int(data_b.get("delta", 0)) > 0
+	if positive_a != positive_b:
+		return positive_a
+	return abs(int(data_a.get("delta", 0))) > abs(int(data_b.get("delta", 0)))
 
 static func _build_compact_text(score_delta: int, stat_deltas: Array, equipped_item_id: String, reason_lines: Array[String] = []) -> String:
 	var score_sign := "+" if score_delta > 0 else ""
 	var parts: Array[String] = ["评分 %s%d" % [score_sign, score_delta]]
 	if equipped_item_id == "":
-		parts.append("空部位")
+		parts.append("空槽位")
 	if not reason_lines.is_empty():
 		parts.append(str(reason_lines[0]))
 	var shown := 0
@@ -115,5 +148,15 @@ static func _stat_label(stat_id: String) -> String:
 			return "防御"
 		"critical_chance":
 			return "暴击"
+		"attack_speed":
+			return "攻速"
+		"cold_damage":
+			return "冰冷伤害"
+		"ice_lance_pierce":
+			return "冰矢穿透"
+		"ice_lance_split":
+			return "冰矢分裂"
+		"coc_cooldown_recovery":
+			return "触发恢复"
 		_:
 			return stat_id

@@ -1,43 +1,59 @@
 # Dark Tower 2D ARPG
 
-Godot 4.6.2 纯 2D / 2.5D 暗黑刷宝爬塔 ARPG 新项目。
+Godot 4.6.3 纯 2D 暗黑刷宝 / 爬塔 ARPG 项目。
 
 当前目标是先把游戏做到稳定可试玩：主城准备、进塔战斗、掉落拾取、背包装备、经验成长、死亡结算和返回主城形成闭环；美术资产继续保留正式素材接入接口，避免继续依赖代码生成素材。
 
 ## 当前状态
 
-- 主菜单、职业选择、存档槽和主城流程已接入。
-- 2.5D 塔内战斗原型已作为当前主线模式推进。
-- WASD / 方向键移动，鼠标攻击，敌人追击、攻击、死亡和掉落已接入。
-- 背包、装备、装备评分、装备推荐、物品对比、废品出售/分解、技能点成长、仓库和商人数据底座已接入。
-- 打开背包 / 装备窗口时会暂停战斗，避免玩家整理装备时被怪物击杀。
-- HUD 显示生命、法力、经验、技能点、装备评分和掉落提示。
-- 死亡结算、半血回城、清层奖励、下一层入口和主城返回闭环已接入。
-- 核心可见 UI 已完成中文化，包含主菜单、职业选择、主城、背包装备、HUD、掉落提示、死亡结算、楼层提示和设施窗口。
-- Godot AI / godot-devtool MCP 已接入，用于项目检查、运行验证和后续编辑器辅助。
+当前版本已经具备第一版可试玩闭环：
+
+- 主菜单
+- 职业选择
+- 主城与塔前准备面板
+- 存档槽与基础玩家数据
+- 2D 战斗场景
+- WASD / 方向键移动
+- 左键基础攻击
+- 敌人追击、攻击、死亡
+- 掉落拾取进入背包
+- 背包、装备、装备评分、装备推荐、装备对比摘要与对比原因
+- 交付级物品实例契约：`instance_id`、`item_power`、`binding_flags`、`icon_id`、`source_tags`
+- 背包查询服务：装备、材料、升级、锁定、收藏、废品筛选与排序接口
+- 背包窗口高级筛选：升级、锁定、收藏、废品
+- 物品锁定、收藏、废品标记写入 `binding_flags`
+- 技能点与基础技能成长
+- 战斗内暂停、背包暂停、死亡结算
+- 清怪开门 / 传送门进入下一层
+- 从第 1 层开始或挑战历史最高层
+- HUD 显示生命、魔力、经验、技能点、掉落提示
+- 手动 / 挂机战斗模式
+- 游侠寒冰射击暴击触发冰矛的 CoC 构筑
+- 游侠 CoC 天赋、装备词条和装备作用解释
+- 通用宝石孔、宝石属性聚合与背包镶嵌入口
+- 宝石刷图掉落、中文通知和独立掉落视觉
+- 主菜单、主城、战斗、背包、装备、天赋和结算中文化
+- Godot AI 与 godot-devtool MCP 插件接入
+- 回归测试与场景启动烟测
 
 ## 项目路径
 
-```text
-H:\GODOT_PROJECT\dark-tower-2d-arpg
-```
+当前工作区由开发者自行选择，不依赖固定盘符。
 
 Godot 项目入口：
 
-```text
-H:\GODOT_PROJECT\dark-tower-2d-arpg\project.godot
-```
+项目根目录下的 `project.godot`。
 
 推荐 Godot 版本：
 
 ```text
-Godot 4.6.2 stable
+Godot 4.6.3 stable
 ```
 
 当前机器常用 Godot console：
 
 ```text
-C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe
+D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
 ```
 
 ## 目录说明
@@ -75,12 +91,13 @@ C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe
 PowerShell 示例：
 
 ```powershell
-$godot = 'C:\Users\huhej\OneDrive\桌面\Godot_v4.6.2-stable_win64_console.exe'
-$project = 'H:\GODOT_PROJECT\dark-tower-2d-arpg'
+$godot = 'D:\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe'
+$project = (Resolve-Path '.').Path
+$log = Join-Path $project '.godot\regression.log'
 $tests = Get-ChildItem -Path "$project\tests\regression" -File -Filter '*.gd' | Sort-Object Name | ForEach-Object { 'res://tests/regression/' + $_.Name }
 foreach ($test in $tests) {
   Write-Host "RUN $test"
-  & $godot --headless --path $project --script $test
+  & $godot --headless --log-file $log --path $project --script $test
   if ($LASTEXITCODE -ne 0) {
     Write-Host "FAILED $test EXIT $LASTEXITCODE"
     exit $LASTEXITCODE
@@ -93,11 +110,31 @@ Godot 退出时可能出现 `ObjectDB instances leaked` / `resources still in us
 
 ## 下一步方向
 
-1. 继续强化 2.5D 塔内战斗可读性，优先解决敌我动作、攻击预警、受击反馈和死亡反馈。
-2. 完善背包 / 装备系统的正式交互体验，包括筛选、排序、对比、出售、分解、仓库和商人窗口。
-3. 推进主城功能化，让主城真正承担准备、交易、训练、仓库和进塔入口。
-4. 准备正式 2D 人物、敌人、动作和环境素材替换，保留清晰的资产接口。
-5. 扩展 3 到 5 个楼层节奏变化，并增加连续爬塔稳定性测试。
+短期优先级：
+
+1. 让冰矛穿透与分裂属性真正改变弹道行为。
+2. 增加宝石选择、替换和取下界面。
+3. 完成 10 分钟游侠挂机刷宝试玩与数值调整。
+4. 扩展自动拾取过滤、危险规避和挂机构筑摘要。
+5. 在通用系统上制作战士、法师和侍僧的首套代表性 Build。
+
+## 2026-06-14 更新：游侠 CoC 与宝石刷宝闭环
+
+- 完成游侠寒冰射击暴击触发冰矛的第一版战斗循环。
+- 手动与挂机模式共用技能、暴击和触发冷却规则。
+- 新增寒霜、精准、迅捷、穿透和分裂宝石。
+- 宝石可从刷图掉落进入背包，并镶嵌到已装备物品。
+- 装备详情显示孔位、已镶宝石和 Build 相关作用说明。
+- 完成主要游戏界面和战斗信息中文化。
+- 详细记录见 `CHANGELOG.md` 与 `docs/progress/2026-06-14-localization-gem-loot-loop-progress.md`。
+
+## 2026-06-10 更新：废品批量处理前置
+
+- 新增 `InventoryItemActionService`，集中处理背包物品操作规则。
+- 新增废品批量出售/分解预览与执行接口，后续商人和铁匠窗口可直接复用。
+- 锁定、收藏、已装备、不可出售物品会被自动保护，不会被批量处理。
+- 背包窗口新增 `SellJunkButton` 与 `SalvageJunkButton`，先以文字按钮保留正式图标素材接口。
+- 新增回归：`regression_inventory_junk_batch_actions.gd`。
 
 ## License
 
